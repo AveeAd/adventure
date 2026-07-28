@@ -29,6 +29,14 @@ export class AdventurePagesController {
     return this.adventurePagesService.list(Number(page) || 1, Number(pageSize) || 20);
   }
 
+  // 2 path segments, so this can't collide with ':id' (1 segment) regardless
+  // of declaration order - public pages route by slug (SEO), not UUID
+  @Public()
+  @Get('slug/:slug')
+  getBySlug(@Param('slug') slug: string, @CurrentUser() user?: AuthenticatedUser) {
+    return this.adventurePagesService.getBySlug(slug, user?.userId);
+  }
+
   @Public()
   @Get(':id')
   get(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {

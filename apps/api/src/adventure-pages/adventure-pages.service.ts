@@ -29,6 +29,14 @@ export class AdventurePagesService {
     return { data, total, page, pageSize };
   }
 
+  async getBySlug(slug: string, currentUserId?: string) {
+    const page = await this.prisma.adventurePage.findUnique({ where: { slug }, select: { id: true } });
+    if (!page) {
+      throw new NotFoundException(`Adventure page "${slug}" not found`);
+    }
+    return this.get(page.id, currentUserId);
+  }
+
   async get(id: string, currentUserId?: string) {
     const page = await this.prisma.adventurePage.findUnique({
       where: { id },
