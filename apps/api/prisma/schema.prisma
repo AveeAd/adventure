@@ -24,6 +24,11 @@ model User {
   profile       Profile?
   refreshTokens RefreshToken[]
 
+  revisions          PageRevision[]
+  pageConfirmations  PageConfirmation[]
+  uploadedMedia      Media[]
+  adventurePageLikes AdventurePageLike[]
+
   @@map("users")
 }
 
@@ -65,6 +70,8 @@ model ActivityType {
   parentId String?
   parent   ActivityType?  @relation("ActivityTypeHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
   children ActivityType[] @relation("ActivityTypeHierarchy")
+
+  adventurePages AdventurePage[]
 
   @@map("activity_types")
 }
@@ -116,6 +123,7 @@ model District {
   updatedAt  DateTime @updatedAt
 
   municipalities Municipality[]
+  adventurePageDistricts AdventurePageDistrict[]
 
   @@unique([provinceId, slug])
   @@map("districts")
@@ -146,6 +154,8 @@ model DifficultyLevel {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  adventurePages AdventurePage[]
+
   @@map("difficulty_levels")
 }
 
@@ -159,5 +169,118 @@ model Season {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  adventurePageSeasons AdventurePageSeason[]
+
   @@map("seasons")
+}
+
+enum PageVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  NEEDS_REVIEW
+}
+
+model AdventurePage {
+  id                 String   @id @default(uuid())
+  title              String
+  slug               String   @unique
+  summary            String?
+  activityTypeId     String
+  activityType       ActivityType     @relation(fields: [activityTypeId], references: [id], onDelete: Restrict)
+  difficultyLevelId  String?
+  difficultyLevel    DifficultyLevel? @relation(fields: [difficultyLevelId], references: [id], onDelete: Restrict)
+  durationMinDays    Int?
+  durationMaxDays    Int?
+  maxAltitudeMeters  Int?
+  verificationStatus PageVerificationStatus @default(UNVERIFIED)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  revisions PageRevision[]
+  districts AdventurePageDistrict[]
+  seasons   AdventurePageSeason[]
+  media     Media[]
+  likes     AdventurePageLike[]
+
+  @@map("adventure_pages")
+}
+
+model PageRevision {
+  id                   String   @id @default(uuid())
+  adventurePageId      String
+  adventurePage        AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  version              Int
+  content              String        // Markdown, full snapshot per revision - not a diff
+  editSummary          String?
+  isSafetyCriticalEdit Boolean  @default(false)
+  editorId             String
+  editor               User          @relation(fields: [editorId], references: [id], onDelete: Restrict)
+  createdAt            DateTime      @default(now())
+
+  confirmations PageConfirmation[]
+
+  @@unique([adventurePageId, version])
+  @@map("page_revisions")
+}
+
+model PageConfirmation {
+  id         String   @id @default(uuid())
+  revisionId String
+  revision   PageRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([revisionId, userId])
+  @@map("page_confirmations")
+}
+
+model AdventurePageDistrict {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  districtId      String
+  district        District      @relation(fields: [districtId], references: [id], onDelete: Restrict)
+
+  @@unique([adventurePageId, districtId])
+  @@map("adventure_page_districts")
+}
+
+model AdventurePageSeason {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  seasonId        String
+  season          Season        @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+
+  @@unique([adventurePageId, seasonId])
+  @@map("adventure_page_seasons")
+}
+
+model Media {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  url             String
+  caption         String?
+  altText         String?
+  sortOrder       Int      @default(0)
+  uploadedById    String
+  uploadedBy      User     @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt       DateTime @default(now())
+
+  @@map("media")
+}
+
+model AdventurePageLike {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@unique([adventurePageId, userId])
+  @@map("adventure_page_likes")
 }
