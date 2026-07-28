@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateSpotDto } from './dto/create-spot.dto';
 import { UpdateSpotDto } from './dto/update-spot.dto';
@@ -10,6 +11,7 @@ import { SpotsService } from './spots.service';
 export class AdventurePageSpotsController {
   constructor(private readonly spotsService: SpotsService) {}
 
+  @Public()
   @Get()
   list(@Param('pageId') pageId: string) {
     return this.spotsService.listForPage(pageId);
@@ -30,6 +32,7 @@ export class SpotsController {
   constructor(private readonly spotsService: SpotsService) {}
 
   // must come before ':id' - otherwise Nest would match "bbox" as an :id
+  @Public()
   @Get('bbox')
   bbox(
     @Query('minLng') minLng: string,
@@ -40,6 +43,7 @@ export class SpotsController {
     return this.spotsService.inBoundingBox(Number(minLng), Number(minLat), Number(maxLng), Number(maxLat));
   }
 
+  @Public()
   @Get(':id')
   get(@Param('id') id: string) {
     return this.spotsService.get(id);

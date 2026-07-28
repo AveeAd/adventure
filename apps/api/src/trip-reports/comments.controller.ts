@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
@@ -8,6 +9,7 @@ import { UpdateCommentDto } from './dto/update-comment.dto';
 export class TripReportCommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
+  @Public()
   @Get()
   list(@Param('tripReportId') tripReportId: string) {
     return this.commentsService.listForTripReport(tripReportId);

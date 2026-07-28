@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AdventurePagesService } from './adventure-pages.service';
 import { AddMediaDto } from './dto/add-media.dto';
@@ -22,11 +23,13 @@ import { UpdateAdventurePageMetadataDto } from './dto/update-adventure-page-meta
 export class AdventurePagesController {
   constructor(private readonly adventurePagesService: AdventurePagesService) {}
 
+  @Public()
   @Get()
   list(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     return this.adventurePagesService.list(Number(page) || 1, Number(pageSize) || 20);
   }
 
+  @Public()
   @Get(':id')
   get(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
     return this.adventurePagesService.get(id, user?.userId);
@@ -48,16 +51,19 @@ export class AdventurePagesController {
     return this.adventurePagesService.delete(id);
   }
 
+  @Public()
   @Get(':id/revisions')
   listRevisions(@Param('id') id: string) {
     return this.adventurePagesService.listRevisions(id);
   }
 
+  @Public()
   @Get(':id/revisions/:version')
   getRevision(@Param('id') id: string, @Param('version', ParseIntPipe) version: number) {
     return this.adventurePagesService.getRevision(id, version);
   }
 
+  @Public()
   @Get(':id/diff')
   diff(@Param('id') id: string, @Query('from', ParseIntPipe) from: number, @Query('to', ParseIntPipe) to: number) {
     return this.adventurePagesService.diff(id, from, to);

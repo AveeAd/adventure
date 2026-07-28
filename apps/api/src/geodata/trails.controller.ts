@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateTrailDto } from './dto/create-trail.dto';
 import { UpdateTrailDto } from './dto/update-trail.dto';
@@ -10,6 +11,7 @@ import { TrailsService } from './trails.service';
 export class AdventurePageTrailsController {
   constructor(private readonly trailsService: TrailsService) {}
 
+  @Public()
   @Get()
   list(@Param('pageId') pageId: string) {
     return this.trailsService.listForPage(pageId);
@@ -30,6 +32,7 @@ export class TrailsController {
   constructor(private readonly trailsService: TrailsService) {}
 
   // must come before ':id' - otherwise Nest would match "bbox" as an :id
+  @Public()
   @Get('bbox')
   bbox(
     @Query('minLng') minLng: string,
@@ -40,6 +43,7 @@ export class TrailsController {
     return this.trailsService.inBoundingBox(Number(minLng), Number(minLat), Number(maxLng), Number(maxLat));
   }
 
+  @Public()
   @Get(':id')
   get(@Param('id') id: string) {
     return this.trailsService.get(id);

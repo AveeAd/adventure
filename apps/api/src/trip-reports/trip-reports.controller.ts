@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { AddTripReportMediaDto } from './dto/add-trip-report-media.dto';
 import { CreateTripReportDto } from './dto/create-trip-report.dto';
 import { UpdateTripReportDto } from './dto/update-trip-report.dto';
@@ -9,6 +10,7 @@ import { TripReportsService } from './trip-reports.service';
 export class AdventurePageTripReportsController {
   constructor(private readonly tripReportsService: TripReportsService) {}
 
+  @Public()
   @Get()
   list(@Param('pageId') pageId: string, @Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     return this.tripReportsService.listForPage(pageId, Number(page) || 1, Number(pageSize) || 20);
@@ -28,6 +30,7 @@ export class AdventurePageTripReportsController {
 export class TripReportsController {
   constructor(private readonly tripReportsService: TripReportsService) {}
 
+  @Public()
   @Get(':id')
   get(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
     return this.tripReportsService.get(id, user?.userId);

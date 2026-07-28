@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Type } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { Public } from '../../auth/decorators/public.decorator';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { AuthenticatedUser, CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -28,6 +29,9 @@ export function createCrudController<TEntity extends CrudEntity>(
       this.service = new BaseCrudService<TEntity>(options.delegate(prisma));
     }
 
+    // master-data reads are public - needed for filter UI on pages
+    // anonymous visitors load, per PUBLIC_PAGES.md
+    @Public()
     @Get()
     list(
       @Query('page') page?: string,
@@ -39,6 +43,7 @@ export function createCrudController<TEntity extends CrudEntity>(
       return this.service.list(Number(page) || 1, Number(pageSize) || 20, wantsIncludeInactive);
     }
 
+    @Public()
     @Get(':id')
     get(@Param('id') id: string) {
       return this.service.get(id);
