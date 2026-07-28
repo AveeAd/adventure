@@ -6,7 +6,7 @@ import { UpdateTrailDto } from './dto/update-trail.dto';
 
 const CONFIRMATION_THRESHOLD = 2;
 
-interface TrailRow {
+export interface TrailRow {
   id: string;
   adventurePageId: string;
   name: string | null;

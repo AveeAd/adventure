@@ -6,7 +6,7 @@ import { UpdateSpotDto } from './dto/update-spot.dto';
 
 const CONFIRMATION_THRESHOLD = 2;
 
-interface SpotRow {
+export interface SpotRow {
   id: string;
   adventurePageId: string;
   spotTypeId: string;
