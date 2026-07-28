@@ -29,6 +29,13 @@ model User {
   uploadedMedia      Media[]
   adventurePageLikes AdventurePageLike[]
 
+  createdTrails      Trail[] @relation("TrailCreatedBy")
+  lastEditedTrails   Trail[] @relation("TrailLastEditedBy")
+  trailConfirmations TrailConfirmation[]
+  createdSpots       Spot[] @relation("SpotCreatedBy")
+  lastEditedSpots    Spot[] @relation("SpotLastEditedBy")
+  spotConfirmations  SpotConfirmation[]
+
   @@map("users")
 }
 
@@ -202,6 +209,8 @@ model AdventurePage {
   seasons   AdventurePageSeason[]
   media     Media[]
   likes     AdventurePageLike[]
+  trails    Trail[]
+  spots     Spot[]
 
   @@map("adventure_pages")
 }
@@ -283,4 +292,94 @@ model AdventurePageLike {
 
   @@unique([adventurePageId, userId])
   @@map("adventure_page_likes")
+}
+
+enum GeoVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  NEEDS_REVIEW
+}
+
+model SpotType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  spots Spot[]
+
+  @@map("spot_types")
+}
+
+model Trail {
+  id                 String   @id @default(uuid())
+  adventurePageId    String
+  adventurePage      AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  name               String?
+  geometry           Unsupported("geometry(LineString, 4326)")
+  distanceMeters     Int?
+  verificationStatus GeoVerificationStatus @default(UNVERIFIED)
+  isActive           Boolean  @default(true)
+  createdById        String
+  createdBy          User     @relation("TrailCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  lastEditedById     String
+  lastEditedBy       User     @relation("TrailLastEditedBy", fields: [lastEditedById], references: [id], onDelete: Restrict)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  confirmations TrailConfirmation[]
+
+  @@map("trails")
+}
+
+model TrailConfirmation {
+  id        String   @id @default(uuid())
+  trailId   String
+  trail     Trail    @relation(fields: [trailId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([trailId, userId])
+  @@map("trail_confirmations")
+}
+
+model Spot {
+  id                 String   @id @default(uuid())
+  adventurePageId    String
+  adventurePage      AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  spotTypeId         String
+  spotType           SpotType @relation(fields: [spotTypeId], references: [id], onDelete: Restrict)
+  name               String
+  description        String?
+  geometry           Unsupported("geometry(Point, 4326)")
+  elevationMeters    Int?
+  verificationStatus GeoVerificationStatus @default(UNVERIFIED)
+  isActive           Boolean  @default(true)
+  createdById        String
+  createdBy          User     @relation("SpotCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  lastEditedById     String
+  lastEditedBy       User     @relation("SpotLastEditedBy", fields: [lastEditedById], references: [id], onDelete: Restrict)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  confirmations SpotConfirmation[]
+
+  @@map("spots")
+}
+
+model SpotConfirmation {
+  id        String   @id @default(uuid())
+  spotId    String
+  spot      Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([spotId, userId])
+  @@map("spot_confirmations")
 }
