@@ -1,0 +1,7 @@
+{
+  "name": "adventure",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ]
+}
