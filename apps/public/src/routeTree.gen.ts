@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as AdventuresSlugIndexRouteImport } from './routes/adventures/$slug/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,44 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdventuresSlugIndexRoute = AdventuresSlugIndexRouteImport.update({
+  id: '/adventures/$slug/',
+  path: '/adventures/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/adventures/$slug/': typeof AdventuresSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/adventures/$slug': typeof AdventuresSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/adventures/$slug/': typeof AdventuresSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/auth/callback'
+  fullPaths: '/' | '/login' | '/auth/callback' | '/adventures/$slug/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/auth/callback'
-  id: '__root__' | '/' | '/login' | '/auth/callback'
+  to: '/' | '/login' | '/auth/callback' | '/adventures/$slug'
+  id: '__root__' | '/' | '/login' | '/auth/callback' | '/adventures/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  AdventuresSlugIndexRoute: typeof AdventuresSlugIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +92,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/adventures/$slug/': {
+      id: '/adventures/$slug/'
+      path: '/adventures/$slug'
+      fullPath: '/adventures/$slug/'
+      preLoaderRoute: typeof AdventuresSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  AdventuresSlugIndexRoute: AdventuresSlugIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
