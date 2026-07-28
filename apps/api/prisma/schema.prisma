@@ -36,6 +36,10 @@ model User {
   lastEditedSpots    Spot[] @relation("SpotLastEditedBy")
   spotConfirmations  SpotConfirmation[]
 
+  tripReports     TripReport[]
+  tripReportKudos TripReportKudos[]
+  comments        Comment[]
+
   @@map("users")
 }
 
@@ -211,6 +215,7 @@ model AdventurePage {
   likes     AdventurePageLike[]
   trails    Trail[]
   spots     Spot[]
+  tripReports TripReport[]
 
   @@map("adventure_pages")
 }
@@ -382,4 +387,65 @@ model SpotConfirmation {
 
   @@unique([spotId, userId])
   @@map("spot_confirmations")
+}
+
+model TripReport {
+  id                String   @id @default(uuid())
+  adventurePageId   String
+  adventurePage     AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  authorId          String
+  author            User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  title             String?
+  description       String?
+  dateCompleted     DateTime
+  durationDays      Int?
+  actualCostAmount  Int?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  media    TripReportMedia[]
+  kudos    TripReportKudos[]
+  comments Comment[]
+
+  @@map("trip_reports")
+}
+
+model TripReportMedia {
+  id           String   @id @default(uuid())
+  tripReportId String
+  tripReport   TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
+  url          String
+  caption      String?
+  altText      String?
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@map("trip_report_media")
+}
+
+model TripReportKudos {
+  id           String   @id @default(uuid())
+  tripReportId String
+  tripReport   TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+
+  @@unique([tripReportId, userId])
+  @@map("trip_report_kudos")
+}
+
+model Comment {
+  id           String   @id @default(uuid())
+  tripReportId String
+  tripReport   TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  content      String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("comments")
 }
