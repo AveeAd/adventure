@@ -1,0 +1,862 @@
+<title>Adventure DB — ER Diagram</title>
+<style>
+  :root {
+    --bg: #f3f5f1;
+    --surface: #ffffff;
+    --ink: #1b2320;
+    --ink-muted: #5c6864;
+    --ink-faint: #8b958f;
+    --border: #d8ddd5;
+    --border-strong: #b9c2ba;
+    --accent-auth: #2c766e;
+    --accent-auth-soft: #2c766e1a;
+    --accent-data: #a6702a;
+    --accent-data-soft: #a6702a1a;
+    --accent-content: #4a5aa8;
+    --accent-content-soft: #4a5aa81a;
+    --accent-geo: #4f7a3d;
+    --accent-geo-soft: #4f7a3d1a;
+    --line: #8a948e;
+    --line-label-bg: #ffffff;
+    --shadow: 0 1px 2px rgba(20, 30, 26, 0.04), 0 6px 16px rgba(20, 30, 26, 0.06);
+    --radius: 10px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #101715;
+      --surface: #16201d;
+      --ink: #e8ece9;
+      --ink-muted: #9db0a8;
+      --ink-faint: #667a72;
+      --border: #2a3733;
+      --border-strong: #3d4d47;
+      --accent-auth: #5fd1c0;
+      --accent-auth-soft: #5fd1c026;
+      --accent-data: #e3ac5c;
+      --accent-data-soft: #e3ac5c26;
+      --accent-content: #8b9cf0;
+      --accent-content-soft: #8b9cf026;
+      --accent-geo: #8fc274;
+      --accent-geo-soft: #8fc27426;
+      --line: #56655f;
+      --line-label-bg: #16201d;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 20px rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101715;
+    --surface: #16201d;
+    --ink: #e8ece9;
+    --ink-muted: #9db0a8;
+    --ink-faint: #667a72;
+    --border: #2a3733;
+    --border-strong: #3d4d47;
+    --accent-auth: #5fd1c0;
+    --accent-auth-soft: #5fd1c026;
+    --accent-data: #e3ac5c;
+    --accent-data-soft: #e3ac5c26;
+    --accent-content: #8b9cf0;
+    --accent-content-soft: #8b9cf026;
+    --accent-geo: #8fc274;
+    --accent-geo-soft: #8fc27426;
+    --line: #56655f;
+    --line-label-bg: #16201d;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 8px 20px rgba(0, 0, 0, 0.35);
+  }
+  :root[data-theme="light"] {
+    --bg: #f3f5f1;
+    --surface: #ffffff;
+    --ink: #1b2320;
+    --ink-muted: #5c6864;
+    --ink-faint: #8b958f;
+    --border: #d8ddd5;
+    --border-strong: #b9c2ba;
+    --accent-auth: #2c766e;
+    --accent-auth-soft: #2c766e1a;
+    --accent-data: #a6702a;
+    --accent-data-soft: #a6702a1a;
+    --accent-content: #4a5aa8;
+    --accent-content-soft: #4a5aa81a;
+    --accent-geo: #4f7a3d;
+    --accent-geo-soft: #4f7a3d1a;
+    --line: #8a948e;
+    --line-label-bg: #ffffff;
+    --shadow: 0 1px 2px rgba(20, 30, 26, 0.04), 0 6px 16px rgba(20, 30, 26, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 2.5rem 1.75rem 4rem;
+  }
+
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.94rem;
+    line-height: 1.5;
+    max-width: 62ch;
+  }
+
+  .subtitle code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.05em 0.4em;
+    border-radius: 5px;
+  }
+
+  /* legend */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.4rem;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    margin-bottom: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+  }
+  .legend__item { display: flex; align-items: center; gap: 0.45rem; }
+  .legend__swatch {
+    width: 0.7rem; height: 0.7rem; border-radius: 3px; flex: none;
+  }
+  .legend__divider {
+    width: 1px; align-self: stretch; background: var(--border-strong);
+  }
+
+  /* diagram scroller */
+  .diagram-scroll {
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  .diagram {
+    position: relative;
+    min-width: 980px;
+  }
+
+  .zone {
+    position: relative;
+    border: 1px dashed var(--border-strong);
+    border-radius: 14px;
+    padding: 2.25rem 1.5rem 1.5rem;
+    margin-bottom: 2.25rem;
+  }
+  .zone__label {
+    position: absolute;
+    top: -0.7rem;
+    left: 1.1rem;
+    background: var(--bg);
+    padding: 0 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .zone--auth .zone__label { color: var(--accent-auth); }
+  .zone--data .zone__label { color: var(--accent-data); }
+  .zone--content .zone__label { color: var(--accent-content); }
+  .zone--geo .zone__label { color: var(--accent-geo); }
+
+  .zone--auth {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    grid-template-rows: auto auto;
+    gap: 2.75rem 3.25rem;
+    align-items: center;
+  }
+  #user-card { grid-column: 1; grid-row: 1 / 3; align-self: stretch; }
+  #profile-card { grid-column: 2; grid-row: 1; }
+  #refresh-card { grid-column: 2; grid-row: 2; }
+
+  .zone--data {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .subzone { position: relative; }
+  .subzone__label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 0.85rem;
+  }
+  .subzone__grid--flat {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+  .subzone__grid--chain {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3rem 1.25rem;
+    align-items: start;
+  }
+
+  .zone--content {
+    display: grid;
+    grid-template-columns: 250px 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 2.5rem 2rem;
+    align-items: start;
+  }
+  #adventure-page-card { grid-column: 1; grid-row: 1 / 4; align-self: stretch; }
+  #page-revision-card { grid-column: 2; grid-row: 1; }
+  #page-confirmation-card { grid-column: 3; grid-row: 1; }
+  #media-card { grid-column: 2; grid-row: 2; }
+  #apd-card { grid-column: 2; grid-row: 3; }
+  #aps-card { grid-column: 3; grid-row: 3; }
+
+  .zone--geo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 2.5rem 2rem;
+  }
+
+  .connectors {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .connectors path {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.6;
+  }
+  .rel-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    background: var(--line-label-bg);
+    border: 1px solid var(--border);
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* table cards */
+  .table-card {
+    position: relative;
+    z-index: 2;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .table-card__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    border-left: 3px solid var(--zone-accent, var(--accent-auth));
+  }
+  .zone--data .table-card { --zone-accent: var(--accent-data); }
+  .zone--auth .table-card { --zone-accent: var(--accent-auth); }
+  .zone--content .table-card { --zone-accent: var(--accent-content); }
+  .zone--geo .table-card { --zone-accent: var(--accent-geo); }
+
+  .table-card__name {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    font-weight: 700;
+    font-size: 0.94rem;
+    letter-spacing: -0.01em;
+  }
+  .table-card__meta {
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+  }
+  .table-card__twin {
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    padding: 0.6rem 0.9rem 0.7rem;
+    border-bottom: 1px solid var(--border);
+    font-style: normal;
+  }
+  .table-card__twin b { color: var(--ink-muted); font-weight: 600; }
+
+  .field {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 0 0.6rem;
+    padding: 0.36rem 0.9rem;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .field:last-child { border-bottom: none; }
+  .field__name { color: var(--ink); font-weight: 600; }
+  .field__name.faint { color: var(--ink-muted); font-weight: 500; }
+  .field__type { color: var(--ink-muted); text-align: right; }
+  .field__ref {
+    grid-column: 1 / -1;
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+    padding: 0 0 0.36rem 0;
+    margin-top: -0.3rem;
+  }
+
+  .badge {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 0.08rem 0.36rem;
+    border-radius: 4px;
+    line-height: 1.4;
+  }
+  .badge-pk { background: var(--ink); color: var(--surface); }
+  :root[data-theme="dark"] .badge-pk { background: var(--ink); color: var(--bg); }
+  @media (prefers-color-scheme: dark) {
+    .badge-pk { background: var(--ink); color: var(--bg); }
+  }
+  .badge-uk { border: 1px solid var(--border-strong); color: var(--ink-muted); }
+  .badge-fk { border: 1px dashed var(--border-strong); color: var(--ink-muted); }
+
+  .footnote {
+    margin-top: 1.75rem;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    max-width: 68ch;
+    line-height: 1.55;
+  }
+  .footnote code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.03em 0.35em;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .connectors path { transition: opacity 0.4s ease; }
+  }
+</style>
+
+<div class="page">
+  <div class="masthead">
+    <div class="eyebrow">Adventure platform · database</div>
+    <h1>Entity-relationship diagram</h1>
+    <p class="subtitle">Phase 1–5 foundation — auth, flat master data, the location hierarchy — plus Phase 6's adventure-page content layer and Phase 7's map/geodata layer. Full field-level detail, conventions, and migration notes live in <code>DATABASE.md</code>, <code>ADVENTURE_PAGES.md</code>, and <code>MAP_GEODATA.md</code>.</p>
+  </div>
+
+  <div class="legend">
+    <div class="legend__item"><span class="badge badge-pk">PK</span> primary key</div>
+    <div class="legend__item"><span class="badge badge-uk">UK</span> unique</div>
+    <div class="legend__item"><span class="badge badge-fk">FK</span> foreign key</div>
+    <div class="legend__divider"></div>
+    <div class="legend__item"><span class="legend__swatch" style="background:var(--accent-auth)"></span> Auth</div>
+    <div class="legend__item"><span class="legend__swatch" style="background:var(--accent-data)"></span> Master data</div>
+    <div class="legend__item"><span class="legend__swatch" style="background:var(--accent-content)"></span> Content</div>
+    <div class="legend__item"><span class="legend__swatch" style="background:var(--accent-geo)"></span> Map/geodata</div>
+    <div class="legend__divider"></div>
+    <div class="legend__item">every table carries <code style="font-family:ui-monospace,monospace">isActive</code> — deletes are soft</div>
+    <div class="legend__divider"></div>
+    <div class="legend__item">→ table.column captions with no line = reference into another zone</div>
+  </div>
+
+  <div class="diagram-scroll">
+    <div class="diagram" id="diagram">
+
+      <div class="zone zone--auth" id="auth-zone">
+        <span class="zone__label">Auth</span>
+        <svg class="connectors" id="auth-connectors"></svg>
+
+        <div class="table-card" id="user-card">
+          <div class="table-card__head">
+            <span class="table-card__name">User</span>
+            <span class="table-card__meta">users</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field"><span class="field__name">email</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+          <div class="field"><span class="field__name">googleId</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+          <div class="field"><span class="field__name">role</span><span class="field__type">Role</span><span></span></div>
+          <div class="field"><span class="field__name">isActive</span><span class="field__type">boolean</span><span></span></div>
+          <div class="field"><span class="field__name faint">createdAt</span><span class="field__type">datetime</span><span></span></div>
+          <div class="field"><span class="field__name faint">updatedAt</span><span class="field__type">datetime</span><span></span></div>
+        </div>
+
+        <div class="table-card" id="profile-card">
+          <div class="table-card__head">
+            <span class="table-card__name">Profile</span>
+            <span class="table-card__meta">profiles</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">userId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · unique, cascades on delete</span>
+          </div>
+          <div class="field"><span class="field__name faint">name</span><span class="field__type">string?</span><span></span></div>
+          <div class="field"><span class="field__name faint">avatarUrl</span><span class="field__type">string?</span><span></span></div>
+          <div class="field"><span class="field__name faint">createdAt</span><span class="field__type">datetime</span><span></span></div>
+          <div class="field"><span class="field__name faint">updatedAt</span><span class="field__type">datetime</span><span></span></div>
+        </div>
+
+        <div class="table-card" id="refresh-card">
+          <div class="table-card__head">
+            <span class="table-card__name">RefreshToken</span>
+            <span class="table-card__meta">refresh_tokens</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">userId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · cascades on delete</span>
+          </div>
+          <div class="field"><span class="field__name">tokenHash</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+          <div class="field"><span class="field__name faint">expiresAt</span><span class="field__type">datetime</span><span></span></div>
+          <div class="field"><span class="field__name faint">revokedAt</span><span class="field__type">datetime?</span><span></span></div>
+          <div class="field"><span class="field__name faint">createdAt</span><span class="field__type">datetime</span><span></span></div>
+        </div>
+      </div>
+
+      <div class="zone zone--data" id="data-zone">
+        <span class="zone__label">Master data</span>
+
+        <div class="subzone">
+          <p class="subzone__label">Flat lookups</p>
+          <div class="subzone__grid--flat">
+            <div class="table-card">
+              <div class="table-card__head">
+                <span class="table-card__name">ActivityType</span>
+                <span class="table-card__meta">activity_types</span>
+              </div>
+              <div class="table-card__twin">↻ self-referencing — nesting, unbounded depth</div>
+              <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+              <div class="field"><span class="field__name">name</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+              <div class="field"><span class="field__name">slug</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+              <div class="field">
+                <span class="field__name">parentId</span><span class="field__type">uuid?</span><span class="badge badge-fk">FK</span>
+                <span class="field__ref">→ activity_types.id · restrict on delete</span>
+              </div>
+              <div class="field"><span class="field__name faint">description</span><span class="field__type">string?</span><span></span></div>
+              <div class="field"><span class="field__name faint">sortOrder, isActive</span><span class="field__type"></span><span></span></div>
+            </div>
+
+            <div class="table-card">
+              <div class="table-card__head">
+                <span class="table-card__name">DifficultyLevel</span>
+                <span class="table-card__meta">difficulty_levels</span>
+              </div>
+              <div class="table-card__twin">plain lookup — no self-reference, unlike ActivityType</div>
+              <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+              <div class="field"><span class="field__name">name / slug</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+              <div class="field"><span class="field__name faint">description, sortOrder, isActive</span><span class="field__type"></span><span></span></div>
+            </div>
+
+            <div class="table-card">
+              <div class="table-card__head">
+                <span class="table-card__name">Season</span>
+                <span class="table-card__meta">seasons</span>
+              </div>
+              <div class="table-card__twin">same shape as <b>DifficultyLevel</b></div>
+              <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+              <div class="field"><span class="field__name">name / slug</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+              <div class="field"><span class="field__name faint">description, sortOrder, isActive</span><span class="field__type"></span><span></span></div>
+            </div>
+
+            <div class="table-card">
+              <div class="table-card__head">
+                <span class="table-card__name">SpotType</span>
+                <span class="table-card__meta">spot_types</span>
+              </div>
+              <div class="table-card__twin">same shape as <b>DifficultyLevel</b> — used by Spot (Map/geodata zone)</div>
+              <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+              <div class="field"><span class="field__name">name / slug</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+              <div class="field"><span class="field__name faint">description, sortOrder, isActive</span><span class="field__type"></span><span></span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="subzone" id="location-subzone">
+          <p class="subzone__label">Location hierarchy · Nepal administrative geography</p>
+          <svg class="connectors" id="location-connectors"></svg>
+          <div class="subzone__grid--chain">
+            <div class="table-card" id="country-card">
+              <div class="table-card__head">
+                <span class="table-card__name">Country</span>
+                <span class="table-card__meta">countries</span>
+              </div>
+              <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+              <div class="field"><span class="field__name">name</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+              <div class="field"><span class="field__name">isoCode</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+              <div class="field"><span class="field__name faint">isActive</span><span class="field__type">boolean</span><span></span></div>
+            </div>
+
+            <div class="table-card" id="province-card">
+              <div class="table-card__head">
+                <span class="table-card__name">Province</span>
+                <span class="table-card__meta">provinces</span>
+              </div>
+              <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+              <div class="field">
+                <span class="field__name">countryId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+                <span class="field__ref">→ countries.id · restrict on delete</span>
+              </div>
+              <div class="field"><span class="field__name">name, slug</span><span class="field__type">string</span><span></span></div>
+              <div class="field__ref" style="padding:0 0.9rem 0.5rem;">slug unique per country</div>
+            </div>
+
+            <div class="table-card" id="district-card">
+              <div class="table-card__head">
+                <span class="table-card__name">District</span>
+                <span class="table-card__meta">districts</span>
+              </div>
+              <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+              <div class="field">
+                <span class="field__name">provinceId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+                <span class="field__ref">→ provinces.id · restrict on delete</span>
+              </div>
+              <div class="field"><span class="field__name">name, slug</span><span class="field__type">string</span><span></span></div>
+              <div class="field__ref" style="padding:0 0.9rem 0.5rem;">slug unique per province</div>
+            </div>
+
+            <div class="table-card" id="municipality-card">
+              <div class="table-card__head">
+                <span class="table-card__name">Municipality</span>
+                <span class="table-card__meta">municipalities</span>
+              </div>
+              <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+              <div class="field">
+                <span class="field__name">districtId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+                <span class="field__ref">→ districts.id · restrict on delete</span>
+              </div>
+              <div class="field"><span class="field__name">name, slug</span><span class="field__type">string</span><span></span></div>
+              <div class="field"><span class="field__name">type</span><span class="field__type">enum</span><span></span></div>
+              <div class="field__ref" style="padding:0 0.9rem 0.6rem;">metropolitan / sub-metropolitan / municipality / rural municipality</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zone zone--content" id="content-zone">
+        <span class="zone__label">Content · wiki/article layer (Phase 6)</span>
+        <svg class="connectors" id="content-connectors"></svg>
+
+        <div class="table-card" id="adventure-page-card">
+          <div class="table-card__head">
+            <span class="table-card__name">AdventurePage</span>
+            <span class="table-card__meta">adventure_pages</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field"><span class="field__name">title</span><span class="field__type">string</span><span></span></div>
+          <div class="field"><span class="field__name">slug</span><span class="field__type">string</span><span class="badge badge-uk">UK</span></div>
+          <div class="field"><span class="field__name faint">summary</span><span class="field__type">string?</span><span></span></div>
+          <div class="field">
+            <span class="field__name">activityTypeId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ activity_types.id · restrict</span>
+          </div>
+          <div class="field">
+            <span class="field__name">difficultyLevelId</span><span class="field__type">uuid?</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ difficulty_levels.id · restrict</span>
+          </div>
+          <div class="field"><span class="field__name faint">durationMinDays, durationMaxDays</span><span class="field__type">int?</span><span></span></div>
+          <div class="field"><span class="field__name faint">maxAltitudeMeters</span><span class="field__type">int?</span><span></span></div>
+          <div class="field"><span class="field__name">verificationStatus</span><span class="field__type">enum</span><span></span></div>
+          <div class="field"><span class="field__name faint">isActive</span><span class="field__type">boolean</span><span></span></div>
+        </div>
+
+        <div class="table-card" id="page-revision-card">
+          <div class="table-card__head">
+            <span class="table-card__name">PageRevision</span>
+            <span class="table-card__meta">page_revisions</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">adventurePageId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ adventure_pages.id · cascade</span>
+          </div>
+          <div class="field"><span class="field__name">version</span><span class="field__type">int</span><span></span></div>
+          <div class="field"><span class="field__name">content</span><span class="field__type">markdown</span><span></span></div>
+          <div class="field"><span class="field__name faint">editSummary</span><span class="field__type">string?</span><span></span></div>
+          <div class="field"><span class="field__name faint">isSafetyCriticalEdit</span><span class="field__type">boolean</span><span></span></div>
+          <div class="field">
+            <span class="field__name">editorId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · restrict</span>
+          </div>
+          <div class="field"><span class="field__name faint">createdAt</span><span class="field__type">datetime</span><span></span></div>
+        </div>
+
+        <div class="table-card" id="page-confirmation-card">
+          <div class="table-card__head">
+            <span class="table-card__name">PageConfirmation</span>
+            <span class="table-card__meta">page_confirmations</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">revisionId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ page_revisions.id · cascade</span>
+          </div>
+          <div class="field">
+            <span class="field__name">userId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · cascade</span>
+          </div>
+          <div class="field"><span class="field__name faint">createdAt</span><span class="field__type">datetime</span><span></span></div>
+          <div class="field__ref" style="padding:0 0.9rem 0.6rem;">unique per (revision, user)</div>
+        </div>
+
+        <div class="table-card" id="media-card">
+          <div class="table-card__head">
+            <span class="table-card__name">Media</span>
+            <span class="table-card__meta">media</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">adventurePageId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ adventure_pages.id · cascade</span>
+          </div>
+          <div class="field"><span class="field__name">url</span><span class="field__type">string</span><span></span></div>
+          <div class="field"><span class="field__name faint">caption, altText</span><span class="field__type">string?</span><span></span></div>
+          <div class="field"><span class="field__name faint">sortOrder</span><span class="field__type">int</span><span></span></div>
+          <div class="field">
+            <span class="field__name">uploadedById</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · restrict</span>
+          </div>
+        </div>
+
+        <div class="table-card" id="apd-card">
+          <div class="table-card__head">
+            <span class="table-card__name">AdventurePageDistrict</span>
+            <span class="table-card__meta">adventure_page_districts</span>
+          </div>
+          <div class="table-card__twin">join table — multiple districts per page</div>
+          <div class="field">
+            <span class="field__name">adventurePageId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ adventure_pages.id · cascade</span>
+          </div>
+          <div class="field">
+            <span class="field__name">districtId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ districts.id · restrict</span>
+          </div>
+        </div>
+
+        <div class="table-card" id="aps-card">
+          <div class="table-card__head">
+            <span class="table-card__name">AdventurePageSeason</span>
+            <span class="table-card__meta">adventure_page_seasons</span>
+          </div>
+          <div class="table-card__twin">join table — multiple seasons per page</div>
+          <div class="field">
+            <span class="field__name">adventurePageId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ adventure_pages.id · cascade</span>
+          </div>
+          <div class="field">
+            <span class="field__name">seasonId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ seasons.id · restrict</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="zone zone--geo" id="geo-zone">
+        <span class="zone__label">Map / geodata (Phase 7)</span>
+        <svg class="connectors" id="geo-connectors"></svg>
+
+        <div class="table-card" id="trail-card">
+          <div class="table-card__head">
+            <span class="table-card__name">Trail</span>
+            <span class="table-card__meta">trails</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">adventurePageId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ adventure_pages.id · cascade</span>
+          </div>
+          <div class="field"><span class="field__name faint">name</span><span class="field__type">string?</span><span></span></div>
+          <div class="field"><span class="field__name">geometry</span><span class="field__type">LineString</span><span></span></div>
+          <div class="field"><span class="field__name faint">distanceMeters</span><span class="field__type">int?</span><span></span></div>
+          <div class="field"><span class="field__name">verificationStatus</span><span class="field__type">enum</span><span></span></div>
+          <div class="field">
+            <span class="field__name">createdById, lastEditedById</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · restrict (2 fields)</span>
+          </div>
+          <div class="field"><span class="field__name faint">isActive</span><span class="field__type">boolean</span><span></span></div>
+        </div>
+
+        <div class="table-card" id="trail-confirmation-card">
+          <div class="table-card__head">
+            <span class="table-card__name">TrailConfirmation</span>
+            <span class="table-card__meta">trail_confirmations</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">trailId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ trails.id · cascade</span>
+          </div>
+          <div class="field">
+            <span class="field__name">userId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · cascade</span>
+          </div>
+          <div class="field__ref" style="padding:0 0.9rem 0.6rem;">unique per (trail, user) · cleared on edit</div>
+        </div>
+
+        <div class="table-card" id="spot-card">
+          <div class="table-card__head">
+            <span class="table-card__name">Spot</span>
+            <span class="table-card__meta">spots</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">adventurePageId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ adventure_pages.id · cascade</span>
+          </div>
+          <div class="field">
+            <span class="field__name">spotTypeId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ spot_types.id · restrict</span>
+          </div>
+          <div class="field"><span class="field__name">name</span><span class="field__type">string</span><span></span></div>
+          <div class="field"><span class="field__name">geometry</span><span class="field__type">Point</span><span></span></div>
+          <div class="field"><span class="field__name faint">description, elevationMeters</span><span class="field__type"></span><span></span></div>
+          <div class="field"><span class="field__name">verificationStatus</span><span class="field__type">enum</span><span></span></div>
+          <div class="field">
+            <span class="field__name">createdById, lastEditedById</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · restrict (2 fields)</span>
+          </div>
+        </div>
+
+        <div class="table-card" id="spot-confirmation-card">
+          <div class="table-card__head">
+            <span class="table-card__name">SpotConfirmation</span>
+            <span class="table-card__meta">spot_confirmations</span>
+          </div>
+          <div class="field"><span class="field__name">id</span><span class="field__type">uuid</span><span class="badge badge-pk">PK</span></div>
+          <div class="field">
+            <span class="field__name">spotId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ spots.id · cascade</span>
+          </div>
+          <div class="field">
+            <span class="field__name">userId</span><span class="field__type">uuid</span><span class="badge badge-fk">FK</span>
+            <span class="field__ref">→ users.id · cascade</span>
+          </div>
+          <div class="field__ref" style="padding:0 0.9rem 0.6rem;">unique per (spot, user) · cleared on edit</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <p class="footnote"><code>ActivityType</code> nests via a self-referencing <code>parentId</code> (unbounded depth); <code>name</code>/<code>slug</code> stay globally unique regardless of nesting, and since Postgres can't enforce "not your own ancestor" as a constraint, the service layer must reject any update that would create a cycle. The location hierarchy replaces what was originally a flat <code>Region</code> table with real administrative geography; each level's <code>slug</code> is unique only within its parent, not globally. Both self-referencing and hierarchical relations use <code>onDelete: Restrict</code> rather than cascade — deleting a parent shouldn't be able to silently wipe everything beneath it. Every table above also carries <code>isActive</code>: "delete" in the admin dashboard sets it to <code>false</code> rather than removing the row.</p>
+
+  <p class="footnote">The Content zone is the only place lines are drawn cross-table on purpose within a zone — everywhere else it references (<code>ActivityType</code>, <code>DifficultyLevel</code>, <code>District</code>, <code>Season</code>, <code>User</code>) live in other zones, shown as <code>→ table.column</code> captions instead of long cross-zone lines, to keep the diagram legible. <code>PageRevision</code> stores a full Markdown snapshot per edit, never a diff — reverting is just copying an old snapshot into a new revision, and a "changes" view diffs two snapshots at render time rather than storing one. <code>PageConfirmation</code> ties to a specific revision, not the page itself, so an edit can't ride on confirmations that predate it — every new revision starts back at zero.</p>
+
+  <p class="footnote">Map/geodata has no revision history, unlike <code>PageRevision</code> — <code>Trail</code>/<code>Spot</code> are edited in place, tracked only by <code>createdById</code>/<code>lastEditedById</code>. Since <code>TrailConfirmation</code>/<code>SpotConfirmation</code> have no revision to scope to, they tie directly to the row — which means the service layer, not the schema, is what keeps trust meaningful: any edit to a trail/spot's geometry must reset <code>verificationStatus</code> and delete its existing confirmations in the same transaction, or a moved trail could still show "verified" from confirmations that applied to its old path. <code>SpotType</code> lives in the Master data zone above, not here — it's a lookup table, not geodata itself.</p>
+</div>
+
+<script>
+  (function () {
+    function makeConnector(hostEl, svgEl) {
+      function edgePoint(el, side) {
+        var r = el.getBoundingClientRect();
+        var host = hostEl.getBoundingClientRect();
+        var y = r.top + r.height / 2 - host.top;
+        var x = (side === 'right' ? r.right : r.left) - host.left;
+        return { x: x, y: y };
+      }
+      function clearLabels() {
+        Array.prototype.slice.call(hostEl.querySelectorAll('.rel-label')).forEach(function (n) { n.remove(); });
+      }
+      function drawLink(fromEl, toEl, label) {
+        var a = edgePoint(fromEl, 'right');
+        var b = edgePoint(toEl, 'left');
+        var mx = (a.x + b.x) / 2;
+        var d = 'M ' + a.x + ' ' + a.y + ' C ' + mx + ' ' + a.y + ', ' + mx + ' ' + b.y + ', ' + b.x + ' ' + b.y;
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', d);
+        svgEl.appendChild(path);
+
+        var lbl = document.createElement('div');
+        lbl.className = 'rel-label';
+        lbl.textContent = label;
+        lbl.style.left = mx + 'px';
+        lbl.style.top = ((a.y + b.y) / 2) + 'px';
+        hostEl.appendChild(lbl);
+      }
+      return function (links) {
+        svgEl.innerHTML = '';
+        clearLabels();
+        links.forEach(function (l) { drawLink(l[0], l[1], l[2]); });
+      };
+    }
+
+    var renderAuth = makeConnector(document.getElementById('auth-zone'), document.getElementById('auth-connectors'));
+    var renderLocation = makeConnector(document.getElementById('location-subzone'), document.getElementById('location-connectors'));
+    var renderContent = makeConnector(document.getElementById('content-zone'), document.getElementById('content-connectors'));
+    var renderGeo = makeConnector(document.getElementById('geo-zone'), document.getElementById('geo-connectors'));
+
+    function render() {
+      renderAuth([
+        [document.getElementById('user-card'), document.getElementById('profile-card'), '1 — 1'],
+        [document.getElementById('user-card'), document.getElementById('refresh-card'), '1 — *']
+      ]);
+      renderLocation([
+        [document.getElementById('country-card'), document.getElementById('province-card'), '1 — *'],
+        [document.getElementById('province-card'), document.getElementById('district-card'), '1 — *'],
+        [document.getElementById('district-card'), document.getElementById('municipality-card'), '1 — *']
+      ]);
+      renderContent([
+        [document.getElementById('adventure-page-card'), document.getElementById('page-revision-card'), '1 — *'],
+        [document.getElementById('page-revision-card'), document.getElementById('page-confirmation-card'), '1 — *'],
+        [document.getElementById('adventure-page-card'), document.getElementById('media-card'), '1 — *'],
+        [document.getElementById('adventure-page-card'), document.getElementById('apd-card'), '1 — *'],
+        [document.getElementById('adventure-page-card'), document.getElementById('aps-card'), '1 — *']
+      ]);
+      renderGeo([
+        [document.getElementById('trail-card'), document.getElementById('trail-confirmation-card'), '1 — *'],
+        [document.getElementById('spot-card'), document.getElementById('spot-confirmation-card'), '1 — *']
+      ]);
+    }
+
+    render();
+    window.addEventListener('resize', render);
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(render); }
+  })();
+</script>
