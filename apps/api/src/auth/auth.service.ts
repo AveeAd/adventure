@@ -1,0 +1,105 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { Role } from '@prisma/client';
+import { createHmac, randomBytes } from 'crypto';
+import ms from 'ms';
+import { PrismaService } from '../prisma/prisma.service';
+import { ProfilesService } from '../profiles/profiles.service';
+import { UsersService } from '../users/users.service';
+import { GoogleProfile } from './strategies/google.strategy';
+
+interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly profilesService: ProfilesService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private get adminEmails(): string[] {
+    return (this.configService.get<string>('ADMIN_EMAILS') ?? '')
+      .split(',')
+      .map((email) => email.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  async handleGoogleLogin(profile: GoogleProfile): Promise<TokenPair> {
+    const roleOnCreate = this.adminEmails.includes(profile.email.toLowerCase())
+      ? Role.ADMIN
+      : Role.USER;
+
+    const user = await this.usersService.upsertGoogleUser({
+      email: profile.email,
+      googleId: profile.googleId,
+      roleOnCreate,
+    });
+
+    await this.profilesService.upsertForUser(user.id, {
+      name: profile.name,
+      avatarUrl: profile.avatarUrl,
+    });
+
+    return this.issueTokenPair(user.id, user.email, user.role);
+  }
+
+  async refresh(rawRefreshToken: string): Promise<TokenPair> {
+    const tokenHash = this.hashRefreshToken(rawRefreshToken);
+    const existing = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    if (!existing || existing.revokedAt || existing.expiresAt < new Date()) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    await this.prisma.refreshToken.update({
+      where: { id: existing.id },
+      data: { revokedAt: new Date() },
+    });
+
+    return this.issueTokenPair(existing.userId, existing.user.email, existing.user.role);
+  }
+
+  async logout(rawRefreshToken: string): Promise<void> {
+    const tokenHash = this.hashRefreshToken(rawRefreshToken);
+    await this.prisma.refreshToken.deleteMany({ where: { tokenHash } });
+  }
+
+  private async issueTokenPair(userId: string, email: string, role: Role): Promise<TokenPair> {
+    const accessToken = this.jwtService.sign(
+      { sub: userId, email, role },
+      {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: this.configService.get<string>('JWT_ACCESS_TTL'),
+      },
+    );
+
+    const refreshToken = randomBytes(32).toString('hex');
+    const refreshTtl = this.configService.get<string>('JWT_REFRESH_TTL')!;
+    const expiresAt = new Date(Date.now() + ms(refreshTtl));
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        tokenHash: this.hashRefreshToken(refreshToken),
+        expiresAt,
+      },
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  private hashRefreshToken(token: string): string {
+    const secret = this.configService.get<string>('JWT_REFRESH_SECRET')!;
+    return createHmac('sha256', secret).update(token).digest('hex');
+  }
+}
