@@ -1,4 +1,4 @@
-import dataProviderSimpleRest from '@refinedev/simple-rest';
+import type { DataProvider } from '@refinedev/core';
 import axios from 'axios';
 import { API_URL } from './auth/auth-provider';
 import { tokenStore } from './auth/token-store';
@@ -13,6 +13,42 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
-// no resources are registered yet (Phase 5) - this just satisfies Refine's
-// required dataProvider prop until then
-export const dataProvider = dataProviderSimpleRest(`${API_URL}/api/v1`, axiosInstance);
+const apiUrl = `${API_URL}/api/v1`;
+
+// Custom, not @refinedev/simple-rest: our Nest API's list contract is
+// { data, total, page, pageSize } (ARCHITECTURE.md §7), not json-server's
+// x-total-count-header + _start/_end convention simple-rest expects.
+export const dataProvider: DataProvider = {
+  getApiUrl: () => apiUrl,
+
+  getList: async ({ resource, pagination }) => {
+    // "off" (used by useSelect for dropdown options) means "give me
+    // everything" - fine at Nepal's real scale (~838 location rows total)
+    const page = pagination?.mode === 'off' ? 1 : (pagination?.currentPage ?? 1);
+    const pageSize = pagination?.mode === 'off' ? 1000 : (pagination?.pageSize ?? 20);
+    const { data } = await axiosInstance.get(`${apiUrl}/${resource}`, {
+      params: { page, pageSize },
+    });
+    return { data: data.data, total: data.total };
+  },
+
+  getOne: async ({ resource, id }) => {
+    const { data } = await axiosInstance.get(`${apiUrl}/${resource}/${id}`);
+    return { data };
+  },
+
+  create: async ({ resource, variables }) => {
+    const { data } = await axiosInstance.post(`${apiUrl}/${resource}`, variables);
+    return { data };
+  },
+
+  update: async ({ resource, id, variables }) => {
+    const { data } = await axiosInstance.patch(`${apiUrl}/${resource}/${id}`, variables);
+    return { data };
+  },
+
+  deleteOne: async ({ resource, id }) => {
+    const { data } = await axiosInstance.delete(`${apiUrl}/${resource}/${id}`);
+    return { data };
+  },
+};
