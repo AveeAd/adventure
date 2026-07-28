@@ -48,5 +48,20 @@ services:
     depends_on:
       - api
 
+  public:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /app
+    command: npm run dev --workspace=apps/public -- --host 0.0.0.0
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/apps/public/node_modules
+    ports:
+      - "3001:3001"
+    depends_on:
+      - api
+
 volumes:
   db_data:
