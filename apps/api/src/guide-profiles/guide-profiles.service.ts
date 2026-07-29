@@ -21,8 +21,17 @@ const PROFILE_INCLUDE = {
 export class GuideProfilesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async list(page = 1, pageSize = 20) {
-    const where = { isActive: true };
+  async list(
+    page = 1,
+    pageSize = 20,
+    filters: { activityTypeId?: string; districtId?: string; languageId?: string } = {},
+  ) {
+    const where = {
+      isActive: true,
+      ...(filters.activityTypeId && { specialties: { some: { activityTypeId: filters.activityTypeId } } }),
+      ...(filters.districtId && { regions: { some: { districtId: filters.districtId } } }),
+      ...(filters.languageId && { languages: { some: { languageId: filters.languageId } } }),
+    };
     const [data, total] = await Promise.all([
       this.prisma.guideProfile.findMany({
         where,

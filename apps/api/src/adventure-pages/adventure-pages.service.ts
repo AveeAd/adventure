@@ -23,6 +23,11 @@ export class AdventurePagesService {
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
+        include: {
+          activityType: true,
+          difficultyLevel: true,
+          media: { take: 1, orderBy: { sortOrder: 'asc' } },
+        },
       }),
       this.prisma.adventurePage.count({ where }),
     ]);

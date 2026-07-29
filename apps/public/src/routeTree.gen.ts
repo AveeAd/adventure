@@ -11,8 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AccountGuideProfileRouteImport } from './routes/account/guide-profile'
+import { Route as AdventuresNewRouteImport } from './routes/adventures/new'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as GuidesIndexRouteImport } from './routes/guides/index'
+import { Route as GuidesIdRouteImport } from './routes/guides/$id'
+import { Route as UsersIdRouteImport } from './routes/users/$id'
 import { Route as AdventuresSlugIndexRouteImport } from './routes/adventures/$slug/index'
+import { Route as AdventuresSlugEditRouteImport } from './routes/adventures/$slug/edit'
+import { Route as AdventuresSlugHistoryIndexRouteImport } from './routes/adventures/$slug/history/index'
+import { Route as AdventuresSlugHistoryVersionRouteImport } from './routes/adventures/$slug/history/$version'
+import { Route as AdventuresSlugTripsTripReportIdRouteImport } from './routes/adventures/$slug/trips/$tripReportId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,9 +33,34 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountGuideProfileRoute = AccountGuideProfileRouteImport.update({
+  id: '/account/guide-profile',
+  path: '/account/guide-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdventuresNewRoute = AdventuresNewRouteImport.update({
+  id: '/adventures/new',
+  path: '/adventures/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuidesIdRoute = GuidesIdRouteImport.update({
+  id: '/guides/$id',
+  path: '/guides/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersIdRoute = UsersIdRouteImport.update({
+  id: '/users/$id',
+  path: '/users/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdventuresSlugIndexRoute = AdventuresSlugIndexRouteImport.update({
@@ -34,39 +68,138 @@ const AdventuresSlugIndexRoute = AdventuresSlugIndexRouteImport.update({
   path: '/adventures/$slug/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdventuresSlugEditRoute = AdventuresSlugEditRouteImport.update({
+  id: '/adventures/$slug/edit',
+  path: '/adventures/$slug/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdventuresSlugHistoryIndexRoute =
+  AdventuresSlugHistoryIndexRouteImport.update({
+    id: '/adventures/$slug/history/',
+    path: '/adventures/$slug/history/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdventuresSlugHistoryVersionRoute =
+  AdventuresSlugHistoryVersionRouteImport.update({
+    id: '/adventures/$slug/history/$version',
+    path: '/adventures/$slug/history/$version',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdventuresSlugTripsTripReportIdRoute =
+  AdventuresSlugTripsTripReportIdRouteImport.update({
+    id: '/adventures/$slug/trips/$tripReportId',
+    path: '/adventures/$slug/trips/$tripReportId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/account/guide-profile': typeof AccountGuideProfileRoute
+  '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guides/$id': typeof GuidesIdRoute
+  '/users/$id': typeof UsersIdRoute
+  '/guides/': typeof GuidesIndexRoute
+  '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/adventures/$slug/': typeof AdventuresSlugIndexRoute
+  '/adventures/$slug/history/$version': typeof AdventuresSlugHistoryVersionRoute
+  '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
+  '/adventures/$slug/history/': typeof AdventuresSlugHistoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/account/guide-profile': typeof AccountGuideProfileRoute
+  '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guides/$id': typeof GuidesIdRoute
+  '/users/$id': typeof UsersIdRoute
+  '/guides': typeof GuidesIndexRoute
+  '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/adventures/$slug': typeof AdventuresSlugIndexRoute
+  '/adventures/$slug/history/$version': typeof AdventuresSlugHistoryVersionRoute
+  '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
+  '/adventures/$slug/history': typeof AdventuresSlugHistoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/account/guide-profile': typeof AccountGuideProfileRoute
+  '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/guides/$id': typeof GuidesIdRoute
+  '/users/$id': typeof UsersIdRoute
+  '/guides/': typeof GuidesIndexRoute
+  '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/adventures/$slug/': typeof AdventuresSlugIndexRoute
+  '/adventures/$slug/history/$version': typeof AdventuresSlugHistoryVersionRoute
+  '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
+  '/adventures/$slug/history/': typeof AdventuresSlugHistoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/auth/callback' | '/adventures/$slug/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/account/guide-profile'
+    | '/adventures/new'
+    | '/auth/callback'
+    | '/guides/$id'
+    | '/users/$id'
+    | '/guides/'
+    | '/adventures/$slug/edit'
+    | '/adventures/$slug/'
+    | '/adventures/$slug/history/$version'
+    | '/adventures/$slug/trips/$tripReportId'
+    | '/adventures/$slug/history/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/auth/callback' | '/adventures/$slug'
-  id: '__root__' | '/' | '/login' | '/auth/callback' | '/adventures/$slug/'
+  to:
+    | '/'
+    | '/login'
+    | '/account/guide-profile'
+    | '/adventures/new'
+    | '/auth/callback'
+    | '/guides/$id'
+    | '/users/$id'
+    | '/guides'
+    | '/adventures/$slug/edit'
+    | '/adventures/$slug'
+    | '/adventures/$slug/history/$version'
+    | '/adventures/$slug/trips/$tripReportId'
+    | '/adventures/$slug/history'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/account/guide-profile'
+    | '/adventures/new'
+    | '/auth/callback'
+    | '/guides/$id'
+    | '/users/$id'
+    | '/guides/'
+    | '/adventures/$slug/edit'
+    | '/adventures/$slug/'
+    | '/adventures/$slug/history/$version'
+    | '/adventures/$slug/trips/$tripReportId'
+    | '/adventures/$slug/history/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  AccountGuideProfileRoute: typeof AccountGuideProfileRoute
+  AdventuresNewRoute: typeof AdventuresNewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  GuidesIdRoute: typeof GuidesIdRoute
+  UsersIdRoute: typeof UsersIdRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
+  AdventuresSlugEditRoute: typeof AdventuresSlugEditRoute
   AdventuresSlugIndexRoute: typeof AdventuresSlugIndexRoute
+  AdventuresSlugHistoryVersionRoute: typeof AdventuresSlugHistoryVersionRoute
+  AdventuresSlugTripsTripReportIdRoute: typeof AdventuresSlugTripsTripReportIdRoute
+  AdventuresSlugHistoryIndexRoute: typeof AdventuresSlugHistoryIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -85,11 +218,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/guide-profile': {
+      id: '/account/guide-profile'
+      path: '/account/guide-profile'
+      fullPath: '/account/guide-profile'
+      preLoaderRoute: typeof AccountGuideProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adventures/new': {
+      id: '/adventures/new'
+      path: '/adventures/new'
+      fullPath: '/adventures/new'
+      preLoaderRoute: typeof AdventuresNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/callback': {
       id: '/auth/callback'
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guides/$id': {
+      id: '/guides/$id'
+      path: '/guides/$id'
+      fullPath: '/guides/$id'
+      preLoaderRoute: typeof GuidesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users/$id': {
+      id: '/users/$id'
+      path: '/users/$id'
+      fullPath: '/users/$id'
+      preLoaderRoute: typeof UsersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/adventures/$slug/': {
@@ -99,14 +267,51 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdventuresSlugIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/adventures/$slug/edit': {
+      id: '/adventures/$slug/edit'
+      path: '/adventures/$slug/edit'
+      fullPath: '/adventures/$slug/edit'
+      preLoaderRoute: typeof AdventuresSlugEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adventures/$slug/history/': {
+      id: '/adventures/$slug/history/'
+      path: '/adventures/$slug/history'
+      fullPath: '/adventures/$slug/history/'
+      preLoaderRoute: typeof AdventuresSlugHistoryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adventures/$slug/history/$version': {
+      id: '/adventures/$slug/history/$version'
+      path: '/adventures/$slug/history/$version'
+      fullPath: '/adventures/$slug/history/$version'
+      preLoaderRoute: typeof AdventuresSlugHistoryVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adventures/$slug/trips/$tripReportId': {
+      id: '/adventures/$slug/trips/$tripReportId'
+      path: '/adventures/$slug/trips/$tripReportId'
+      fullPath: '/adventures/$slug/trips/$tripReportId'
+      preLoaderRoute: typeof AdventuresSlugTripsTripReportIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  AccountGuideProfileRoute: AccountGuideProfileRoute,
+  AdventuresNewRoute: AdventuresNewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  GuidesIdRoute: GuidesIdRoute,
+  UsersIdRoute: UsersIdRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
+  AdventuresSlugEditRoute: AdventuresSlugEditRoute,
   AdventuresSlugIndexRoute: AdventuresSlugIndexRoute,
+  AdventuresSlugHistoryVersionRoute: AdventuresSlugHistoryVersionRoute,
+  AdventuresSlugTripsTripReportIdRoute: AdventuresSlugTripsTripReportIdRoute,
+  AdventuresSlugHistoryIndexRoute: AdventuresSlugHistoryIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

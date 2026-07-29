@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Mountain } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { consumePostLoginRedirect } from '../../lib/auth/require-auth';
 import { tokenStore } from '../../lib/auth/token-store';
 
 export const Route = createFileRoute('/auth/callback')({
@@ -24,9 +26,17 @@ function AuthCallbackPage() {
 
   useEffect(() => {
     if (done) {
-      navigate({ to: '/' });
+      // destination is an arbitrary in-app path we stored ourselves before
+      // leaving for Google sign-in, not one of the router's known literal
+      // routes, so it can't be typed against the generated route union
+      navigate({ to: consumePostLoginRedirect() as never });
     }
   }, [done, navigate]);
 
-  return <main style={{ textAlign: 'center', paddingTop: '20vh' }}>Signing in...</main>;
+  return (
+    <main className="flex min-h-[70vh] flex-col items-center justify-center gap-3 text-stone-500 dark:text-stone-400">
+      <Mountain className="h-8 w-8 animate-pulse text-primary-600 dark:text-primary-400" strokeWidth={2.5} />
+      <p>Signing in...</p>
+    </main>
+  );
 }

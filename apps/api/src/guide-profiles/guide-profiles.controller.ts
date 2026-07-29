@@ -14,8 +14,18 @@ export class GuideProfilesController {
 
   @Public()
   @Get()
-  list(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.guideProfilesService.list(Number(page) || 1, Number(pageSize) || 20);
+  list(
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('activityTypeId') activityTypeId?: string,
+    @Query('districtId') districtId?: string,
+    @Query('languageId') languageId?: string,
+  ) {
+    return this.guideProfilesService.list(Number(page) || 1, Number(pageSize) || 20, {
+      activityTypeId,
+      districtId,
+      languageId,
+    });
   }
 
   // must come before ':id' - otherwise Nest would match "me" as an :id
