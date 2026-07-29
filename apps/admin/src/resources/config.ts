@@ -97,3 +97,14 @@ export const spotTypeConfig: MasterDataResourceConfig = {
   ],
   listColumns: ['name', 'slug', 'sortOrder', 'isActive'],
 };
+
+export const tagConfig: MasterDataResourceConfig = {
+  resource: 'tags',
+  label: 'Tags',
+  fields: [
+    { kind: 'text', name: 'name', label: 'Name', required: true },
+    { kind: 'text', name: 'slug', label: 'Slug', required: true },
+    { kind: 'number', name: 'sortOrder', label: 'Sort order' },
+  ],
+  listColumns: ['name', 'slug', 'sortOrder', 'isActive'],
+};

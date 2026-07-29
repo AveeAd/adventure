@@ -225,6 +225,9 @@ model AdventurePage {
   spots     Spot[]
   tripReports TripReport[]
   tripGroups TripGroup[]
+  tags      AdventurePageTag[]
+  relatedTo   RelatedAdventurePage[] @relation("PageRelations")
+  relatedFrom RelatedAdventurePage[] @relation("RelatedByPage")
 
   @@map("adventure_pages")
 }
@@ -279,6 +282,49 @@ model AdventurePageSeason {
 
   @@unique([adventurePageId, seasonId])
   @@map("adventure_page_seasons")
+}
+
+// Free-form-ish labels beyond ActivityType (curated via the same generic
+// master-data CRUD, not fully user-typed, to avoid duplicate/spam tags)
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pages AdventurePageTag[]
+
+  @@map("tags")
+}
+
+model AdventurePageTag {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  tagId           String
+  tag             Tag           @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@unique([adventurePageId, tagId])
+  @@map("adventure_page_tags")
+}
+
+// "See also" links - symmetric (inserted both directions on create), any
+// signed-in contributor can suggest one, same low-friction model as editing
+// a page. Revisit if this becomes a spam vector (see TRIP_GROUPS.md-style
+// open-decisions framing).
+model RelatedAdventurePage {
+  id            String   @id @default(uuid())
+  pageId        String
+  page          AdventurePage @relation("PageRelations", fields: [pageId], references: [id], onDelete: Cascade)
+  relatedPageId String
+  relatedPage   AdventurePage @relation("RelatedByPage", fields: [relatedPageId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([pageId, relatedPageId])
+  @@map("related_adventure_pages")
 }
 
 model Media {
@@ -409,6 +455,7 @@ model TripReport {
   dateCompleted     DateTime
   durationDays      Int?
   actualCostAmount  Int?
+  currency          String   @default("NPR") // fixed short list (NPR/USD/EUR/INR), validated in the DTO
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -446,15 +493,19 @@ model TripReportKudos {
 }
 
 model Comment {
-  id           String   @id @default(uuid())
-  tripReportId String
-  tripReport   TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
-  authorId     String
-  author       User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  content      String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String   @id @default(uuid())
+  tripReportId     String
+  tripReport       TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
+  authorId         String
+  author           User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  content          String
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  parentCommentId String?
+  parentComment   Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         Comment[] @relation("CommentReplies")
 
   @@map("comments")
 }
@@ -520,6 +571,12 @@ model Language {
   @@map("languages")
 }
 
+enum RateUnit {
+  PER_DAY
+  PER_TRIP
+  PER_HOUR
+}
+
 model GuideProfile {
   id                 String   @id @default(uuid())
   userId             String   @unique
@@ -528,7 +585,7 @@ model GuideProfile {
   bio                String?
   rateMin            Int?
   rateMax            Int?
-  rateUnit           String?
+  rateUnit           RateUnit?
   verificationStatus GuideVerificationStatus @default(UNVERIFIED)
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())

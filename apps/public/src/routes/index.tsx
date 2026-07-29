@@ -22,6 +22,7 @@ interface AdventurePageSummary {
   maxAltitudeMeters: number | null;
   activityType: { name: string } | null;
   difficultyLevel: { name: string } | null;
+  tags: { tag: { id: string; name: string } }[];
   media: { url: string; altText: string | null }[];
 }
 
@@ -101,6 +102,11 @@ function DiscoverPage() {
                     <div className="mt-auto flex flex-wrap gap-2 pt-2">
                       {page.activityType && <Badge tone="neutral">{page.activityType.name}</Badge>}
                       {page.difficultyLevel && <Badge tone="neutral">{page.difficultyLevel.name}</Badge>}
+                      {page.tags.slice(0, 3).map(({ tag }) => (
+                        <Badge key={tag.id} tone="neutral">
+                          #{tag.name}
+                        </Badge>
+                      ))}
                     </div>
                     {(page.durationMinDays || page.maxAltitudeMeters) && (
                       <p className="text-xs text-stone-500 dark:text-stone-400">

@@ -52,6 +52,12 @@ export class CreateAdventurePageDto {
   @IsUUID(undefined, { each: true })
   seasonIds?: string[];
 
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID(undefined, { each: true })
+  tagIds?: string[];
+
   @IsString()
   @MinLength(1)
   content: string;

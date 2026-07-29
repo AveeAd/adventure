@@ -15,6 +15,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AdventurePagesService } from './adventure-pages.service';
 import { AddMediaDto } from './dto/add-media.dto';
+import { AddRelatedPageDto } from './dto/add-related-page.dto';
 import { CreateAdventurePageDto } from './dto/create-adventure-page.dto';
 import { SubmitRevisionDto } from './dto/submit-revision.dto';
 import { UpdateAdventurePageMetadataDto } from './dto/update-adventure-page-metadata.dto';
@@ -129,5 +130,15 @@ export class AdventurePagesController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.adventurePagesService.removeMedia(id, mediaId, user);
+  }
+
+  @Post(':id/related-pages')
+  addRelatedPage(@Param('id') id: string, @Body() dto: AddRelatedPageDto) {
+    return this.adventurePagesService.addRelatedPage(id, dto.relatedPageId);
+  }
+
+  @Delete(':id/related-pages/:relatedPageId')
+  removeRelatedPage(@Param('id') id: string, @Param('relatedPageId') relatedPageId: string) {
+    return this.adventurePagesService.removeRelatedPage(id, relatedPageId);
   }
 }

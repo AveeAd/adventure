@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { Compass } from 'lucide-react';
 import { apiUrl } from '../../lib/auth/api';
+import { formatRateUnit } from '../../lib/format';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
@@ -136,7 +137,7 @@ function GuideDirectoryPage() {
                 </p>
                 {(guide.rateMin || guide.rateMax) && (
                   <p className="mt-1 text-sm font-medium text-stone-700 dark:text-stone-300">
-                    NPR {guide.rateMin}-{guide.rateMax} {guide.rateUnit}
+                    NPR {guide.rateMin}-{guide.rateMax} {formatRateUnit(guide.rateUnit)}
                   </p>
                 )}
               </Card>

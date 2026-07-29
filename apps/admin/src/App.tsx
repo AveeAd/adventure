@@ -16,6 +16,7 @@ import {
   languageConfig,
   seasonConfig,
   spotTypeConfig,
+  tagConfig,
 } from './resources/config';
 import { MasterDataCreate } from './resources/MasterDataCreate';
 import { MasterDataEdit } from './resources/MasterDataEdit';
@@ -52,6 +53,7 @@ const masterDataResourceConfigs = [
   seasonConfig,
   languageConfig,
   spotTypeConfig,
+  tagConfig,
 ];
 
 function App() {

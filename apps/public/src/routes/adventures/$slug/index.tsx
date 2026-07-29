@@ -9,7 +9,7 @@ import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Container } from '../../../components/Container';
 import { EmptyState } from '../../../components/EmptyState';
-import { Textarea, Input, Field } from '../../../components/FormField';
+import { Textarea, Input, Field, Select } from '../../../components/FormField';
 import { MarkdownContent } from '../../../components/MarkdownContent';
 import { LazyAdventureMap } from '../../../components/LazyAdventureMap';
 import type { MapSpot, MapTrail } from '../../../components/AdventureMap';
@@ -26,6 +26,8 @@ interface AdventurePageDetail {
   difficultyLevel: { name: string } | null;
   districts: { district: { name: string } }[];
   seasons: { season: { name: string } }[];
+  tags: { tag: { id: string; name: string } }[];
+  relatedPages: { id: string; title: string; slug: string; summary: string | null }[];
   currentRevision: { content: string; createdAt: string } | null;
   contributorIds: string[];
   likeCount: number;
@@ -123,6 +125,11 @@ function AdventurePageView() {
           <StatusBadge status={page.verificationStatus} />
           {page.activityType && <Badge tone="neutral">{page.activityType.name}</Badge>}
           {page.difficultyLevel && <Badge tone="neutral">{page.difficultyLevel.name}</Badge>}
+          {page.tags.map(({ tag }) => (
+            <Badge key={tag.id} tone="neutral">
+              #{tag.name}
+            </Badge>
+          ))}
         </div>
 
         <Card className="mt-6 grid grid-cols-2 gap-4 p-5 sm:grid-cols-4">
@@ -160,6 +167,8 @@ function AdventurePageView() {
         <TrailsAndSpotsSection slug={slug} trails={trails} spots={spots} />
 
         <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
+
+        <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} />
 
         {page.currentRevision && (
           <div className="mt-6">
@@ -371,6 +380,110 @@ function TrailsAndSpotsSection({
   );
 }
 
+function SeeAlsoSection({
+  pageId,
+  relatedPages,
+}: {
+  pageId: string;
+  relatedPages: { id: string; title: string; slug: string; summary: string | null }[];
+}) {
+  const [signedIn, setSignedIn] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [slugInput, setSlugInput] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [pages, setPages] = useState(relatedPages);
+
+  useEffect(() => {
+    checkAuth().then(setSignedIn);
+  }, []);
+
+  async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const lookupRes = await fetch(apiUrl(`/adventure-pages/slug/${slugInput.trim()}`));
+      if (!lookupRes.ok) {
+        throw new Error('No adventure page found with that slug');
+      }
+      const related: { id: string; title: string; slug: string; summary: string | null } = await lookupRes.json();
+      await authPost(`/adventure-pages/${pageId}/related-pages`, { relatedPageId: related.id });
+      setPages((prev) => [...prev, related]);
+      setSlugInput('');
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add related page');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (pages.length === 0 && !signedIn) {
+    return null;
+  }
+
+  return (
+    <section className="mt-10">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">See also</h2>
+        {signedIn && !open && (
+          <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+            <Plus className="h-3.5 w-3.5" /> Add related page
+          </Button>
+        )}
+      </div>
+
+      {pages.length === 0 ? (
+        <div className="mt-3">
+          <EmptyState>No related pages yet.</EmptyState>
+        </div>
+      ) : (
+        <ul className="mt-3 flex flex-col gap-2">
+          {pages.map((related) => (
+            <li key={related.id}>
+              <Card className="p-4">
+                <Link
+                  to="/adventures/$slug"
+                  params={{ slug: related.slug }}
+                  className="font-medium text-primary-700 hover:underline dark:text-primary-400"
+                >
+                  {related.title}
+                </Link>
+                {related.summary && <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">{related.summary}</p>}
+              </Card>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {open && (
+        <Card className="mt-4 max-w-md p-5">
+          <form onSubmit={handleAdd} className="flex flex-col gap-4">
+            <Field label="Page slug" hint="e.g. annapurna-base-camp">
+              <Input
+                name="relatedSlug"
+                required
+                value={slugInput}
+                onChange={(e) => setSlugInput(e.target.value)}
+              />
+            </Field>
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Adding...' : 'Add'}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+    </section>
+  );
+}
+
 function LogTripForm({ pageId }: { pageId: string }) {
   const [signedIn, setSignedIn] = useState(false);
   const [open, setOpen] = useState(false);
@@ -410,6 +523,7 @@ function LogTripForm({ pageId }: { pageId: string }) {
         dateCompleted: formData.get('dateCompleted'),
         durationDays: formData.get('durationDays') ? Number(formData.get('durationDays')) : undefined,
         actualCostAmount: formData.get('actualCostAmount') ? Number(formData.get('actualCostAmount')) : undefined,
+        currency: formData.get('actualCostAmount') ? formData.get('currency') : undefined,
       });
       setDone(true);
     } catch (err) {
@@ -432,10 +546,18 @@ function LogTripForm({ pageId }: { pageId: string }) {
           <Field label="Duration (days)">
             <Input name="durationDays" type="number" min={0} />
           </Field>
-          <Field label="Actual cost (NPR)">
+          <Field label="Actual cost">
             <Input name="actualCostAmount" type="number" min={0} />
           </Field>
         </div>
+        <Field label="Currency">
+          <Select name="currency" defaultValue="NPR">
+            <option value="NPR">NPR</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="INR">INR</option>
+          </Select>
+        </Field>
         <Field label="Notes">
           <Textarea name="description" rows={3} />
         </Field>

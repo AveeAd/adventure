@@ -6,7 +6,7 @@ import { useRequireAuth } from '../../lib/auth/require-auth';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
-import { Field, Input, Textarea } from '../../components/FormField';
+import { Field, Input, Select, Textarea } from '../../components/FormField';
 import { MultiSelectChips, selectedChipValues } from '../../components/MultiSelectChips';
 
 interface MasterDataOption {
@@ -20,7 +20,7 @@ interface OwnGuideProfile {
   licenseNumber: string | null;
   rateMin: number | null;
   rateMax: number | null;
-  rateUnit: string | null;
+  rateUnit: 'PER_DAY' | 'PER_TRIP' | 'PER_HOUR' | null;
   specialties: { activityType: MasterDataOption }[];
   regions: { district: MasterDataOption }[];
   languages: { language: MasterDataOption }[];
@@ -127,7 +127,12 @@ function GuideProfileAccountPage() {
               <Input name="rateMax" type="number" min={0} defaultValue={existing?.rateMax ?? ''} />
             </Field>
             <Field label="Rate unit">
-              <Input name="rateUnit" placeholder="per day" defaultValue={existing?.rateUnit ?? ''} />
+              <Select name="rateUnit" defaultValue={existing?.rateUnit ?? ''}>
+                <option value="">Unspecified</option>
+                <option value="PER_DAY">Per day</option>
+                <option value="PER_TRIP">Per trip</option>
+                <option value="PER_HOUR">Per hour</option>
+              </Select>
             </Field>
           </div>
           <Field label="Specialties">

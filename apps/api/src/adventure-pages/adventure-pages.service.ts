@@ -27,6 +27,7 @@ export class AdventurePagesService {
           activityType: true,
           difficultyLevel: true,
           media: { take: 1, orderBy: { sortOrder: 'asc' } },
+          tags: { include: { tag: true } },
         },
       }),
       this.prisma.adventurePage.count({ where }),
@@ -51,6 +52,14 @@ export class AdventurePagesService {
         districts: { include: { district: true } },
         seasons: { include: { season: true } },
         media: { orderBy: { sortOrder: 'asc' } },
+        tags: { include: { tag: true } },
+        relatedTo: {
+          include: {
+            relatedPage: {
+              select: { id: true, title: true, slug: true, summary: true },
+            },
+          },
+        },
         _count: { select: { likes: true } },
       },
     });
@@ -75,13 +84,14 @@ export class AdventurePagesService {
         }))
       : false;
 
-    const { _count, ...rest } = page;
+    const { _count, relatedTo, ...rest } = page;
     return {
       ...rest,
       currentRevision,
       contributorIds: contributorRows.map((row) => row.editorId),
       likeCount: _count.likes,
       likedByMe,
+      relatedPages: relatedTo.map((r) => r.relatedPage),
     };
   }
 
@@ -103,6 +113,7 @@ export class AdventurePagesService {
           seasons: dto.seasonIds?.length
             ? { create: dto.seasonIds.map((seasonId) => ({ seasonId })) }
             : undefined,
+          tags: dto.tagIds?.length ? { create: dto.tagIds.map((tagId) => ({ tagId })) } : undefined,
         },
       });
 
@@ -137,6 +148,15 @@ export class AdventurePagesService {
         if (dto.seasonIds.length) {
           await tx.adventurePageSeason.createMany({
             data: dto.seasonIds.map((seasonId) => ({ adventurePageId: id, seasonId })),
+          });
+        }
+      }
+
+      if (dto.tagIds) {
+        await tx.adventurePageTag.deleteMany({ where: { adventurePageId: id } });
+        if (dto.tagIds.length) {
+          await tx.adventurePageTag.createMany({
+            data: dto.tagIds.map((tagId) => ({ adventurePageId: id, tagId })),
           });
         }
       }
@@ -315,6 +335,39 @@ export class AdventurePagesService {
       throw new ForbiddenException('Only the uploader or an admin can remove this photo');
     }
     await this.prisma.media.delete({ where: { id: mediaId } });
+    return { success: true };
+  }
+
+  // symmetric - "see also" makes sense from either page, so a suggestion
+  // made on A shows up on B's page too, not just A's
+  async addRelatedPage(pageId: string, relatedPageId: string) {
+    if (pageId === relatedPageId) {
+      throw new ForbiddenException('A page cannot be related to itself');
+    }
+    await this.ensureExists(pageId);
+    await this.ensureExists(relatedPageId);
+
+    await this.prisma.$transaction([
+      this.prisma.relatedAdventurePage.upsert({
+        where: { pageId_relatedPageId: { pageId, relatedPageId } },
+        create: { pageId, relatedPageId },
+        update: {},
+      }),
+      this.prisma.relatedAdventurePage.upsert({
+        where: { pageId_relatedPageId: { pageId: relatedPageId, relatedPageId: pageId } },
+        create: { pageId: relatedPageId, relatedPageId: pageId },
+        update: {},
+      }),
+    ]);
+
+    return { success: true };
+  }
+
+  async removeRelatedPage(pageId: string, relatedPageId: string) {
+    await this.prisma.$transaction([
+      this.prisma.relatedAdventurePage.deleteMany({ where: { pageId, relatedPageId } }),
+      this.prisma.relatedAdventurePage.deleteMany({ where: { pageId: relatedPageId, relatedPageId: pageId } }),
+    ]);
     return { success: true };
   }
 

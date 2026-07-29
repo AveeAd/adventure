@@ -19,6 +19,7 @@ interface FormData {
   difficultyLevels: MasterDataOption[];
   seasons: MasterDataOption[];
   districts: MasterDataOption[];
+  tags: MasterDataOption[];
 }
 
 async function fetchOptions(path: string): Promise<MasterDataOption[]> {
@@ -30,20 +31,21 @@ async function fetchOptions(path: string): Promise<MasterDataOption[]> {
 
 export const Route = createFileRoute('/adventures/new')({
   loader: async (): Promise<FormData> => {
-    const [activityTypes, difficultyLevels, seasons, districts] = await Promise.all([
+    const [activityTypes, difficultyLevels, seasons, districts, tags] = await Promise.all([
       fetchOptions('/activity-types'),
       fetchOptions('/difficulty-levels'),
       fetchOptions('/seasons'),
       fetchOptions('/districts'),
+      fetchOptions('/tags'),
     ]);
-    return { activityTypes, difficultyLevels, seasons, districts };
+    return { activityTypes, difficultyLevels, seasons, districts, tags };
   },
   component: NewAdventurePage,
   head: () => ({ meta: [{ title: 'Create an adventure page' }] }),
 });
 
 function NewAdventurePage() {
-  const { activityTypes, difficultyLevels, seasons, districts } = Route.useLoaderData();
+  const { activityTypes, difficultyLevels, seasons, districts, tags } = Route.useLoaderData();
   const authStatus = useRequireAuth('/adventures/new');
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +80,7 @@ function NewAdventurePage() {
           : undefined,
         districtIds: selectedChipValues(form, 'districtIds'),
         seasonIds: selectedChipValues(form, 'seasonIds'),
+        tagIds: selectedChipValues(form, 'tagIds'),
         content: formData.get('content'),
       });
       navigate({ to: '/adventures/$slug', params: { slug: page.slug } });
@@ -145,6 +148,9 @@ function NewAdventurePage() {
           </Field>
           <Field label="Best seasons">
             <MultiSelectChips name="seasonIds" options={seasons} />
+          </Field>
+          <Field label="Tags">
+            <MultiSelectChips name="tagIds" options={tags} />
           </Field>
           <Field label="Content (Markdown)">
             <Textarea name="content" required rows={12} className="font-mono text-sm" />

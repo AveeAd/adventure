@@ -1,4 +1,6 @@
-import { IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsString } from 'class-validator';
+
+const SUPPORTED_CURRENCIES = ['NPR', 'USD', 'EUR', 'INR'] as const;
 
 export class CreateTripReportDto {
   @IsOptional()
@@ -16,8 +18,11 @@ export class CreateTripReportDto {
   @IsInt()
   durationDays?: number;
 
-  // implicit currency (NPR), no currency column - per TRIP_REPORTS.md
   @IsOptional()
   @IsInt()
   actualCostAmount?: number;
+
+  @IsOptional()
+  @IsIn(SUPPORTED_CURRENCIES)
+  currency?: string;
 }

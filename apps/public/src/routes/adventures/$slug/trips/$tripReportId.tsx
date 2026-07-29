@@ -17,6 +17,7 @@ interface TripReportDetail {
   dateCompleted: string;
   durationDays: number | null;
   actualCostAmount: number | null;
+  currency: string;
   authorId: string;
   kudosCount: number;
   commentCount: number;
@@ -28,6 +29,12 @@ interface CommentItem {
   authorId: string;
   content: string;
   createdAt: string;
+  parentCommentId: string | null;
+  replies: CommentItem[];
+}
+
+function countComments(comments: CommentItem[]): number {
+  return comments.reduce((total, comment) => total + 1 + countComments(comment.replies), 0);
 }
 
 export const Route = createFileRoute('/adventures/$slug/trips/$tripReportId')({
@@ -61,10 +68,35 @@ function TripReportPage() {
   const [commentText, setCommentText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
 
   useEffect(() => {
     checkAuth().then(setSignedIn);
   }, []);
+
+  function insertComment(comment: CommentItem) {
+    if (!comment.parentCommentId) {
+      setComments((current) => [...current, comment]);
+      return;
+    }
+    const parentId = comment.parentCommentId;
+    function addReply(list: CommentItem[]): CommentItem[] {
+      return list.map((existing) =>
+        existing.id === parentId
+          ? { ...existing, replies: [...existing.replies, comment] }
+          : { ...existing, replies: addReply(existing.replies) },
+      );
+    }
+    setComments((current) => addReply(current));
+  }
+
+  async function postComment(content: string, parentCommentId?: string) {
+    const comment = await authPost<Omit<CommentItem, 'replies'>>(`/trip-reports/${report.id}/comments`, {
+      content,
+      parentCommentId,
+    });
+    insertComment({ ...comment, replies: [] });
+  }
 
   async function toggleKudos() {
     try {
@@ -86,8 +118,7 @@ function TripReportPage() {
     setError(null);
     setSubmitting(true);
     try {
-      const comment = await authPost<CommentItem>(`/trip-reports/${report.id}/comments`, { content: commentText });
-      setComments((current) => [...current, comment]);
+      await postComment(commentText);
       setCommentText('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post comment');
@@ -117,7 +148,11 @@ function TripReportPage() {
         <span>·</span>
         <span>{new Date(report.dateCompleted).toLocaleDateString()}</span>
         {report.durationDays ? <span>· {report.durationDays} days</span> : null}
-        {report.actualCostAmount ? <span>· NPR {report.actualCostAmount}</span> : null}
+        {report.actualCostAmount ? (
+          <span>
+            · {report.currency} {report.actualCostAmount}
+          </span>
+        ) : null}
       </div>
 
       {report.description && (
@@ -138,20 +173,19 @@ function TripReportPage() {
       </div>
 
       <section className="mt-10">
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Comments ({comments.length})</h2>
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">
+          Comments ({countComments(comments)})
+        </h2>
         <ul className="mt-3 flex flex-col gap-3">
           {comments.map((comment) => (
-            <li key={comment.id}>
-              <Card className="p-4">
-                <div className="flex items-center gap-2">
-                  <Avatar label={comment.authorId} size="sm" />
-                  <span className="text-xs text-stone-500 dark:text-stone-400">
-                    {new Date(comment.createdAt).toLocaleString()}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-stone-700 dark:text-stone-300">{comment.content}</p>
-              </Card>
-            </li>
+            <CommentThread
+              key={comment.id}
+              comment={comment}
+              signedIn={signedIn}
+              replyingToId={replyingToId}
+              setReplyingToId={setReplyingToId}
+              onReply={postComment}
+            />
           ))}
         </ul>
 
@@ -172,5 +206,96 @@ function TripReportPage() {
         )}
       </section>
     </Container>
+  );
+}
+
+function CommentThread({
+  comment,
+  signedIn,
+  replyingToId,
+  setReplyingToId,
+  onReply,
+  depth = 0,
+}: {
+  comment: CommentItem;
+  signedIn: boolean;
+  replyingToId: string | null;
+  setReplyingToId: (id: string | null) => void;
+  onReply: (content: string, parentCommentId?: string) => Promise<void>;
+  depth?: number;
+}) {
+  const [replyText, setReplyText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const isReplying = replyingToId === comment.id;
+
+  async function handleReplySubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+    try {
+      await onReply(replyText, comment.id);
+      setReplyText('');
+      setReplyingToId(null);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <li className={depth > 0 ? 'ml-6 border-l border-stone-200 pl-4 dark:border-stone-700' : ''}>
+      <Card className="p-4">
+        <div className="flex items-center gap-2">
+          <Avatar label={comment.authorId} size="sm" />
+          <span className="text-xs text-stone-500 dark:text-stone-400">
+            {new Date(comment.createdAt).toLocaleString()}
+          </span>
+        </div>
+        <p className="mt-2 text-sm text-stone-700 dark:text-stone-300">{comment.content}</p>
+        {signedIn && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-2"
+            onClick={() => setReplyingToId(isReplying ? null : comment.id)}
+          >
+            Reply
+          </Button>
+        )}
+        {isReplying && (
+          <form onSubmit={handleReplySubmit} className="mt-3 flex flex-col gap-2">
+            <Textarea
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              required
+              rows={2}
+              placeholder="Write a reply..."
+            />
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={submitting || !replyText.trim()}>
+                {submitting ? 'Posting...' : 'Post reply'}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setReplyingToId(null)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        )}
+      </Card>
+
+      {comment.replies.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-3">
+          {comment.replies.map((reply) => (
+            <CommentThread
+              key={reply.id}
+              comment={reply}
+              signedIn={signedIn}
+              replyingToId={replyingToId}
+              setReplyingToId={setReplyingToId}
+              onReply={onReply}
+              depth={depth + 1}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }

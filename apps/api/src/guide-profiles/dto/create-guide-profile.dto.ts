@@ -1,11 +1,13 @@
 import {
   ArrayUnique,
   IsArray,
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
   IsUUID,
 } from 'class-validator';
+import { RateUnit } from '@prisma/client';
 
 export class CreateGuideProfileDto {
   @IsOptional()
@@ -24,11 +26,10 @@ export class CreateGuideProfileDto {
   @IsInt()
   rateMax?: number;
 
-  // free text (e.g. "per day", "per trip") - informational only, never
-  // referenced by transaction logic per GUIDES.md
+  // informational only, never referenced by transaction logic per GUIDES.md
   @IsOptional()
-  @IsString()
-  rateUnit?: string;
+  @IsEnum(RateUnit)
+  rateUnit?: RateUnit;
 
   @IsOptional()
   @IsArray()

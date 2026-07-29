@@ -76,6 +76,7 @@ export class TripReportsService {
         dateCompleted: new Date(dto.dateCompleted),
         durationDays: dto.durationDays,
         actualCostAmount: dto.actualCostAmount,
+        currency: dto.currency,
       },
     });
   }
@@ -90,6 +91,7 @@ export class TripReportsService {
         dateCompleted: dto.dateCompleted ? new Date(dto.dateCompleted) : undefined,
         durationDays: dto.durationDays,
         actualCostAmount: dto.actualCostAmount,
+        currency: dto.currency,
       },
     });
   }

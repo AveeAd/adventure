@@ -9,6 +9,7 @@ interface TripReportDetail {
   dateCompleted: string;
   durationDays: number | null;
   actualCostAmount: number | null;
+  currency: string;
   authorId: string;
   kudosCount: number;
   commentCount: number;
@@ -34,7 +35,7 @@ export const TripReportShow = () => {
               {record.durationDays ? `${record.durationDays} days` : '—'}
             </Descriptions.Item>
             <Descriptions.Item label="Cost">
-              {record.actualCostAmount ? `NPR ${record.actualCostAmount}` : '—'}
+              {record.actualCostAmount ? `${record.currency} ${record.actualCostAmount}` : '—'}
             </Descriptions.Item>
             <Descriptions.Item label="Kudos / Comments">
               {record.kudosCount} / {record.commentCount}
