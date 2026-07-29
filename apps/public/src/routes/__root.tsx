@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import appCss from '../styles.css?url'
 import { Button } from '../components/Button'
+import { NotificationBell } from '../components/NotificationBell'
 import { fetchCurrentUser, logout, type CurrentUser } from '../lib/auth/session'
 
 export const Route = createRootRoute({
@@ -124,6 +125,7 @@ function AuthStatus({ stacked = false }: { stacked?: boolean }) {
 
   return (
     <span className={stacked ? 'flex flex-col gap-4' : 'flex items-center gap-4'}>
+      <NotificationBell />
       <Link to="/adventures/new" className={navLinkClass}>
         New page
       </Link>

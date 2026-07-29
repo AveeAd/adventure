@@ -45,6 +45,8 @@ model User {
 
   guideProfile GuideProfile?
 
+  notifications Notification[]
+
   @@map("users")
 }
 
@@ -215,6 +217,11 @@ model AdventurePage {
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  // trigger-maintained (title + summary + latest revision content) - see
+  // migration 20260729080000_search_and_notifications. Never written to by
+  // Prisma, same "Unsupported columns aren't diff-managed" gotcha as geometry.
+  searchVector Unsupported("tsvector")?
 
   revisions PageRevision[]
   districts AdventurePageDistrict[]
@@ -629,4 +636,30 @@ model GuideLanguage {
 
   @@unique([guideProfileId, languageId])
   @@map("guide_languages")
+}
+
+enum NotificationType {
+  COMMENT
+  REPLY
+  KUDOS
+  PAGE_VERIFIED
+  TRAIL_VERIFIED
+  SPOT_VERIFIED
+  GUIDE_VERIFIED
+}
+
+// one-way system messages, not user chat - doesn't reopen IDEA.md's
+// no-in-app-messaging ruling, per TRIP_GROUPS.md-style framing
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  linkUrl   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
 }

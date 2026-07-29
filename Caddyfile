@@ -1,0 +1,17 @@
+# Caddy gets automatic HTTPS (Let's Encrypt) for free just from having a
+# real domain in the site address - no separate certbot/nginx-TLS setup
+# needed, which is why it's the reverse proxy here instead of nginx.
+# Domains come from the server's .env (see .env.production.example) via
+# docker-compose.prod.yml's `environment:` block.
+
+{$PUBLIC_DOMAIN} {
+	reverse_proxy public:3001
+}
+
+{$ADMIN_DOMAIN} {
+	reverse_proxy admin:80
+}
+
+{$API_DOMAIN} {
+	reverse_proxy api:3000
+}

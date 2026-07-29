@@ -1,12 +1,23 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
-import { Compass, MountainSnow } from 'lucide-react';
+import { Compass, MountainSnow, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { apiUrl } from '../lib/auth/api';
-import { Badge } from '../components/Badge';
+import { Badge, StatusBadge } from '../components/Badge';
 import { Card } from '../components/Card';
 import { Container } from '../components/Container';
 import { EmptyState } from '../components/EmptyState';
+import { Input } from '../components/FormField';
 import { LazyAdventureMap } from '../components/LazyAdventureMap';
 import type { MapSpot, MapTrail } from '../components/AdventureMap';
+
+interface SearchResult {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  verificationStatus: string;
+  activityTypeName: string | null;
+}
 
 // generous box around Nepal - the bbox endpoints only support a rectangle,
 // not a country polygon, so this is a deliberate approximation
@@ -52,6 +63,25 @@ export const Route = createFileRoute('/')({
 
 function DiscoverPage() {
   const { pages, trails, spots } = Route.useLoaderData();
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SearchResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setResults(null);
+      return;
+    }
+    setSearching(true);
+    const timeout = setTimeout(async () => {
+      const res = await fetch(apiUrl(`/adventure-pages/search?q=${encodeURIComponent(trimmed)}`));
+      const body: { data: SearchResult[] } = res.ok ? await res.json() : { data: [] };
+      setResults(body.data);
+      setSearching(false);
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [query]);
 
   return (
     <>
@@ -67,16 +97,31 @@ function DiscoverPage() {
           <p className="mt-3 max-w-2xl text-stone-600 dark:text-stone-300">
             A free, open guide to adventure in Nepal &mdash; built and verified by the people who've been there.
           </p>
+          <div className="relative mt-6 max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search adventure pages..."
+              className="pl-9"
+            />
+          </div>
         </Container>
       </div>
 
       <Container size="wide">
-        {(trails.length > 0 || spots.length > 0) && (
-          <div className="mb-8">
-            <LazyAdventureMap trails={trails} spots={spots} height={420} zoom={7} />
-          </div>
+        {results !== null ? (
+          <SearchResults query={query} results={results} searching={searching} />
+        ) : (
+          <>
+            {(trails.length > 0 || spots.length > 0) && (
+              <div className="mb-8">
+                <LazyAdventureMap trails={trails} spots={spots} height={420} zoom={7} />
+              </div>
+            )}
+          </>
         )}
-        {pages.length === 0 ? (
+        {results === null && (pages.length === 0 ? (
           <EmptyState icon={<MountainSnow className="h-8 w-8" />}>No adventure pages yet.</EmptyState>
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -121,8 +166,39 @@ function DiscoverPage() {
               </Link>
             ))}
           </div>
-        )}
+        ))}
       </Container>
     </>
+  );
+}
+
+function SearchResults({ query, results, searching }: { query: string; results: SearchResult[]; searching: boolean }) {
+  if (searching && results.length === 0) {
+    return <p className="text-sm text-stone-500 dark:text-stone-400">Searching...</p>;
+  }
+
+  if (results.length === 0) {
+    return <EmptyState icon={<Search className="h-8 w-8" />}>No results for &ldquo;{query}&rdquo;.</EmptyState>;
+  }
+
+  return (
+    <ul className="flex flex-col gap-3">
+      {results.map((result) => (
+        <li key={result.id}>
+          <Link to="/adventures/$slug" params={{ slug: result.slug }}>
+            <Card className="p-4 transition-shadow hover:shadow-md">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-semibold text-stone-900 dark:text-stone-50">{result.title}</h2>
+                <StatusBadge status={result.verificationStatus} />
+                {result.activityTypeName && <Badge tone="neutral">{result.activityTypeName}</Badge>}
+              </div>
+              {result.summary && (
+                <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">{result.summary}</p>
+              )}
+            </Card>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }

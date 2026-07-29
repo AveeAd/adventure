@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { NotificationType, Role } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddTripReportMediaDto } from './dto/add-trip-report-media.dto';
 import { CreateTripReportDto } from './dto/create-trip-report.dto';
@@ -8,7 +9,10 @@ import { UpdateTripReportDto } from './dto/update-trip-report.dto';
 
 @Injectable()
 export class TripReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async listForPage(pageId: string, page = 1, pageSize = 20) {
     const where = { adventurePageId: pageId, isActive: true };
@@ -125,7 +129,18 @@ export class TripReportsService {
   }
 
   async addKudos(id: string, userId: string) {
-    await this.ensureExists(id);
+    const report = await this.prisma.tripReport.findUnique({
+      where: { id },
+      select: { authorId: true, title: true, adventurePage: { select: { slug: true } } },
+    });
+    if (!report) {
+      throw new NotFoundException(`Trip report ${id} not found`);
+    }
+
+    const existing = await this.prisma.tripReportKudos.findUnique({
+      where: { tripReportId_userId: { tripReportId: id, userId } },
+    });
+
     // self-kudos isn't blocked, only capped at one per user - see
     // TRIP_REPORTS.md's TripReportKudos note
     await this.prisma.tripReportKudos.upsert({
@@ -133,6 +148,17 @@ export class TripReportsService {
       create: { tripReportId: id, userId },
       update: {},
     });
+
+    if (!existing) {
+      await this.notifications.notify(
+        report.authorId,
+        userId,
+        NotificationType.KUDOS,
+        `Someone gave kudos to "${report.title ?? 'your trip report'}"`,
+        `/adventures/${report.adventurePage.slug}/trips/${id}`,
+      );
+    }
+
     return this.kudosCount(id);
   }
 

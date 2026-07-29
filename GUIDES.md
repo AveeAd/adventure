@@ -2,7 +2,7 @@
 
 Design for IDEA.md's "Connect" pillar: "a free guide directory. Profiles show certifications, languages, specialties, regions, rate range. No in-app payment or commission. Restricted-region guides need license verification before being marked verified." Companion to [DATABASE.md](DATABASE.md) (extends `User`, `ActivityType`, `District`).
 
-**Status**: built (Phase 9) — public guide directory, profile pages, and a create/edit-your-own-profile form; admin got the manual license verification review queue this doc called for (list/show + a `PATCH .../verification-status` action) in the admin-beyond-master-data pass. Schema below is unchanged from what shipped.
+**Status**: built (Phase 9) — public guide directory, profile pages, and a create/edit-your-own-profile form; admin got the manual license verification review queue this doc called for (list/show + a `PATCH .../verification-status` action) in the admin-beyond-master-data pass. One thing has changed since: `rateUnit` was converted from free text to a `RateUnit` enum in Phase 13 (via a data-preserving migration, not a drop+recreate) — see the schema and per-table note below, updated to match.
 
 ## Scope and the trust model here is different again
 
@@ -17,6 +17,13 @@ enum GuideVerificationStatus {
   UNVERIFIED
   PENDING_LICENSE_REVIEW
   VERIFIED
+}
+
+// Phase 13: replaced the original free-text rateUnit
+enum RateUnit {
+  PER_DAY
+  PER_TRIP
+  PER_HOUR
 }
 
 model Language {
@@ -41,7 +48,7 @@ model GuideProfile {
   bio                String?
   rateMin            Int?
   rateMax            Int?
-  rateUnit           String?
+  rateUnit           RateUnit?
   verificationStatus GuideVerificationStatus @default(UNVERIFIED)
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
@@ -107,7 +114,7 @@ erDiagram
         string bio "nullable"
         int rateMin "nullable, informational"
         int rateMax "nullable, informational"
-        string rateUnit "nullable, e.g. per day"
+        RateUnit rateUnit "nullable"
         GuideVerificationStatus verificationStatus
         boolean isActive
     }
@@ -136,7 +143,7 @@ erDiagram
 - **`GuideProfile` is a 1:1 extension of `User`**, same pattern as `Profile` — a user becomes a guide by gaining this row, not by being a different account type. `onDelete: Cascade` from `User`, matching `Profile`'s reasoning (exclusively owned, no reason for it to outlive the user).
 - **`Language` is new master data**, same flat shape as `DifficultyLevel`/`Season` — nothing in the schema modeled spoken languages before this. `isoCode` (ISO 639-1) is the stable identifier; `name` is the display label, same name/slug-equivalent split reasoning used everywhere else.
 - **Specialties/regions/languages are all many-to-many join tables** — a guide can specialize in more than one activity, cover more than one district, and speak more than one language. Same shape and `onDelete` reasoning as `AdventurePageDistrict`/`AdventurePageSeason`: `Cascade` from the owning `GuideProfile`, `Restrict` toward the shared lookup table.
-- **`rateMin`/`rateMax`/`rateUnit` are informational only** — IDEA.md is explicit that there's no in-app payment or commission, so these fields exist purely for display on the guide's profile, never referenced by any transaction logic (there isn't one). `rateUnit` is free text (e.g. "per day", "per trip") rather than an enum — a fixed set of units is a plausible future refinement, not designed now.
+- **`rateMin`/`rateMax`/`rateUnit` are informational only** — IDEA.md is explicit that there's no in-app payment or commission, so these fields exist purely for display on the guide's profile, never referenced by any transaction logic (there isn't one). `rateUnit` was originally free text; Phase 13 converted it to the `RateUnit` enum above via a data-preserving migration (`ADD COLUMN` + `UPDATE ... CASE` pattern-matching the old free text, then drop the old column and rename) rather than a naive drop-and-recreate, so existing profiles' rates didn't silently go blank.
 - **Restricted-region enforcement depends on a new `District` field**: IDEA.md's real legal constraint — Annapurna, Manaslu, and Upper Mustang require a registered trekking agency for permits — means the platform needs to know *which* districts carry that requirement. Proposed as a **required addition to the already-finalized `District` model**: `requiresRegisteredAgency Boolean @default(false)`. This is a genuine new column on an existing table, not just a reverse-relation array field like the other "required additions" tables in ADVENTURE_PAGES.md/MAP_GEODATA.md — flagged clearly for that reason. Service-layer rule: if any of a `GuideProfile`'s `GuideRegion` rows reference a district where `requiresRegisteredAgency = true`, that guide's `verificationStatus` can only reach `VERIFIED` by passing through `PENDING_LICENSE_REVIEW` (a human actually checking the license) — never a shortcut path. Guides who only cover non-restricted districts could plausibly have a lighter verification bar, but that policy detail belongs to the service layer, not the schema.
 
 ## Required additions to existing models

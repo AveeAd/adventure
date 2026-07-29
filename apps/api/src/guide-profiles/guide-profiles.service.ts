@@ -5,8 +5,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { GuideVerificationStatus, Role } from '@prisma/client';
+import { GuideVerificationStatus, NotificationType, Role } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateGuideProfileDto } from './dto/create-guide-profile.dto';
 import { UpdateGuideProfileDto } from './dto/update-guide-profile.dto';
@@ -19,7 +20,10 @@ const PROFILE_INCLUDE = {
 
 @Injectable()
 export class GuideProfilesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async list(
     page = 1,
@@ -172,6 +176,17 @@ export class GuideProfilesService {
     }
 
     await this.prisma.guideProfile.update({ where: { id }, data: { verificationStatus: status } });
+
+    if (status === GuideVerificationStatus.VERIFIED) {
+      await this.notifications.notify(
+        profile.userId,
+        undefined,
+        NotificationType.GUIDE_VERIFIED,
+        'Your guide profile was verified',
+        '/account/guide-profile',
+      );
+    }
+
     return this.get(id);
   }
 

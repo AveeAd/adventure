@@ -1,7 +1,8 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { PageVerificationStatus, Role } from '@prisma/client';
+import { NotificationType, PageVerificationStatus, Role } from '@prisma/client';
 import { diffLines } from 'diff';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddMediaDto } from './dto/add-media.dto';
 import { CreateAdventurePageDto } from './dto/create-adventure-page.dto';
@@ -13,7 +14,10 @@ const CONFIRMATION_THRESHOLD = 2;
 
 @Injectable()
 export class AdventurePagesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async list(page = 1, pageSize = 20) {
     const where = { isActive: true };
@@ -32,6 +36,42 @@ export class AdventurePagesService {
       }),
       this.prisma.adventurePage.count({ where }),
     ]);
+    return { data, total, page, pageSize };
+  }
+
+  // searchVector is trigger-maintained (title + summary + latest revision
+  // content) - see migration 20260729080000_search_and_notifications
+  async search(query: string, page = 1, pageSize = 20) {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      return { data: [], total: 0, page, pageSize };
+    }
+    const offset = (page - 1) * pageSize;
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        id: string;
+        title: string;
+        slug: string;
+        summary: string | null;
+        verificationStatus: string;
+        activityTypeName: string | null;
+        total: bigint;
+      }>
+    >`
+      SELECT ap.id, ap.title, ap.slug, ap.summary, ap."verificationStatus",
+             at.name AS "activityTypeName",
+             count(*) OVER() AS total
+      FROM adventure_pages ap
+      LEFT JOIN activity_types at ON at.id = ap."activityTypeId"
+      WHERE ap."isActive" = true
+        AND ap."searchVector" @@ plainto_tsquery('english', ${trimmed})
+      ORDER BY ts_rank(ap."searchVector", plainto_tsquery('english', ${trimmed})) DESC
+      LIMIT ${pageSize} OFFSET ${offset}
+    `;
+
+    const total = rows.length ? Number(rows[0].total) : 0;
+    const data = rows.map(({ total: _total, ...row }) => row);
     return { data, total, page, pageSize };
   }
 
@@ -288,10 +328,24 @@ export class AdventurePagesService {
     });
 
     if (confirmationCount >= CONFIRMATION_THRESHOLD) {
-      await this.prisma.adventurePage.update({
+      const page = await this.prisma.adventurePage.update({
         where: { id: pageId },
         data: { verificationStatus: 'VERIFIED' },
+        select: { title: true, slug: true },
       });
+
+      const contributorRows = await this.prisma.pageRevision.findMany({
+        where: { adventurePageId: pageId },
+        distinct: ['editorId'],
+        select: { editorId: true },
+      });
+      await this.notifications.notifyMany(
+        contributorRows.map((row) => row.editorId),
+        userId,
+        NotificationType.PAGE_VERIFIED,
+        `"${page.title}" was confirmed as verified`,
+        `/adventures/${page.slug}`,
+      );
     }
 
     return { revisionId: latest.id, confirmationCount, threshold: CONFIRMATION_THRESHOLD };

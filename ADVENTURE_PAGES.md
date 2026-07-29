@@ -2,7 +2,7 @@
 
 Design for IDEA.md's "Article" layer (inherited from Wikipedia): per-adventure pages with an infobox, collaboratively-edited prose, full revision history, and a trust model. This was explicitly deferred in [ROADMAP.md](ROADMAP.md) until the Phase 1–5 foundation ([ARCHITECTURE.md](ARCHITECTURE.md) / [DATABASE.md](DATABASE.md)) was settled — it now is, so this is that design.
 
-**Status**: built (Phase 6), and since given a full public UI pass — Discover, the adventure page view (now with an embedded Leaflet map, see MAP_GEODATA.md's status note), the contribute/edit/history/diff flow, and a real visual identity (Tailwind, see PUBLIC_PAGES.md's status note). The schema and service-layer design below are unchanged from what shipped.
+**Status**: built (Phase 6), and since given a full public UI pass — Discover, the adventure page view (now with an embedded Leaflet map, see MAP_GEODATA.md's status note), the contribute/edit/history/diff flow, and a real visual identity (Tailwind, see PUBLIC_PAGES.md's status note). The schema and service-layer design below are unchanged from what shipped. Everything flagged as "not designed here" below (tags, "see also" links) was subsequently designed and built in the content-enhancement grab-bag (Phase 13) — `Tag`/`AdventurePageTag`/`RelatedAdventurePage` now exist alongside the original schema; see the note at the end of that paragraph.
 
 ## What's on a page, beyond the original ask
 
@@ -16,7 +16,15 @@ Starting point: title, activity type, date posted/updated, rich-text content, co
 - **A safety-critical flag on edits** — IDEA.md specifically calls out "manual review for anything safety-critical (route conditions, hazards)"; something has to trigger that path.
 - **A like button on the page itself** — casual appreciation, distinct from `PageConfirmation` (a trust/accuracy claim) and from `TripReportKudos` (scoped to one trip report, not the page) — see `AdventurePageLike` below.
 
-Not designed here, flagged for later discussion: tags/free-form labels beyond `ActivityType` (ROADMAP already floats a future `Tag` master-data type), "see also"/related-page links, a permit-required flag (might actually belong on `District` itself, given IDEA.md's Annapurna/Manaslu/Upper Mustang permit rule, rather than on each page), and any actual map/route geodata (that's the still-undesigned PostGIS layer — pages will eventually link to it).
+Not designed here at the time, flagged for later discussion — now all resolved: tags/free-form labels beyond `ActivityType` and "see also"/related-page links were built in Phase 13 (`Tag`, `AdventurePageTag`, `RelatedAdventurePage` below); the permit-required flag ended up on `District` as `requiresRegisteredAgency` (GUIDES.md, built in Phase 9); the map/route geodata is the Phase 7/11 `Trail`/`Spot` layer (MAP_GEODATA.md), now linked from every adventure page's "Trails & spots" section.
+
+### Tags (Phase 13 addition)
+
+`Tag` is curated master data (same generic CRUD as `ActivityType`/`Season`) rather than fully free-typed user input — deliberately, to avoid duplicate/near-duplicate tags ("teahouse-trek" vs. "tea house trek") and spam tags, the same reasoning DATABASE.md's other lookup tables already follow. `AdventurePageTag` is a plain join table, identical in shape to `AdventurePageDistrict`/`AdventurePageSeason`: `Cascade` from the owning page, `Restrict` toward the shared `Tag` row. Tags are set at page-creation time only in the public UI (not editable afterward, same limitation districts/seasons already had) — a real gap, not a design choice, flagged here rather than silently accepted.
+
+### Related pages / "see also" (Phase 13 addition)
+
+`RelatedAdventurePage` is a **symmetric self-join** — any signed-in contributor can suggest a link from page A to page B, and the service inserts both `(A, B)` and `(B, A)` rows in one transaction so the link shows up from either page immediately, not just the one it was added from. Same low-friction model as editing a page (no moderation queue), which is a real spam vector worth revisiting if it becomes one — not designed against here.
 
 ## Schema (additions to `prisma/schema.prisma`)
 
@@ -130,6 +138,46 @@ model AdventurePageLike {
 
   @@unique([adventurePageId, userId])
   @@map("adventure_page_likes")
+}
+
+// Phase 13 addition - curated master data, not free-typed (see the Tags
+// note above)
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pages AdventurePageTag[]
+
+  @@map("tags")
+}
+
+model AdventurePageTag {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  tagId           String
+  tag             Tag           @relation(fields: [tagId], references: [id], onDelete: Restrict)
+
+  @@unique([adventurePageId, tagId])
+  @@map("adventure_page_tags")
+}
+
+// Phase 13 addition - symmetric self-join, see the Related pages note above
+model RelatedAdventurePage {
+  id            String   @id @default(uuid())
+  pageId        String
+  page          AdventurePage @relation("PageRelations", fields: [pageId], references: [id], onDelete: Cascade)
+  relatedPageId String
+  relatedPage   AdventurePage @relation("RelatedByPage", fields: [relatedPageId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+
+  @@unique([pageId, relatedPageId])
+  @@map("related_adventure_pages")
 }
 ```
 

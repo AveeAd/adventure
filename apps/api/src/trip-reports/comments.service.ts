@@ -1,13 +1,17 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { NotificationType, Role } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
 @Injectable()
 export class CommentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // flat fetch + nest in application code - no recursive SQL needed at this scale
   async listForTripReport(tripReportId: string) {
@@ -34,18 +38,49 @@ export class CommentsService {
   }
 
   async create(tripReportId: string, authorId: string, dto: CreateCommentDto) {
+    let parent: { tripReportId: string; authorId: string } | null = null;
     if (dto.parentCommentId) {
-      const parent = await this.prisma.comment.findUnique({
+      parent = await this.prisma.comment.findUnique({
         where: { id: dto.parentCommentId },
-        select: { tripReportId: true },
+        select: { tripReportId: true, authorId: true },
       });
       if (!parent || parent.tripReportId !== tripReportId) {
         throw new NotFoundException('Parent comment not found on this trip report');
       }
     }
-    return this.prisma.comment.create({
+
+    const comment = await this.prisma.comment.create({
       data: { tripReportId, authorId, content: dto.content, parentCommentId: dto.parentCommentId },
     });
+
+    const tripReport = await this.prisma.tripReport.findUnique({
+      where: { id: tripReportId },
+      select: { authorId: true, title: true, adventurePage: { select: { slug: true } } },
+    });
+    const linkUrl = tripReport
+      ? `/adventures/${tripReport.adventurePage.slug}/trips/${tripReportId}`
+      : undefined;
+    const label = tripReport?.title ?? 'your trip report';
+
+    if (parent) {
+      await this.notifications.notify(
+        parent.authorId,
+        authorId,
+        NotificationType.REPLY,
+        `Someone replied to your comment on "${label}"`,
+        linkUrl,
+      );
+    } else if (tripReport) {
+      await this.notifications.notify(
+        tripReport.authorId,
+        authorId,
+        NotificationType.COMMENT,
+        `Someone commented on "${label}"`,
+        linkUrl,
+      );
+    }
+
+    return comment;
   }
 
   async update(id: string, currentUser: AuthenticatedUser, dto: UpdateCommentDto) {

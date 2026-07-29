@@ -101,7 +101,7 @@ The one core IDEA.md pillar with no design doc through Phase 10 — now designed
 
 ## Deferred — still not built
 
-- **Content enhancement grab-bag**: tags/free-form labels beyond `ActivityType`, "see also"/related-page links, threaded comment replies, multi-currency trip costs, a stricter `rateUnit` enum — all flagged as discussion points across ADVENTURE_PAGES.md/MAP_GEODATA.md/TRIP_REPORTS.md/GUIDES.md, not yet designed or built.
-- **Platform/infra**: full-text search implementation, in-app notifications, UI-language i18n. i18n specifically needs a scoping decision (target languages, machine vs. human translation) before any library gets wired in.
+- **Content enhancement grab-bag**: done — tags, "see also"/related-page links, threaded comment replies, multi-currency trip costs, and a stricter `rateUnit` enum are all built (schema + API + admin + public UI). Was flagged as discussion points across ADVENTURE_PAGES.md/MAP_GEODATA.md/TRIP_REPORTS.md/GUIDES.md; those docs' notes are now historical context, not open questions.
+- **Platform/infra**: full-text search and in-app notifications are done (Postgres tsvector/GIN search on adventure pages; a `Notification` model firing on comment/reply/kudos/verification events, surfaced via a bell icon). UI-language i18n is still not built — it needs a scoping decision (target languages, machine vs. human translation) before any library gets wired in.
 - Elevation-along-path profiles, spatially-derived district tagging, full OSM-style changeset history for geodata — flagged in MAP_GEODATA.md, still undesigned.
-- Hosting/deployment target — still local-only per your call; revisit once there's something worth showing someone else.
+- Hosting/deployment: done — see [DEPLOYMENT.md](DEPLOYMENT.md). Single VPS, docker-compose, Caddy for TLS, GitHub Actions deploys on push to `main`.

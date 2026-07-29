@@ -39,6 +39,14 @@ export class AdventurePagesController {
     return this.adventurePagesService.getBySlug(slug, user?.userId);
   }
 
+  // single path segment like ':id' below - must be declared first, since
+  // Nest/Express matches routes in declaration order, not by specificity
+  @Public()
+  @Get('search')
+  search(@Query('q') q: string, @Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+    return this.adventurePagesService.search(q ?? '', Number(page) || 1, Number(pageSize) || 20);
+  }
+
   @Public()
   @Get(':id')
   get(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {

@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTrailDto } from './dto/create-trail.dto';
 import { UpdateTrailDto } from './dto/update-trail.dto';
@@ -22,7 +24,10 @@ export interface TrailRow {
 
 @Injectable()
 export class TrailsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async listForPage(pageId: string): Promise<TrailRow[]> {
     return this.prisma.$queryRaw<TrailRow[]>`
@@ -114,7 +119,7 @@ export class TrailsService {
   }
 
   async confirm(trailId: string, userId: string) {
-    await this.get(trailId);
+    const trail = await this.get(trailId);
     await this.prisma.trailConfirmation.upsert({
       where: { trailId_userId: { trailId, userId } },
       create: { trailId, userId },
@@ -124,6 +129,18 @@ export class TrailsService {
     const confirmationCount = await this.prisma.trailConfirmation.count({ where: { trailId } });
     if (confirmationCount >= CONFIRMATION_THRESHOLD) {
       await this.prisma.$executeRaw`UPDATE trails SET "verificationStatus" = 'VERIFIED'::"GeoVerificationStatus" WHERE id = ${trailId}`;
+
+      const page = await this.prisma.adventurePage.findUnique({
+        where: { id: trail.adventurePageId },
+        select: { slug: true },
+      });
+      await this.notifications.notify(
+        trail.createdById,
+        userId,
+        NotificationType.TRAIL_VERIFIED,
+        `"${trail.name ?? 'Your trail'}" was confirmed as accurate`,
+        page ? `/adventures/${page.slug}` : undefined,
+      );
     }
 
     return { trailId, confirmationCount, threshold: CONFIRMATION_THRESHOLD };

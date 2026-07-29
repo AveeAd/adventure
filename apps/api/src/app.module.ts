@@ -5,6 +5,7 @@ import { ConfigModule } from './config/config.module';
 import { GeodataModule } from './geodata/geodata.module';
 import { GuideProfilesModule } from './guide-profiles/guide-profiles.module';
 import { MasterDataModule } from './master-data/master-data.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TripReportsModule } from './trip-reports/trip-reports.module';
 import { TripGroupsModule } from './trip-groups/trip-groups.module';
@@ -14,6 +15,7 @@ import { HealthController } from './health/health.controller';
   imports: [
     ConfigModule,
     PrismaModule,
+    NotificationsModule,
     AuthModule,
     MasterDataModule,
     AdventurePagesModule,

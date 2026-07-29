@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { NotificationType } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSpotDto } from './dto/create-spot.dto';
 import { UpdateSpotDto } from './dto/update-spot.dto';
@@ -25,7 +27,10 @@ export interface SpotRow {
 
 @Injectable()
 export class SpotsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async listForPage(pageId: string): Promise<SpotRow[]> {
     return this.prisma.$queryRaw<SpotRow[]>`
@@ -123,7 +128,7 @@ export class SpotsService {
   }
 
   async confirm(spotId: string, userId: string) {
-    await this.get(spotId);
+    const spot = await this.get(spotId);
     await this.prisma.spotConfirmation.upsert({
       where: { spotId_userId: { spotId, userId } },
       create: { spotId, userId },
@@ -133,6 +138,18 @@ export class SpotsService {
     const confirmationCount = await this.prisma.spotConfirmation.count({ where: { spotId } });
     if (confirmationCount >= CONFIRMATION_THRESHOLD) {
       await this.prisma.$executeRaw`UPDATE spots SET "verificationStatus" = 'VERIFIED'::"GeoVerificationStatus" WHERE id = ${spotId}`;
+
+      const page = await this.prisma.adventurePage.findUnique({
+        where: { id: spot.adventurePageId },
+        select: { slug: true },
+      });
+      await this.notifications.notify(
+        spot.createdById,
+        userId,
+        NotificationType.SPOT_VERIFIED,
+        `"${spot.name}" was confirmed as accurate`,
+        page ? `/adventures/${page.slug}` : undefined,
+      );
     }
 
     return { spotId, confirmationCount, threshold: CONFIRMATION_THRESHOLD };
