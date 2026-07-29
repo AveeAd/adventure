@@ -1,6 +1,6 @@
 # Roadmap — phased build plan
 
-Companion to [IDEA.md](IDEA.md). This covers *how* we build, iteratively, starting from pure infrastructure before any adventure-specific content. Content-pillar prioritization (Discover vs. Contribute vs. Share first) is intentionally deferred — see "Deferred" section at the bottom.
+Companion to [IDEA.md](IDEA.md). This covers *how* we build, iteratively, starting from pure infrastructure before any adventure-specific content. Content-pillar prioritization (Discover vs. Contribute vs. Share first) was resolved in Phase 10 — **Discover → Contribute → Share → Connect**, reasoning in PUBLIC_PAGES.md. Phases 1–12 below are built; see "Deferred" at the bottom for what's genuinely still not done.
 
 ## Ground rules
 
@@ -83,9 +83,25 @@ Companion to [IDEA.md](IDEA.md). This covers *how* we build, iteratively, starti
 - **Requires an auth-flow change already applied to ARCHITECTURE.md §4**: two frontends (`admin`, `public`) can now trigger Google login, so the single `ADMIN_APP_URL` redirect target became a validated `redirectUrl` + `ALLOWED_REDIRECT_URLS` allowlist.
 - **Done when**: an anonymous visitor can browse Discover and read an adventure page with no login; a logged-in user (via either the admin or public app) lands back on whichever app they started from after Google sign-in.
 
-## Deferred — revisit after Phase 10
+## Phase 10.5 — Public site visual identity (done)
 
-- Trip-companion groups (Strava-clubs-style, shared route + date window) — the only core IDEA.md pillar still fully undesigned.
-- Tags/free-form labels beyond `ActivityType`, "see also"/related-page links, elevation-along-path profiles, spatially-derived district tagging, full OSM-style changeset history for geodata, threaded comment replies, multi-currency trip costs, a stricter `rateUnit` enum, in-app messaging/notifications, full-text search implementation, UI-language i18n — all flagged as discussion points across ADVENTURE_PAGES.md/MAP_GEODATA.md/TRIP_REPORTS.md/GUIDES.md/PUBLIC_PAGES.md, not yet designed.
-- Admin dashboard beyond Phase 5's master-data CRUD — moderation screens (safety-critical review queue, guide license verification queue), user management. Not yet designed; next up per your call to do public pages first.
+Phase 10 shipped functional but unstyled (plain inline `style={{}}`, no design system). This pass gave `apps/public` an actual visual identity: Tailwind CSS v4, an earthy pine-green/terracotta palette on warm stone neutrals, Inter typography, dark mode via `prefers-color-scheme`, and a reusable component library (`apps/public/src/components/`) — applied across every Phase 10 page. `apps/admin` got the same palette applied via Ant Design's `ConfigProvider` theme tokens (a reskin, not a rewrite — the Refine/AntD stack didn't change), plus a branded title and redesigned Login/Dashboard.
+
+## Phase 10.6 — Admin beyond master data (done)
+
+The "admin dashboard beyond Phase 5's master-data CRUD" item below is done: admin now manages Users (role/active, self-demotion guarded), Adventure Pages (verification-status moderation), Trip Reports (view/delete), Guide Profiles (the license verification review queue GUIDES.md called for), and — after Phase 11 — Trails/Spots and Trip Groups. All at **read + moderate** depth; full content authoring stays in the public contribute flow so compound-write logic (revisions, confirmations, transactions) lives in one place. The sidebar is grouped (Master Data / Locations / Content / Trails & Spots) instead of one flat list.
+
+## Phase 11 — Map/geodata UI (done)
+
+MAP_GEODATA.md (Phase 7) shipped a full `Trail`/`Spot` backend in the original build order, but nothing consumed it — no map rendered anywhere. This phase closed that gap: Leaflet + OpenStreetMap rendering on the adventure page view and Discover (bbox pins) in `apps/public`, a draw-a-trail/spot contribute flow (click-to-place/click-to-draw), a "confirm accurate" action wired to the existing peer-confirmation endpoints, and a new Trails & Spots area in `apps/admin` (list/show + verification-status override, mirroring the pattern already used for Adventure Pages/Guide Profiles). See MAP_GEODATA.md's updated status note.
+
+## Phase 12 — Trip-companion groups (done)
+
+The one core IDEA.md pillar with no design doc through Phase 10 — now designed and built. See [TRIP_GROUPS.md](TRIP_GROUPS.md) for the schema, API, and UI. Deliberately no messaging model, consistent with IDEA.md's informational-only contact stance.
+
+## Deferred — still not built
+
+- **Content enhancement grab-bag**: tags/free-form labels beyond `ActivityType`, "see also"/related-page links, threaded comment replies, multi-currency trip costs, a stricter `rateUnit` enum — all flagged as discussion points across ADVENTURE_PAGES.md/MAP_GEODATA.md/TRIP_REPORTS.md/GUIDES.md, not yet designed or built.
+- **Platform/infra**: full-text search implementation, in-app notifications, UI-language i18n. i18n specifically needs a scoping decision (target languages, machine vs. human translation) before any library gets wired in.
+- Elevation-along-path profiles, spatially-derived district tagging, full OSM-style changeset history for geodata — flagged in MAP_GEODATA.md, still undesigned.
 - Hosting/deployment target — still local-only per your call; revisit once there's something worth showing someone else.

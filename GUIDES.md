@@ -2,7 +2,7 @@
 
 Design for IDEA.md's "Connect" pillar: "a free guide directory. Profiles show certifications, languages, specialties, regions, rate range. No in-app payment or commission. Restricted-region guides need license verification before being marked verified." Companion to [DATABASE.md](DATABASE.md) (extends `User`, `ActivityType`, `District`).
 
-Nothing here is migrated yet — schema to implement in whatever phase actually builds this.
+**Status**: built (Phase 9) — public guide directory, profile pages, and a create/edit-your-own-profile form; admin got the manual license verification review queue this doc called for (list/show + a `PATCH .../verification-status` action) in the admin-beyond-master-data pass. Schema below is unchanged from what shipped.
 
 ## Scope and the trust model here is different again
 

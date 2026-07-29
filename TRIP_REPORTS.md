@@ -2,7 +2,7 @@
 
 Design for IDEA.md's "Share" pillar and Activity layer (inherited from Strava): "a Strava-style trip reports: what someone actually did, real dates, real costs, kudos/comments." Companion to [ADVENTURE_PAGES.md](ADVENTURE_PAGES.md) (trip reports live on an adventure page's feed) and [MAP_GEODATA.md](MAP_GEODATA.md).
 
-Nothing here is migrated yet — schema to implement in whatever phase actually builds this.
+**Status**: built (Phase 8) — public logging/kudos/comments UI on the adventure page view and a trip report permalink page, plus an admin view/delete area (Users beyond master data pass). Schema below is unchanged from what shipped; the multi-currency-cost and threaded-reply gaps noted below are still open, see ROADMAP.md's Deferred section.
 
 ## Scope and the one big departure from the content layer
 

@@ -2,7 +2,7 @@
 
 Design for the public-facing side of the platform — everything a visitor sees, as opposed to [ARCHITECTURE.md](ARCHITECTURE.md)'s admin dashboard. This is the first design pass to actually consume the schema built across DATABASE.md/ADVENTURE_PAGES.md/MAP_GEODATA.md/TRIP_REPORTS.md/GUIDES.md — until now, everything designed has been backend-only.
 
-Nothing here is built yet — page list, routes, and data contracts to implement in whatever phase actually builds this.
+**Status**: built, and since redesigned with a real visual identity (Tailwind CSS, an earthy pine-green/terracotta palette, dark mode, a reusable component library at `apps/public/src/components/`) rather than the plain unstyled pages this doc originally described. The page inventory and routing structure below have grown since the original Phase 10 build to cover the geodata contribute flow (Phase 11) and trip-companion groups (Phase 12, see TRIP_GROUPS.md) — both reflected below.
 
 ## Stack: TanStack Start
 
@@ -41,14 +41,21 @@ ROADMAP.md's Deferred section has carried "which content pillar goes live first 
 | `/adventures/$slug/history/$version` | Diff of one revision vs. the previous, revert action | Public read | two `PageRevision.content` snapshots, diffed at render time | Revert → new `PageRevision` (auth) | noindex |
 | `/adventures/new` | Create a new adventure page | Required | master data for form selects | Create `AdventurePage` + `PageRevision` v1 | n/a |
 | `/adventures/$slug/trips/$tripReportId` | Trip report permalink, comments | Public read | `TripReport` + `TripReportMedia` + `Comment[]` | Kudos, comment (auth) | Indexed, secondary priority |
+| `/adventures/$slug/trails/new` | Draw a new trail onto the map | Required | none (draws directly) | Create `Trail` | noindex |
+| `/adventures/$slug/spots/new` | Place a new spot on the map | Required | `SpotType[]` for the form select | Create `Spot` | noindex |
+| `/adventures/$slug/groups` | Trip-companion groups for this page (see TRIP_GROUPS.md, Phase 12) | Public | `TripGroup[]` for the page | — | Indexed |
+| `/adventures/$slug/groups/new` | Start a trip group | Required | none | Create `TripGroup` (creator auto-joins as organizer) | noindex |
+| `/adventures/$slug/groups/$groupId` | Trip group detail — dates, description, member list | Public read | one `TripGroup` + members | Join/leave (auth), cancel (organizer) | Indexed |
 | `/guides` | Guide directory, filter by specialty/region/language | Public | `GuideProfile[]` + joins | — | Indexed |
 | `/guides/$id` | Guide profile — certifications, languages, regions, rate range | Public | one `GuideProfile` | — | Indexed |
 | `/account/guide-profile` | Create/edit your own guide profile | Required | own `GuideProfile` | Create/update `GuideProfile` + specialty/region/language joins | noindex |
-| `/users/$id` | Public contributor page — edits, trips logged, kudos received (the Wikipedia-userpage concept from IDEA.md) | Public | derived counts/lists across `PageRevision`, `TripReport`, `TrailConfirmation`/`SpotConfirmation` by user | — | Indexed, low priority |
+| `/users/$id` | Public contributor page — edits, trips logged, kudos received (the Wikipedia-userpage concept from IDEA.md) | Public | derived counts/lists across `PageRevision`, `TripReport`, `TrailConfirmation`/`SpotConfirmation` by user, from `GET /users/:id/profile` | — | Indexed, low priority |
 | `/login` | Trigger Google sign-in | Public | — | Redirects to `GET /auth/google?redirectUrl=...` | noindex |
 | `/auth/callback` | Reads the access token fragment, stores it, redirects to the intended destination | Public (technical) | — | — | noindex |
 
-Not designed here, flagged for later: trip-companion group pages (the feature itself is still undesigned per ROADMAP.md), notifications, any in-app messaging between users/guides (IDEA.md explicitly rules out in-app payment but is silent on messaging — contact is informational-only for now), search implementation details (full-text vs. simple filter query), i18n/language switching for the UI itself (distinct from `Language` master data, which is about *guides'* spoken languages, not the site's UI language), pagination/infinite-scroll mechanics.
+`/users/$id`'s data source is `GET /users/:id/profile`, not `GET /users/:id` — that plainer path is the **admin** raw-record endpoint (role, isActive, email, for the admin Users edit form) added in the admin-beyond-master-data pass. The two were originally the same route; they were split once the admin edit form needed a different shape than the public contributor-profile aggregation.
+
+Not designed here, flagged for later: notifications, any in-app messaging between users/guides (IDEA.md explicitly rules out in-app payment but is silent on messaging — contact is informational-only for now; trip-companion groups deliberately have no messaging either, see TRIP_GROUPS.md), search implementation details (full-text vs. simple filter query — Discover has no search box yet), i18n/language switching for the UI itself (distinct from `Language` master data, which is about *guides'* spoken languages, not the site's UI language), pagination/infinite-scroll mechanics (every list currently just requests a large page size).
 
 ## Routing structure (TanStack Router file convention)
 
@@ -63,8 +70,16 @@ apps/public/src/routes/
 │       ├── history/
 │       │   ├── index.tsx              # /adventures/$slug/history
 │       │   └── $version.tsx           # /adventures/$slug/history/$version
-│       └── trips/
-│           └── $tripReportId.tsx      # /adventures/$slug/trips/$tripReportId
+│       ├── trips/
+│       │   └── $tripReportId.tsx      # /adventures/$slug/trips/$tripReportId
+│       ├── trails/
+│       │   └── new.tsx                # /adventures/$slug/trails/new
+│       ├── spots/
+│       │   └── new.tsx                # /adventures/$slug/spots/new
+│       └── groups/
+│           ├── index.tsx              # /adventures/$slug/groups
+│           ├── new.tsx                # /adventures/$slug/groups/new
+│           └── $groupId.tsx           # /adventures/$slug/groups/$groupId
 ├── guides/
 │   ├── index.tsx                      # /guides
 │   └── $id.tsx                        # /guides/$id
@@ -76,6 +91,8 @@ apps/public/src/routes/
 └── auth/
     └── callback.tsx                   # /auth/callback
 ```
+
+Also new since the original build: `apps/public/src/components/` (`Container`, `Button`, `Card`, `Badge`, `FormField`, `MultiSelectChips`, `Avatar`, `EmptyState`, `MarkdownContent`, `AdventureMap`/`LazyAdventureMap`, `DrawMap`/`LazyDrawMap`) — the reusable component/theme layer the visual-identity pass introduced, used across every route above.
 
 ## Data-loading pattern
 

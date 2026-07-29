@@ -1,8 +1,8 @@
 # Architecture — Phase 1–5 (foundation)
 
-Detailed design for [ROADMAP.md](ROADMAP.md) phases 1–5: repo skeleton, auth, RBAC, admin dashboard, master data CRUD. Nothing here touches adventure content — the wiki/article layer is designed in [ADVENTURE_PAGES.md](ADVENTURE_PAGES.md) (Phase 6), the map/geodata layer in [MAP_GEODATA.md](MAP_GEODATA.md) (Phase 7), trip reports in [TRIP_REPORTS.md](TRIP_REPORTS.md) (Phase 8), and the guide directory in [GUIDES.md](GUIDES.md) (Phase 9); trip-companion groups are the only core pillar still deferred, designed when its phase comes up. The public-facing site (a third app, TanStack Start) is designed in [PUBLIC_PAGES.md](PUBLIC_PAGES.md) (Phase 10), which also resolves §11's "public read access" open decision and requires the auth-flow update in §4 below.
+Detailed design for [ROADMAP.md](ROADMAP.md) phases 1–5: repo skeleton, auth, RBAC, admin dashboard, master data CRUD. Nothing here touches adventure content — the wiki/article layer is designed in [ADVENTURE_PAGES.md](ADVENTURE_PAGES.md) (Phase 6), the map/geodata layer in [MAP_GEODATA.md](MAP_GEODATA.md) (Phase 7), trip reports in [TRIP_REPORTS.md](TRIP_REPORTS.md) (Phase 8), the guide directory in [GUIDES.md](GUIDES.md) (Phase 9), and trip-companion groups in [TRIP_GROUPS.md](TRIP_GROUPS.md) (Phase 12). The public-facing site (a third app, TanStack Start) is designed in [PUBLIC_PAGES.md](PUBLIC_PAGES.md) (Phase 10), which also resolves §11's "public read access" open decision and requires the auth-flow update in §4 below.
 
-Nothing in this file is built yet. Review and flag anything you want changed before implementation starts.
+**Status**: built. This doc's Phase 1–5 foundation shipped as designed; §9's admin app has since grown well beyond the master-data-only scope described there — see its status note.
 
 ## 1. Repo layout
 
@@ -238,6 +238,8 @@ No seed script — there's no way to pre-create a Google-authenticated user with
 
 ## 9. Admin app (`apps/admin`)
 
+**Status**: grew past this section's original master-data-only scope. Beyond the four resources below, admin now also manages Users (role/active, with a guard against an admin demoting/deactivating themselves), Adventure Pages (verification-status moderation — a `PATCH .../verification-status` admin-only endpoint that didn't exist before), Trip Reports and Trip Groups (view/delete), Trails/Spots (verification-status moderation, TRIP_GROUPS.md/MAP_GEODATA.md), and Guide Profiles (the license verification review queue GUIDES.md called for). All at **read + moderate** depth — creating/editing the underlying content stays in the public contribute flow, so the compound-write logic (revisions, confirmations, transactions) isn't duplicated. The sidebar is grouped (Master Data / Locations / Content / Trails & Spots) rather than one flat resource list. The Refine + Ant Design choice below is unchanged; only reskinned with the same palette as `apps/public` via Ant Design's `ConfigProvider` theme tokens.
+
 - React + Vite + Refine (data provider pointed at the Nest REST API), UI kit: Ant Design (Refine's default, least setup).
 - Auth provider: "Sign in with Google" button navigates the browser (full page nav, not fetch/XHR — OAuth redirects can't be done via AJAX) to `${API_URL}/auth/google`. After the Google → API → admin-app redirect chain (see §4), the admin app reads the access token from the URL fragment, stores it in memory only (not localStorage, to reduce XSS token-theft surface), and strips it from the URL. The refresh token never touches JS — it lives in an httpOnly cookie the browser sends automatically to `/auth/refresh`.
 - Resources: one Refine resource per master-data type, each auto-generating list/create/edit/delete screens from the CRUD endpoints — this is most of Phase 5's admin UI for free, not hand-built screens.
@@ -268,10 +270,8 @@ PORT=3000
 
 Validated at boot via a Zod schema in `config/config.module.ts` — the app should fail to start with a clear error if a required var is missing, not fail confusingly at first use.
 
-## 11. Open decisions for you to confirm before implementation
+## 11. Open decisions — resolved by implementation
 
-1. **Repo split**: single repo with `apps/api` + `apps/admin` + `apps/public` (as above) vs. separate repos. Single repo assumed here for solo-dev simplicity.
-2. **UI kit for admin**: Ant Design (Refine default) vs. Mantine/other — Ant assumed above purely to minimize setup.
-3. **Google Cloud project setup**: you'll need to create an OAuth consent screen + credentials in Google Cloud Console yourself (client ID/secret, authorized redirect URI) before Phase 2 can be implemented — this is an external one-time step, not something the codebase can automate.
+All three items originally listed here are resolved now that the repo is built: **repo split** landed as a single repo (as above); **UI kit for admin** landed as Ant Design, now themed via `ConfigProvider` per §9's status note rather than reconsidered; **Google Cloud project setup** was completed out-of-band (real `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` in `.env`, gitignored).
 
-Resolved: refresh token transport is an **httpOnly cookie** (§4) — the OAuth redirect flow forces this shape rather than allowing tokens in a plain JSON response body. **Public read access** is resolved too — content and master-data GETs are `@Public()`, per PUBLIC_PAGES.md (Phase 10), which needs anonymous visitors to read them.
+Also resolved: refresh token transport is an **httpOnly cookie** (§4) — the OAuth redirect flow forces this shape rather than allowing tokens in a plain JSON response body. **Public read access** is resolved too — content and master-data GETs are `@Public()`, per PUBLIC_PAGES.md (Phase 10), which needs anonymous visitors to read them.

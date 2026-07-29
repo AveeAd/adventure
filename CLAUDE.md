@@ -4,22 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is right now
 
-This is a **design-docs-only repository** for a Nepal adventure platform — no code has been written yet (no `apps/`, no `package.json`, no `schema.prisma` on disk). Everything here is markdown design documentation plus one standalone HTML artifact (`ER_DIAGRAM.html`, a rendered entity-relationship diagram — open it in a browser to view, it has no build step). There are no build/lint/test commands to run because there is no code yet.
+This is a **working monorepo**, not just design docs — `apps/api` (NestJS), `apps/admin` (React + Vite + Refine + Ant Design), and `apps/public` (TanStack Start) are all implemented and run together via `docker-compose up`. Phases 1–10 from ROADMAP.md are built, the public site has a real Tailwind-based visual identity (not just unstyled functional pages), the admin dashboard has grown well beyond Phase 5's master-data CRUD (content moderation, user management, geodata moderation), and trip-companion groups — the one pillar with no design doc through Phase 10 — is now designed and built too (see TRIP_GROUPS.md). The live `apps/api/prisma/schema.prisma` is the actual source of truth for the schema; there's no separate ER diagram artifact to keep in sync with it.
 
-When asked to "implement" or "start building," treat the docs below as the spec and follow the phase order in ROADMAP.md — don't invent structure that contradicts what's already been decided in these files.
+The markdown docs remain the source of truth for *why* things are shaped the way they are — read them before touching code that contradicts a documented decision. When asked to "implement" or "start building" something new, treat the docs as the spec and extend them (per the conventions below) rather than inventing structure that contradicts what's already decided.
 
 ## Reading order / doc map
 
 Read in this order to understand the project; each doc explicitly says what it depends on and what it defers:
 
 1. **IDEA.md** — product vision. A non-commercial "OpenStreetMap + Wikipedia + Strava, for adventure in Nepal": map layer, wiki-style article layer, Strava-style activity/social layer, unified under one contributor account. Defines the trust model (unverified → verified via peer confirmation) and the real legal constraint that restricted-region trekking (Annapurna, Manaslu, Upper Mustang) requires a licensed agency.
-2. **ROADMAP.md** — the phased build plan (Phase 1 through 10 below), locked stack choices, and what's deliberately deferred.
+2. **ROADMAP.md** — the phased build plan (Phase 1 through 10, now all built), locked stack choices, and what's still deferred.
 3. **ARCHITECTURE.md** — Phases 1–5 foundation: repo layout, docker-compose full-container dev, NestJS module map, Google-only OAuth design, RBAC, generic CRUD pattern, admin app.
 4. **DATABASE.md** — Phase 1–5 Prisma schema (auth + master data) and conventions that apply to *every* table added later (soft delete, UUIDs, `@@map` naming, etc.).
-5. **ADVENTURE_PAGES.md** (Phase 6), **MAP_GEODATA.md** (Phase 7), **TRIP_REPORTS.md** (Phase 8), **GUIDES.md** (Phase 9) — each is a self-contained schema/design addendum for one content layer, all building on DATABASE.md's conventions.
-6. **PUBLIC_PAGES.md** (Phase 10) — the public TanStack Start site; resolves two things left open in ARCHITECTURE.md (public read access, multi-frontend OAuth redirect).
+5. **ADVENTURE_PAGES.md** (Phase 6), **MAP_GEODATA.md** (Phase 7, now with a public+admin UI consuming it), **TRIP_REPORTS.md** (Phase 8), **GUIDES.md** (Phase 9), **TRIP_GROUPS.md** (Phase 12) — each is a self-contained schema/design addendum for one content layer, all building on DATABASE.md's conventions.
+6. **PUBLIC_PAGES.md** (Phase 10) — the public TanStack Start site; resolves two things left open in ARCHITECTURE.md (public read access, multi-frontend OAuth redirect). Page inventory now includes the geodata contribute flow and trip-groups pages added after Phase 10 shipped.
 
-Trip-companion groups (Strava-clubs-style) are the one core IDEA.md pillar with no design doc yet — deliberately deferred past Phase 10.
+Still deferred, per ROADMAP.md's Deferred section: tags/related-page links/threaded comment replies/multi-currency trip costs/a stricter `rateUnit` enum (content grab-bag), full-text search, notifications, UI i18n, and hosting/deployment.
 
 ## Locked architecture decisions (don't relitigate without reason)
 
@@ -37,6 +37,9 @@ Trip-companion groups (Strava-clubs-style) are the one core IDEA.md pillar with 
   - Trip reports: **no verification tier at all** — a trip report is a personal account, not a factual claim; kudos/comments are the only signal.
   - Guide profiles: verification is **manual-review-only**, never peer-confirmed — credential trust, not content trust. Restricted-district guides must pass through `PENDING_LICENSE_REVIEW`.
 - **Location hierarchy is real Nepal admin geography** (`Country → Province → District → Municipality`, ~838 rows), not a flat "region" list — populated via a one-off import script, not the no-seed-script convention that applies elsewhere.
+- **`apps/public` styling is Tailwind CSS v4** + a small reusable component library (`apps/public/src/components/`) — an earthy pine-green/terracotta palette on warm stone neutrals, dark mode via `prefers-color-scheme` (no manual toggle). `apps/admin` gets the same palette via Ant Design's `ConfigProvider` theme tokens rather than a Tailwind rewrite — the Refine/AntD stack stays, only reskinned.
+- **Map rendering is Leaflet + OpenStreetMap tiles** (free, no API key — matches IDEA.md's non-commercial framing), in both `apps/public` and `apps/admin`. Leaflet isn't SSR-safe, so in `apps/public` it's lazy-loaded behind TanStack Router's `ClientOnly` (see `LazyAdventureMap`/`LazyDrawMap`) — never imported at module scope in a file that renders during SSR.
+- **Admin resources beyond master data are read + moderate, not full authoring** — Adventure Pages, Trip Reports, Trip Groups, Trails/Spots, Guide Profiles all get admin list/show + verification-status/delete actions, but creating/editing the actual content stays in the public contribute flow. This keeps compound-write logic (revisions, confirmations, transactions) in one place instead of duplicating it in admin.
 
 ## Conventions to carry forward when adding new design docs or schema
 

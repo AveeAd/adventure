@@ -2,7 +2,7 @@
 
 Design for IDEA.md's "Article" layer (inherited from Wikipedia): per-adventure pages with an infobox, collaboratively-edited prose, full revision history, and a trust model. This was explicitly deferred in [ROADMAP.md](ROADMAP.md) until the Phase 1–5 foundation ([ARCHITECTURE.md](ARCHITECTURE.md) / [DATABASE.md](DATABASE.md)) was settled — it now is, so this is that design.
 
-Nothing here is migrated yet — schema to implement in whatever phase actually builds this.
+**Status**: built (Phase 6), and since given a full public UI pass — Discover, the adventure page view (now with an embedded Leaflet map, see MAP_GEODATA.md's status note), the contribute/edit/history/diff flow, and a real visual identity (Tailwind, see PUBLIC_PAGES.md's status note). The schema and service-layer design below are unchanged from what shipped.
 
 ## What's on a page, beyond the original ask
 

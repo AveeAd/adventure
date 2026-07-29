@@ -2,7 +2,7 @@
 
 Design for IDEA.md's "Geodata" layer (inherited from OpenStreetMap): trails and spots as editable geodata. The last of IDEA.md's three inherited layers to get designed — the Article layer is [ADVENTURE_PAGES.md](ADVENTURE_PAGES.md), the Phase 1–5 foundation is [ARCHITECTURE.md](ARCHITECTURE.md)/[DATABASE.md](DATABASE.md). PostGIS has been enabled on the `db` container since Phase 1 specifically so this phase wouldn't need a migration to add the extension (see ROADMAP.md's stack section).
 
-Nothing here is migrated yet — schema to implement in whatever phase actually builds this.
+**Status**: the schema/API below shipped as originally planned (Phase 7), but for a while had no consuming UI — no map rendered anywhere. **Phase 11 closed that gap**: `apps/public` renders trails/spots via Leaflet + OpenStreetMap (`AdventureMap`/`LazyAdventureMap` components) on the adventure page view and Discover (bbox pins), plus a draw-a-trail/spot contribute flow (`/adventures/$slug/trails/new`, `/spots/new`) and a "confirm accurate" action wired to the `TrailConfirmation`/`SpotConfirmation` endpoints below. `apps/admin` got a Trails & Spots area (list/show + a verification-status override endpoint added at `PATCH /trails/:id/verification-status` / `/spots/:id/verification-status`, mirroring the pattern used for Adventure Pages/Guide Profiles) with an embedded read-only map on each Show page. The schema/service-layer design below is otherwise unchanged from the original Phase 7 plan.
 
 ## Scope
 
