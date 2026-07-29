@@ -1,9 +1,11 @@
 import { Authenticated, Refine } from '@refinedev/core';
 import { ThemedLayout } from '@refinedev/antd';
 import routerProvider, { CatchAllNavigate } from '@refinedev/react-router';
+import { ConfigProvider } from 'antd';
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { authProvider } from './auth/auth-provider';
 import { dataProvider } from './data-provider';
+import { usePrefersDark } from './hooks/usePrefersDark';
 import { AuthCallbackPage } from './pages/AuthCallback';
 import { DashboardPage } from './pages/Dashboard';
 import { LoginPage } from './pages/Login';
@@ -25,9 +27,14 @@ import { MunicipalityList } from './resources/location/MunicipalityList';
 import { ProvinceCreate } from './resources/location/ProvinceCreate';
 import { ProvinceEdit } from './resources/location/ProvinceEdit';
 import { ProvinceList } from './resources/location/ProvinceList';
+import { AppTitle } from './components/AppTitle';
+import { darkTheme, lightTheme } from './theme';
 
 function App() {
+  const prefersDark = usePrefersDark();
+
   return (
+    <ConfigProvider theme={prefersDark ? darkTheme : lightTheme}>
     <BrowserRouter>
       <Refine
         routerProvider={routerProvider}
@@ -91,7 +98,7 @@ function App() {
           <Route
             element={
               <Authenticated key="authenticated" fallback={<CatchAllNavigate to="/login" />}>
-                <ThemedLayout>
+                <ThemedLayout Title={AppTitle}>
                   <Outlet />
                 </ThemedLayout>
               </Authenticated>
@@ -145,6 +152,7 @@ function App() {
         </Routes>
       </Refine>
     </BrowserRouter>
+    </ConfigProvider>
   );
 }
 
