@@ -7,6 +7,7 @@ import { GuideProfilesModule } from './guide-profiles/guide-profiles.module';
 import { MasterDataModule } from './master-data/master-data.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TripReportsModule } from './trip-reports/trip-reports.module';
+import { TripGroupsModule } from './trip-groups/trip-groups.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -18,6 +19,7 @@ import { HealthController } from './health/health.controller';
     AdventurePagesModule,
     GeodataModule,
     TripReportsModule,
+    TripGroupsModule,
     GuideProfilesModule,
   ],
   controllers: [HealthController],

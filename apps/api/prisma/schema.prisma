@@ -40,6 +40,9 @@ model User {
   tripReportKudos TripReportKudos[]
   comments        Comment[]
 
+  createdTripGroups    TripGroup[]
+  tripGroupMemberships TripGroupMember[]
+
   guideProfile GuideProfile?
 
   @@map("users")
@@ -221,6 +224,7 @@ model AdventurePage {
   trails    Trail[]
   spots     Spot[]
   tripReports TripReport[]
+  tripGroups TripGroup[]
 
   @@map("adventure_pages")
 }
@@ -453,6 +457,47 @@ model Comment {
   updatedAt    DateTime @updatedAt
 
   @@map("comments")
+}
+
+// Trip-companion groups (IDEA.md's Strava-clubs pillar): a shared route +
+// date window to find companions for. Deliberately no messaging model here -
+// IDEA.md keeps contact informational-only, this is membership metadata,
+// not chat.
+enum TripGroupRole {
+  ORGANIZER
+  MEMBER
+}
+
+model TripGroup {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  dateStart       DateTime
+  dateEnd         DateTime
+  createdById     String
+  createdBy       User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  members TripGroupMember[]
+
+  @@map("trip_groups")
+}
+
+model TripGroupMember {
+  id          String   @id @default(uuid())
+  tripGroupId String
+  tripGroup   TripGroup @relation(fields: [tripGroupId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        TripGroupRole @default(MEMBER)
+  joinedAt    DateTime  @default(now())
+
+  @@unique([tripGroupId, userId])
+  @@map("trip_group_members")
 }
 
 enum GuideVerificationStatus {

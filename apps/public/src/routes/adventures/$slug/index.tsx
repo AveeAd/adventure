@@ -168,7 +168,16 @@ function AdventurePageView() {
         )}
 
         <section className="mt-10">
-          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Trip reports</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Trip reports</h2>
+            <Link
+              to="/adventures/$slug/groups"
+              params={{ slug }}
+              className="text-sm text-primary-700 hover:underline dark:text-primary-400"
+            >
+              Find a trip group →
+            </Link>
+          </div>
           {tripReports.length === 0 ? (
             <div className="mt-3">
               <EmptyState>No trip reports logged yet.</EmptyState>

@@ -33,6 +33,8 @@ import { AdventurePageList } from './resources/adventure-pages/AdventurePageList
 import { AdventurePageShow } from './resources/adventure-pages/AdventurePageShow';
 import { TripReportList } from './resources/trip-reports/TripReportList';
 import { TripReportShow } from './resources/trip-reports/TripReportShow';
+import { TripGroupList } from './resources/trip-groups/TripGroupList';
+import { TripGroupShow } from './resources/trip-groups/TripGroupShow';
 import { GuideProfileList } from './resources/guide-profiles/GuideProfileList';
 import { GuideProfileShow } from './resources/guide-profiles/GuideProfileShow';
 import { TrailList } from './resources/trails/TrailList';
@@ -114,6 +116,12 @@ function App() {
               list: '/trip-reports',
               show: '/trip-reports/show/:id',
               meta: { label: 'Trip Reports', parent: 'content' },
+            },
+            {
+              name: 'trip-groups',
+              list: '/trip-groups',
+              show: '/trip-groups/show/:id',
+              meta: { label: 'Trip Groups', parent: 'content' },
             },
 
             { name: 'geodata', meta: { label: 'Trails & Spots' } },
@@ -198,6 +206,11 @@ function App() {
               <Route path="/trip-reports">
                 <Route index element={<TripReportList />} />
                 <Route path="show/:id" element={<TripReportShow />} />
+              </Route>
+
+              <Route path="/trip-groups">
+                <Route index element={<TripGroupList />} />
+                <Route path="show/:id" element={<TripGroupShow />} />
               </Route>
 
               <Route path="/trails">

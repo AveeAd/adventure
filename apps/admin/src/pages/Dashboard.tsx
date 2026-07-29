@@ -15,6 +15,7 @@ import {
   Route as RouteIcon,
   ShieldCheck,
   Tent,
+  UsersRound,
   Users as UsersIcon,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -35,6 +36,7 @@ interface ResourceLink {
 const contentLinks: ResourceLink[] = [
   { to: '/adventure-pages', label: 'Adventure Pages', description: 'Moderate content & verification status', icon: BookOpen },
   { to: '/trip-reports', label: 'Trip Reports', description: 'View and remove trip logs', icon: Tent },
+  { to: '/trip-groups', label: 'Trip Groups', description: 'Companion groups by route & date', icon: UsersRound },
   { to: '/trails', label: 'Trails', description: 'Moderate trail geometry & verification', icon: RouteIcon },
   { to: '/spots', label: 'Spots', description: 'Moderate points of interest', icon: LandPlot },
   { to: '/guide-profiles', label: 'Guide Profiles', description: 'License verification review queue', icon: ShieldCheck },
