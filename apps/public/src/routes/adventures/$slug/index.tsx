@@ -1,5 +1,5 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { Calendar, Clock, Heart, MapPin, MountainSnow, Pencil, Users } from 'lucide-react';
+import { Calendar, CheckCircle2, Clock, Heart, MapPin, MountainSnow, Pencil, Plus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authPost } from '../../../lib/auth/auth-fetch';
@@ -157,11 +157,7 @@ function AdventurePageView() {
           <InfoItem icon={<Users className="h-4 w-4" />} label="Contributors" value={page.contributorIds.length} />
         </Card>
 
-        {(trails.length > 0 || spots.length > 0) && (
-          <div className="mt-6">
-            <LazyAdventureMap trails={trails} spots={spots} zoom={12} />
-          </div>
-        )}
+        <TrailsAndSpotsSection slug={slug} trails={trails} spots={spots} />
 
         <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
 
@@ -255,6 +251,114 @@ function LikeButton({
         </span>
       )}
     </div>
+  );
+}
+
+function TrailsAndSpotsSection({
+  slug,
+  trails,
+  spots,
+}: {
+  slug: string;
+  trails: MapTrail[];
+  spots: MapSpot[];
+}) {
+  const [signedIn, setSignedIn] = useState(false);
+  const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    checkAuth().then(setSignedIn);
+  }, []);
+
+  async function confirmTrail(id: string) {
+    await authPost(`/trails/${id}/confirmations`);
+    setConfirmed((prev) => new Set(prev).add(id));
+  }
+
+  async function confirmSpot(id: string) {
+    await authPost(`/spots/${id}/confirmations`);
+    setConfirmed((prev) => new Set(prev).add(id));
+  }
+
+  return (
+    <section className="mt-10">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Trails &amp; spots</h2>
+        {signedIn && (
+          <div className="flex gap-2">
+            <Link to="/adventures/$slug/trails/new" params={{ slug }}>
+              <Button variant="secondary" size="sm">
+                <Plus className="h-3.5 w-3.5" /> Add trail
+              </Button>
+            </Link>
+            <Link to="/adventures/$slug/spots/new" params={{ slug }}>
+              <Button variant="secondary" size="sm">
+                <Plus className="h-3.5 w-3.5" /> Add spot
+              </Button>
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {trails.length === 0 && spots.length === 0 ? (
+        <div className="mt-3">
+          <EmptyState icon={<MapPin className="h-8 w-8" />}>No trails or spots mapped yet.</EmptyState>
+        </div>
+      ) : (
+        <>
+          <div className="mt-4">
+            <LazyAdventureMap trails={trails} spots={spots} zoom={12} />
+          </div>
+          <ul className="mt-4 flex flex-col gap-2">
+            {trails.map((trail) => (
+              <li key={trail.id}>
+                <Card className="flex items-center justify-between p-4">
+                  <div>
+                    <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? 'Trail'}</div>
+                    <StatusBadge status={trail.verificationStatus} />
+                  </div>
+                  {signedIn && (
+                    <Button
+                      variant={confirmed.has(trail.id) ? 'ghost' : 'secondary'}
+                      size="sm"
+                      disabled={confirmed.has(trail.id)}
+                      onClick={() => confirmTrail(trail.id)}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {confirmed.has(trail.id) ? 'Confirmed' : 'Confirm accurate'}
+                    </Button>
+                  )}
+                </Card>
+              </li>
+            ))}
+            {spots.map((spot) => (
+              <li key={spot.id}>
+                <Card className="flex items-center justify-between p-4">
+                  <div>
+                    <div className="font-medium text-stone-900 dark:text-stone-50">{spot.name}</div>
+                    <div className="flex items-center gap-2">
+                      {spot.spotTypeName && <Badge tone="neutral">{spot.spotTypeName}</Badge>}
+                      <StatusBadge status={spot.verificationStatus} />
+                    </div>
+                  </div>
+                  {signedIn && (
+                    <Button
+                      variant={confirmed.has(spot.id) ? 'ghost' : 'secondary'}
+                      size="sm"
+                      disabled={confirmed.has(spot.id)}
+                      onClick={() => confirmSpot(spot.id)}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {confirmed.has(spot.id) ? 'Confirmed' : 'Confirm accurate'}
+                    </Button>
+                  )}
+                </Card>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
   );
 }
 
