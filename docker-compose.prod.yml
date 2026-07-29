@@ -51,7 +51,13 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL}
     restart: always
-    env_file: .env
+    # No env_file here deliberately - public has no runtime dependency on
+    # .env (SERVER_API_URL is hardcoded to http://api:3000 in code,
+    # VITE_API_URL is baked in at build time). Loading `.env` anyway would
+    # leak PORT=3000 (meant for the api service) into this container,
+    # overriding Dockerfile.prod's ENV PORT=3001 default that Caddy expects.
+    environment:
+      PORT: 3001
     depends_on:
       - api
 
