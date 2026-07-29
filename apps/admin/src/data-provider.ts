@@ -51,4 +51,11 @@ export const dataProvider: DataProvider = {
     const { data } = await axiosInstance.delete(`${apiUrl}/${resource}/${id}`);
     return { data };
   },
+
+  // escape hatch for actions that aren't plain list/get/create/update/delete,
+  // e.g. PATCH /:id/verification-status - a sub-path, not a resource root
+  custom: async ({ url, method, payload }) => {
+    const { data } = await axiosInstance.request({ url: `${apiUrl}${url}`, method, data: payload });
+    return { data };
+  },
 };

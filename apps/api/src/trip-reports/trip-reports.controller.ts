@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { AddTripReportMediaDto } from './dto/add-trip-report-media.dto';
 import { CreateTripReportDto } from './dto/create-trip-report.dto';
 import { UpdateTripReportDto } from './dto/update-trip-report.dto';
@@ -29,6 +31,12 @@ export class AdventurePageTripReportsController {
 @Controller('trip-reports')
 export class TripReportsController {
   constructor(private readonly tripReportsService: TripReportsService) {}
+
+  @Roles(Role.ADMIN)
+  @Get()
+  list(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+    return this.tripReportsService.listAll(Number(page) || 1, Number(pageSize) || 20);
+  }
 
   @Public()
   @Get(':id')

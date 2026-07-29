@@ -24,6 +24,26 @@ export class TripReportsService {
     return { data, total, page, pageSize };
   }
 
+  // admin-only flat listing across all pages - the public listForPage above
+  // is intentionally scoped to one page, this is for the admin moderation view
+  async listAll(page = 1, pageSize = 20) {
+    const where = { isActive: true };
+    const [data, total] = await Promise.all([
+      this.prisma.tripReport.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          adventurePage: { select: { title: true, slug: true } },
+          author: { select: { email: true } },
+        },
+      }),
+      this.prisma.tripReport.count({ where }),
+    ]);
+    return { data, total, page, pageSize };
+  }
+
   async get(id: string, currentUserId?: string) {
     const report = await this.prisma.tripReport.findUnique({
       where: { id },

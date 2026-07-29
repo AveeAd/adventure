@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { PageVerificationStatus, Role } from '@prisma/client';
 import { diffLines } from 'diff';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
@@ -159,6 +159,13 @@ export class AdventurePagesService {
   async delete(id: string) {
     await this.ensureExists(id);
     return this.prisma.adventurePage.update({ where: { id }, data: { isActive: false } });
+  }
+
+  // admin override - sets verificationStatus directly, bypassing the
+  // confirmation-threshold/revision-reset flow normal users go through
+  async updateVerificationStatus(id: string, status: PageVerificationStatus) {
+    await this.ensureExists(id);
+    return this.prisma.adventurePage.update({ where: { id }, data: { verificationStatus: status } });
   }
 
   async listRevisions(pageId: string) {

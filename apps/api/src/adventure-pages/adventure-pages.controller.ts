@@ -18,6 +18,7 @@ import { AddMediaDto } from './dto/add-media.dto';
 import { CreateAdventurePageDto } from './dto/create-adventure-page.dto';
 import { SubmitRevisionDto } from './dto/submit-revision.dto';
 import { UpdateAdventurePageMetadataDto } from './dto/update-adventure-page-metadata.dto';
+import { UpdateVerificationStatusDto } from './dto/update-verification-status.dto';
 
 @Controller('adventure-pages')
 export class AdventurePagesController {
@@ -57,6 +58,12 @@ export class AdventurePagesController {
   @Delete(':id')
   delete(@Param('id') id: string) {
     return this.adventurePagesService.delete(id);
+  }
+
+  @Roles(Role.ADMIN)
+  @Patch(':id/verification-status')
+  updateVerificationStatus(@Param('id') id: string, @Body() dto: UpdateVerificationStatusDto) {
+    return this.adventurePagesService.updateVerificationStatus(id, dto.status);
   }
 
   @Public()

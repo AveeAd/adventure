@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,46 @@ export class UsersService {
 
   findById(id: string) {
     return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  // Admin user management (list + role/active) - a separate concern from
+  // getPublicProfile above, which is the anonymous-safe contributor view.
+  async list(page = 1, pageSize = 20) {
+    const [data, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: { profile: { select: { name: true } } },
+      }),
+      this.prisma.user.count(),
+    ]);
+    return { data, total, page, pageSize };
+  }
+
+  async get(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { profile: { select: { name: true } } },
+    });
+    if (!user) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+    return user;
+  }
+
+  async updateAdmin(id: string, currentUserId: string, dto: UpdateUserDto) {
+    if (id === currentUserId && (dto.role === Role.USER || dto.isActive === false)) {
+      throw new BadRequestException('You cannot demote or deactivate your own account');
+    }
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User ${id} not found`);
+    }
+    return this.prisma.user.update({
+      where: { id },
+      data: { role: dto.role, isActive: dto.isActive },
+    });
   }
 
   // Public contributor page (PUBLIC_PAGES.md /users/$id) - derived counts

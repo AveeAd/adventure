@@ -13,7 +13,9 @@ import {
   activityTypeConfig,
   countryConfig,
   difficultyLevelConfig,
+  languageConfig,
   seasonConfig,
+  spotTypeConfig,
 } from './resources/config';
 import { MasterDataCreate } from './resources/MasterDataCreate';
 import { MasterDataEdit } from './resources/MasterDataEdit';
@@ -27,131 +29,173 @@ import { MunicipalityList } from './resources/location/MunicipalityList';
 import { ProvinceCreate } from './resources/location/ProvinceCreate';
 import { ProvinceEdit } from './resources/location/ProvinceEdit';
 import { ProvinceList } from './resources/location/ProvinceList';
+import { AdventurePageList } from './resources/adventure-pages/AdventurePageList';
+import { AdventurePageShow } from './resources/adventure-pages/AdventurePageShow';
+import { TripReportList } from './resources/trip-reports/TripReportList';
+import { TripReportShow } from './resources/trip-reports/TripReportShow';
+import { GuideProfileList } from './resources/guide-profiles/GuideProfileList';
+import { GuideProfileShow } from './resources/guide-profiles/GuideProfileShow';
+import { UserList } from './resources/users/UserList';
+import { UserEdit } from './resources/users/UserEdit';
 import { AppTitle } from './components/AppTitle';
 import { darkTheme, lightTheme } from './theme';
+
+const masterDataResourceConfigs = [
+  activityTypeConfig,
+  difficultyLevelConfig,
+  seasonConfig,
+  languageConfig,
+  spotTypeConfig,
+];
 
 function App() {
   const prefersDark = usePrefersDark();
 
   return (
     <ConfigProvider theme={prefersDark ? darkTheme : lightTheme}>
-    <BrowserRouter>
-      <Refine
-        routerProvider={routerProvider}
-        authProvider={authProvider}
-        dataProvider={dataProvider}
-        resources={[
-          {
-            name: 'activity-types',
-            list: '/activity-types',
-            create: '/activity-types/create',
-            edit: '/activity-types/edit/:id',
-            meta: { label: 'Activity Types' },
-          },
-          {
-            name: 'difficulty-levels',
-            list: '/difficulty-levels',
-            create: '/difficulty-levels/create',
-            edit: '/difficulty-levels/edit/:id',
-            meta: { label: 'Difficulty Levels' },
-          },
-          {
-            name: 'seasons',
-            list: '/seasons',
-            create: '/seasons/create',
-            edit: '/seasons/edit/:id',
-            meta: { label: 'Seasons' },
-          },
-          {
-            name: 'countries',
-            list: '/countries',
-            create: '/countries/create',
-            edit: '/countries/edit/:id',
-            meta: { label: 'Countries' },
-          },
-          {
-            name: 'provinces',
-            list: '/provinces',
-            create: '/provinces/create',
-            edit: '/provinces/edit/:id',
-            meta: { label: 'Provinces' },
-          },
-          {
-            name: 'districts',
-            list: '/districts',
-            create: '/districts/create',
-            edit: '/districts/edit/:id',
-            meta: { label: 'Districts' },
-          },
-          {
-            name: 'municipalities',
-            list: '/municipalities',
-            create: '/municipalities/create',
-            edit: '/municipalities/edit/:id',
-            meta: { label: 'Municipalities' },
-          },
-        ]}
-      >
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
-          <Route
-            element={
-              <Authenticated key="authenticated" fallback={<CatchAllNavigate to="/login" />}>
-                <ThemedLayout Title={AppTitle}>
-                  <Outlet />
-                </ThemedLayout>
-              </Authenticated>
-            }
-          >
-            <Route index element={<DashboardPage />} />
+      <BrowserRouter>
+        <Refine
+          routerProvider={routerProvider}
+          authProvider={authProvider}
+          dataProvider={dataProvider}
+          resources={[
+            { name: 'master-data', meta: { label: 'Master Data' } },
+            ...masterDataResourceConfigs.map((config) => ({
+              name: config.resource,
+              list: `/${config.resource}`,
+              create: `/${config.resource}/create`,
+              edit: `/${config.resource}/edit/:id`,
+              meta: { label: config.label, parent: 'master-data' },
+            })),
 
-            <Route path="/activity-types">
-              <Route index element={<MasterDataList config={activityTypeConfig} />} />
-              <Route path="create" element={<MasterDataCreate config={activityTypeConfig} />} />
-              <Route path="edit/:id" element={<MasterDataEdit config={activityTypeConfig} />} />
-            </Route>
+            { name: 'locations', meta: { label: 'Locations' } },
+            {
+              name: 'countries',
+              list: '/countries',
+              create: '/countries/create',
+              edit: '/countries/edit/:id',
+              meta: { label: 'Countries', parent: 'locations' },
+            },
+            {
+              name: 'provinces',
+              list: '/provinces',
+              create: '/provinces/create',
+              edit: '/provinces/edit/:id',
+              meta: { label: 'Provinces', parent: 'locations' },
+            },
+            {
+              name: 'districts',
+              list: '/districts',
+              create: '/districts/create',
+              edit: '/districts/edit/:id',
+              meta: { label: 'Districts', parent: 'locations' },
+            },
+            {
+              name: 'municipalities',
+              list: '/municipalities',
+              create: '/municipalities/create',
+              edit: '/municipalities/edit/:id',
+              meta: { label: 'Municipalities', parent: 'locations' },
+            },
 
-            <Route path="/difficulty-levels">
-              <Route index element={<MasterDataList config={difficultyLevelConfig} />} />
-              <Route path="create" element={<MasterDataCreate config={difficultyLevelConfig} />} />
-              <Route path="edit/:id" element={<MasterDataEdit config={difficultyLevelConfig} />} />
-            </Route>
+            { name: 'content', meta: { label: 'Content' } },
+            {
+              name: 'adventure-pages',
+              list: '/adventure-pages',
+              show: '/adventure-pages/show/:id',
+              meta: { label: 'Adventure Pages', parent: 'content' },
+            },
+            {
+              name: 'trip-reports',
+              list: '/trip-reports',
+              show: '/trip-reports/show/:id',
+              meta: { label: 'Trip Reports', parent: 'content' },
+            },
 
-            <Route path="/seasons">
-              <Route index element={<MasterDataList config={seasonConfig} />} />
-              <Route path="create" element={<MasterDataCreate config={seasonConfig} />} />
-              <Route path="edit/:id" element={<MasterDataEdit config={seasonConfig} />} />
-            </Route>
+            {
+              name: 'guide-profiles',
+              list: '/guide-profiles',
+              show: '/guide-profiles/show/:id',
+              meta: { label: 'Guide Profiles' },
+            },
+            {
+              name: 'users',
+              list: '/users',
+              edit: '/users/edit/:id',
+              meta: { label: 'Users' },
+            },
+          ]}
+        >
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route
+              element={
+                <Authenticated key="authenticated" fallback={<CatchAllNavigate to="/login" />}>
+                  <ThemedLayout Title={AppTitle}>
+                    <Outlet />
+                  </ThemedLayout>
+                </Authenticated>
+              }
+            >
+              <Route index element={<DashboardPage />} />
 
-            <Route path="/countries">
-              <Route index element={<MasterDataList config={countryConfig} />} />
-              <Route path="create" element={<MasterDataCreate config={countryConfig} />} />
-              <Route path="edit/:id" element={<MasterDataEdit config={countryConfig} />} />
-            </Route>
+              {masterDataResourceConfigs.map((config) => (
+                <Route key={config.resource} path={`/${config.resource}`}>
+                  <Route index element={<MasterDataList config={config} />} />
+                  <Route path="create" element={<MasterDataCreate config={config} />} />
+                  <Route path="edit/:id" element={<MasterDataEdit config={config} />} />
+                </Route>
+              ))}
 
-            <Route path="/provinces">
-              <Route index element={<ProvinceList />} />
-              <Route path="create" element={<ProvinceCreate />} />
-              <Route path="edit/:id" element={<ProvinceEdit />} />
-            </Route>
+              <Route path="/countries">
+                <Route index element={<MasterDataList config={countryConfig} />} />
+                <Route path="create" element={<MasterDataCreate config={countryConfig} />} />
+                <Route path="edit/:id" element={<MasterDataEdit config={countryConfig} />} />
+              </Route>
 
-            <Route path="/districts">
-              <Route index element={<DistrictList />} />
-              <Route path="create" element={<DistrictCreate />} />
-              <Route path="edit/:id" element={<DistrictEdit />} />
-            </Route>
+              <Route path="/provinces">
+                <Route index element={<ProvinceList />} />
+                <Route path="create" element={<ProvinceCreate />} />
+                <Route path="edit/:id" element={<ProvinceEdit />} />
+              </Route>
 
-            <Route path="/municipalities">
-              <Route index element={<MunicipalityList />} />
-              <Route path="create" element={<MunicipalityCreate />} />
-              <Route path="edit/:id" element={<MunicipalityEdit />} />
+              <Route path="/districts">
+                <Route index element={<DistrictList />} />
+                <Route path="create" element={<DistrictCreate />} />
+                <Route path="edit/:id" element={<DistrictEdit />} />
+              </Route>
+
+              <Route path="/municipalities">
+                <Route index element={<MunicipalityList />} />
+                <Route path="create" element={<MunicipalityCreate />} />
+                <Route path="edit/:id" element={<MunicipalityEdit />} />
+              </Route>
+
+              <Route path="/adventure-pages">
+                <Route index element={<AdventurePageList />} />
+                <Route path="show/:id" element={<AdventurePageShow />} />
+              </Route>
+
+              <Route path="/trip-reports">
+                <Route index element={<TripReportList />} />
+                <Route path="show/:id" element={<TripReportShow />} />
+              </Route>
+
+              <Route path="/guide-profiles">
+                <Route index element={<GuideProfileList />} />
+                <Route path="show/:id" element={<GuideProfileShow />} />
+              </Route>
+
+              <Route path="/users">
+                <Route index element={<UserList />} />
+                <Route path="edit/:id" element={<UserEdit />} />
+              </Route>
             </Route>
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Refine>
-    </BrowserRouter>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Refine>
+      </BrowserRouter>
     </ConfigProvider>
   );
 }

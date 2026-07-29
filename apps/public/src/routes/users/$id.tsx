@@ -16,7 +16,7 @@ interface PublicProfile {
 
 export const Route = createFileRoute('/users/$id')({
   loader: async ({ params }) => {
-    const res = await fetch(apiUrl(`/users/${params.id}`));
+    const res = await fetch(apiUrl(`/users/${params.id}/profile`));
     if (res.status === 404) {
       throw notFound();
     }

@@ -74,3 +74,26 @@ export const countryConfig: MasterDataResourceConfig = {
   ],
   listColumns: ['name', 'isoCode', 'isActive'],
 };
+
+export const languageConfig: MasterDataResourceConfig = {
+  resource: 'languages',
+  label: 'Languages',
+  fields: [
+    { kind: 'text', name: 'name', label: 'Name', required: true },
+    { kind: 'text', name: 'isoCode', label: 'ISO code', required: true },
+    { kind: 'number', name: 'sortOrder', label: 'Sort order' },
+  ],
+  listColumns: ['name', 'isoCode', 'sortOrder', 'isActive'],
+};
+
+export const spotTypeConfig: MasterDataResourceConfig = {
+  resource: 'spot-types',
+  label: 'Spot Types',
+  fields: [
+    { kind: 'text', name: 'name', label: 'Name', required: true },
+    { kind: 'text', name: 'slug', label: 'Slug', required: true },
+    { kind: 'text', name: 'description', label: 'Description' },
+    { kind: 'number', name: 'sortOrder', label: 'Sort order' },
+  ],
+  listColumns: ['name', 'slug', 'sortOrder', 'isActive'],
+};
