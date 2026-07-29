@@ -11,6 +11,8 @@ import { Container } from '../../../components/Container';
 import { EmptyState } from '../../../components/EmptyState';
 import { Textarea, Input, Field } from '../../../components/FormField';
 import { MarkdownContent } from '../../../components/MarkdownContent';
+import { LazyAdventureMap } from '../../../components/LazyAdventureMap';
+import type { MapSpot, MapTrail } from '../../../components/AdventureMap';
 
 interface AdventurePageDetail {
   id: string;
@@ -54,7 +56,14 @@ export const Route = createFileRoute('/adventures/$slug/')({
       ? await tripReportsRes.json()
       : { data: [] };
 
-    return { page, tripReports: tripReportsBody.data };
+    const [trailsRes, spotsRes] = await Promise.all([
+      fetch(apiUrl(`/adventure-pages/${page.id}/trails`)),
+      fetch(apiUrl(`/adventure-pages/${page.id}/spots`)),
+    ]);
+    const trails: MapTrail[] = trailsRes.ok ? await trailsRes.json() : [];
+    const spots: MapSpot[] = spotsRes.ok ? await spotsRes.json() : [];
+
+    return { page, tripReports: tripReportsBody.data, trails, spots };
   },
   component: AdventurePageView,
   head: ({ loaderData }) => ({
@@ -77,7 +86,7 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 
 function AdventurePageView() {
-  const { page, tripReports } = Route.useLoaderData();
+  const { page, tripReports, trails, spots } = Route.useLoaderData();
   const { slug } = Route.useParams();
 
   return (
@@ -147,6 +156,12 @@ function AdventurePageView() {
           )}
           <InfoItem icon={<Users className="h-4 w-4" />} label="Contributors" value={page.contributorIds.length} />
         </Card>
+
+        {(trails.length > 0 || spots.length > 0) && (
+          <div className="mt-6">
+            <LazyAdventureMap trails={trails} spots={spots} zoom={12} />
+          </div>
+        )}
 
         <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
 

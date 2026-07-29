@@ -7,10 +7,12 @@ import {
   Compass,
   Flag,
   Gauge,
+  LandPlot,
   Languages,
   MapPin,
   MapPinned,
   MapPinned as SpotIcon,
+  Route as RouteIcon,
   ShieldCheck,
   Tent,
   Users as UsersIcon,
@@ -33,6 +35,8 @@ interface ResourceLink {
 const contentLinks: ResourceLink[] = [
   { to: '/adventure-pages', label: 'Adventure Pages', description: 'Moderate content & verification status', icon: BookOpen },
   { to: '/trip-reports', label: 'Trip Reports', description: 'View and remove trip logs', icon: Tent },
+  { to: '/trails', label: 'Trails', description: 'Moderate trail geometry & verification', icon: RouteIcon },
+  { to: '/spots', label: 'Spots', description: 'Moderate points of interest', icon: LandPlot },
   { to: '/guide-profiles', label: 'Guide Profiles', description: 'License verification review queue', icon: ShieldCheck },
   { to: '/users', label: 'Users', description: 'Manage roles and access', icon: UsersIcon },
 ];

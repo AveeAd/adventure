@@ -129,14 +129,49 @@ export class TrailsService {
     return { trailId, confirmationCount, threshold: CONFIRMATION_THRESHOLD };
   }
 
-  async inBoundingBox(minLng: number, minLat: number, maxLng: number, maxLat: number): Promise<TrailRow[]> {
-    return this.prisma.$queryRaw<TrailRow[]>`
-      SELECT id, "adventurePageId", name, ST_AsGeoJSON(geometry)::json AS geometry,
-             "distanceMeters", "verificationStatus", "isActive",
-             "createdById", "lastEditedById", "createdAt", "updatedAt"
-      FROM trails
-      WHERE "isActive" = true
-        AND ST_Intersects(geometry, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))
+  async inBoundingBox(
+    minLng: number,
+    minLat: number,
+    maxLng: number,
+    maxLat: number,
+  ): Promise<(TrailRow & { pageSlug: string; pageTitle: string })[]> {
+    return this.prisma.$queryRaw<(TrailRow & { pageSlug: string; pageTitle: string })[]>`
+      SELECT t.id, t."adventurePageId", ap.slug AS "pageSlug", ap.title AS "pageTitle", t.name,
+             ST_AsGeoJSON(t.geometry)::json AS geometry,
+             t."distanceMeters", t."verificationStatus", t."isActive",
+             t."createdById", t."lastEditedById", t."createdAt", t."updatedAt"
+      FROM trails t
+      JOIN adventure_pages ap ON ap.id = t."adventurePageId"
+      WHERE t."isActive" = true
+        AND ST_Intersects(t.geometry, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))
     `;
+  }
+
+  // admin-only flat listing across all pages, for the Trails & Spots admin area
+  async listAll(page = 1, pageSize = 20): Promise<{ data: (TrailRow & { adventurePageTitle: string })[]; total: number; page: number; pageSize: number }> {
+    const offset = (page - 1) * pageSize;
+    const [data, totalRows] = await Promise.all([
+      this.prisma.$queryRaw<(TrailRow & { adventurePageTitle: string })[]>`
+        SELECT t.id, t."adventurePageId", ap.title AS "adventurePageTitle", t.name,
+               ST_AsGeoJSON(t.geometry)::json AS geometry, t."distanceMeters",
+               t."verificationStatus", t."isActive",
+               t."createdById", t."lastEditedById", t."createdAt", t."updatedAt"
+        FROM trails t
+        JOIN adventure_pages ap ON ap.id = t."adventurePageId"
+        WHERE t."isActive" = true
+        ORDER BY t."createdAt" DESC
+        LIMIT ${pageSize} OFFSET ${offset}
+      `,
+      this.prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM trails WHERE "isActive" = true`,
+    ]);
+    return { data, total: Number(totalRows[0].count), page, pageSize };
+  }
+
+  // admin override - sets verificationStatus directly, mirrors
+  // AdventurePagesService.updateVerificationStatus
+  async updateVerificationStatus(id: string, status: string): Promise<TrailRow> {
+    await this.get(id);
+    await this.prisma.$executeRaw`UPDATE trails SET "verificationStatus" = ${status}::"GeoVerificationStatus" WHERE id = ${id}`;
+    return this.get(id);
   }
 }

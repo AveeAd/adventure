@@ -35,6 +35,10 @@ import { TripReportList } from './resources/trip-reports/TripReportList';
 import { TripReportShow } from './resources/trip-reports/TripReportShow';
 import { GuideProfileList } from './resources/guide-profiles/GuideProfileList';
 import { GuideProfileShow } from './resources/guide-profiles/GuideProfileShow';
+import { TrailList } from './resources/trails/TrailList';
+import { TrailShow } from './resources/trails/TrailShow';
+import { SpotList } from './resources/spots/SpotList';
+import { SpotShow } from './resources/spots/SpotShow';
 import { UserList } from './resources/users/UserList';
 import { UserEdit } from './resources/users/UserEdit';
 import { AppTitle } from './components/AppTitle';
@@ -112,6 +116,20 @@ function App() {
               meta: { label: 'Trip Reports', parent: 'content' },
             },
 
+            { name: 'geodata', meta: { label: 'Trails & Spots' } },
+            {
+              name: 'trails',
+              list: '/trails',
+              show: '/trails/show/:id',
+              meta: { label: 'Trails', parent: 'geodata' },
+            },
+            {
+              name: 'spots',
+              list: '/spots',
+              show: '/spots/show/:id',
+              meta: { label: 'Spots', parent: 'geodata' },
+            },
+
             {
               name: 'guide-profiles',
               list: '/guide-profiles',
@@ -180,6 +198,16 @@ function App() {
               <Route path="/trip-reports">
                 <Route index element={<TripReportList />} />
                 <Route path="show/:id" element={<TripReportShow />} />
+              </Route>
+
+              <Route path="/trails">
+                <Route index element={<TrailList />} />
+                <Route path="show/:id" element={<TrailShow />} />
+              </Route>
+
+              <Route path="/spots">
+                <Route index element={<SpotList />} />
+                <Route path="show/:id" element={<SpotShow />} />
               </Route>
 
               <Route path="/guide-profiles">

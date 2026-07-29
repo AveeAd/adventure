@@ -5,6 +5,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateSpotDto } from './dto/create-spot.dto';
 import { UpdateSpotDto } from './dto/update-spot.dto';
+import { UpdateGeoVerificationStatusDto } from './dto/update-verification-status.dto';
 import { SpotsService } from './spots.service';
 
 @Controller('adventure-pages/:pageId/spots')
@@ -30,6 +31,12 @@ export class AdventurePageSpotsController {
 @Controller('spots')
 export class SpotsController {
   constructor(private readonly spotsService: SpotsService) {}
+
+  @Roles(Role.ADMIN)
+  @Get()
+  listAll(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+    return this.spotsService.listAll(Number(page) || 1, Number(pageSize) || 20);
+  }
 
   // must come before ':id' - otherwise Nest would match "bbox" as an :id
   @Public()
@@ -63,5 +70,11 @@ export class SpotsController {
   @Post(':id/confirmations')
   confirm(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.spotsService.confirm(id, user.userId);
+  }
+
+  @Roles(Role.ADMIN)
+  @Patch(':id/verification-status')
+  updateVerificationStatus(@Param('id') id: string, @Body() dto: UpdateGeoVerificationStatusDto) {
+    return this.spotsService.updateVerificationStatus(id, dto.status);
   }
 }

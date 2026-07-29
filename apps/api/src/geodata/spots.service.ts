@@ -10,6 +10,7 @@ export interface SpotRow {
   id: string;
   adventurePageId: string;
   spotTypeId: string;
+  spotTypeName: string;
   name: string;
   description: string | null;
   geometry: unknown;
@@ -28,23 +29,25 @@ export class SpotsService {
 
   async listForPage(pageId: string): Promise<SpotRow[]> {
     return this.prisma.$queryRaw<SpotRow[]>`
-      SELECT id, "adventurePageId", "spotTypeId", name, description,
-             ST_AsGeoJSON(geometry)::json AS geometry, "elevationMeters",
-             "verificationStatus", "isActive",
-             "createdById", "lastEditedById", "createdAt", "updatedAt"
-      FROM spots
-      WHERE "adventurePageId" = ${pageId} AND "isActive" = true
+      SELECT s.id, s."adventurePageId", s."spotTypeId", st.name AS "spotTypeName", s.name, s.description,
+             ST_AsGeoJSON(s.geometry)::json AS geometry, s."elevationMeters",
+             s."verificationStatus", s."isActive",
+             s."createdById", s."lastEditedById", s."createdAt", s."updatedAt"
+      FROM spots s
+      JOIN spot_types st ON st.id = s."spotTypeId"
+      WHERE s."adventurePageId" = ${pageId} AND s."isActive" = true
     `;
   }
 
   async get(id: string): Promise<SpotRow> {
     const rows = await this.prisma.$queryRaw<SpotRow[]>`
-      SELECT id, "adventurePageId", "spotTypeId", name, description,
-             ST_AsGeoJSON(geometry)::json AS geometry, "elevationMeters",
-             "verificationStatus", "isActive",
-             "createdById", "lastEditedById", "createdAt", "updatedAt"
-      FROM spots
-      WHERE id = ${id}
+      SELECT s.id, s."adventurePageId", s."spotTypeId", st.name AS "spotTypeName", s.name, s.description,
+             ST_AsGeoJSON(s.geometry)::json AS geometry, s."elevationMeters",
+             s."verificationStatus", s."isActive",
+             s."createdById", s."lastEditedById", s."createdAt", s."updatedAt"
+      FROM spots s
+      JOIN spot_types st ON st.id = s."spotTypeId"
+      WHERE s.id = ${id}
     `;
     if (rows.length === 0) {
       throw new NotFoundException(`Spot ${id} not found`);
@@ -135,15 +138,53 @@ export class SpotsService {
     return { spotId, confirmationCount, threshold: CONFIRMATION_THRESHOLD };
   }
 
-  async inBoundingBox(minLng: number, minLat: number, maxLng: number, maxLat: number): Promise<SpotRow[]> {
-    return this.prisma.$queryRaw<SpotRow[]>`
-      SELECT id, "adventurePageId", "spotTypeId", name, description,
-             ST_AsGeoJSON(geometry)::json AS geometry, "elevationMeters",
-             "verificationStatus", "isActive",
-             "createdById", "lastEditedById", "createdAt", "updatedAt"
-      FROM spots
-      WHERE "isActive" = true
-        AND ST_Intersects(geometry, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))
+  async inBoundingBox(
+    minLng: number,
+    minLat: number,
+    maxLng: number,
+    maxLat: number,
+  ): Promise<(SpotRow & { pageSlug: string; pageTitle: string })[]> {
+    return this.prisma.$queryRaw<(SpotRow & { pageSlug: string; pageTitle: string })[]>`
+      SELECT s.id, s."adventurePageId", ap.slug AS "pageSlug", ap.title AS "pageTitle",
+             s."spotTypeId", st.name AS "spotTypeName", s.name, s.description,
+             ST_AsGeoJSON(s.geometry)::json AS geometry, s."elevationMeters",
+             s."verificationStatus", s."isActive",
+             s."createdById", s."lastEditedById", s."createdAt", s."updatedAt"
+      FROM spots s
+      JOIN spot_types st ON st.id = s."spotTypeId"
+      JOIN adventure_pages ap ON ap.id = s."adventurePageId"
+      WHERE s."isActive" = true
+        AND ST_Intersects(s.geometry, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))
     `;
+  }
+
+  // admin-only flat listing across all pages, for the Trails & Spots admin area
+  async listAll(page = 1, pageSize = 20): Promise<{ data: (SpotRow & { adventurePageTitle: string })[]; total: number; page: number; pageSize: number }> {
+    const offset = (page - 1) * pageSize;
+    const [data, totalRows] = await Promise.all([
+      this.prisma.$queryRaw<(SpotRow & { adventurePageTitle: string })[]>`
+        SELECT s.id, s."adventurePageId", ap.title AS "adventurePageTitle", s."spotTypeId",
+               st.name AS "spotTypeName", s.name, s.description,
+               ST_AsGeoJSON(s.geometry)::json AS geometry, s."elevationMeters",
+               s."verificationStatus", s."isActive",
+               s."createdById", s."lastEditedById", s."createdAt", s."updatedAt"
+        FROM spots s
+        JOIN spot_types st ON st.id = s."spotTypeId"
+        JOIN adventure_pages ap ON ap.id = s."adventurePageId"
+        WHERE s."isActive" = true
+        ORDER BY s."createdAt" DESC
+        LIMIT ${pageSize} OFFSET ${offset}
+      `,
+      this.prisma.$queryRaw<{ count: bigint }[]>`SELECT count(*) FROM spots WHERE "isActive" = true`,
+    ]);
+    return { data, total: Number(totalRows[0].count), page, pageSize };
+  }
+
+  // admin override - sets verificationStatus directly, mirrors
+  // AdventurePagesService.updateVerificationStatus
+  async updateVerificationStatus(id: string, status: string): Promise<SpotRow> {
+    await this.get(id);
+    await this.prisma.$executeRaw`UPDATE spots SET "verificationStatus" = ${status}::"GeoVerificationStatus" WHERE id = ${id}`;
+    return this.get(id);
   }
 }

@@ -5,6 +5,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateTrailDto } from './dto/create-trail.dto';
 import { UpdateTrailDto } from './dto/update-trail.dto';
+import { UpdateGeoVerificationStatusDto } from './dto/update-verification-status.dto';
 import { TrailsService } from './trails.service';
 
 @Controller('adventure-pages/:pageId/trails')
@@ -30,6 +31,12 @@ export class AdventurePageTrailsController {
 @Controller('trails')
 export class TrailsController {
   constructor(private readonly trailsService: TrailsService) {}
+
+  @Roles(Role.ADMIN)
+  @Get()
+  listAll(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+    return this.trailsService.listAll(Number(page) || 1, Number(pageSize) || 20);
+  }
 
   // must come before ':id' - otherwise Nest would match "bbox" as an :id
   @Public()
@@ -63,5 +70,11 @@ export class TrailsController {
   @Post(':id/confirmations')
   confirm(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.trailsService.confirm(id, user.userId);
+  }
+
+  @Roles(Role.ADMIN)
+  @Patch(':id/verification-status')
+  updateVerificationStatus(@Param('id') id: string, @Body() dto: UpdateGeoVerificationStatusDto) {
+    return this.trailsService.updateVerificationStatus(id, dto.status);
   }
 }

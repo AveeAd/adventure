@@ -5,6 +5,12 @@ import { Badge } from '../components/Badge';
 import { Card } from '../components/Card';
 import { Container } from '../components/Container';
 import { EmptyState } from '../components/EmptyState';
+import { LazyAdventureMap } from '../components/LazyAdventureMap';
+import type { MapSpot, MapTrail } from '../components/AdventureMap';
+
+// generous box around Nepal - the bbox endpoints only support a rectangle,
+// not a country polygon, so this is a deliberate approximation
+const NEPAL_BBOX = { minLng: 79.5, minLat: 26.0, maxLng: 88.5, maxLat: 30.5 };
 
 interface AdventurePageSummary {
   id: string;
@@ -21,18 +27,30 @@ interface AdventurePageSummary {
 
 export const Route = createFileRoute('/')({
   loader: async () => {
-    const res = await fetch(apiUrl('/adventure-pages?pageSize=50'));
-    if (!res.ok) {
+    const bboxParams = new URLSearchParams({
+      minLng: String(NEPAL_BBOX.minLng),
+      minLat: String(NEPAL_BBOX.minLat),
+      maxLng: String(NEPAL_BBOX.maxLng),
+      maxLat: String(NEPAL_BBOX.maxLat),
+    });
+    const [pagesRes, trailsRes, spotsRes] = await Promise.all([
+      fetch(apiUrl('/adventure-pages?pageSize=50')),
+      fetch(apiUrl(`/trails/bbox?${bboxParams}`)),
+      fetch(apiUrl(`/spots/bbox?${bboxParams}`)),
+    ]);
+    if (!pagesRes.ok) {
       throw new Error('Failed to load adventure pages');
     }
-    const body: { data: AdventurePageSummary[] } = await res.json();
-    return { pages: body.data };
+    const body: { data: AdventurePageSummary[] } = await pagesRes.json();
+    const trails: MapTrail[] = trailsRes.ok ? await trailsRes.json() : [];
+    const spots: MapSpot[] = spotsRes.ok ? await spotsRes.json() : [];
+    return { pages: body.data, trails, spots };
   },
   component: DiscoverPage,
 });
 
 function DiscoverPage() {
-  const { pages } = Route.useLoaderData();
+  const { pages, trails, spots } = Route.useLoaderData();
 
   return (
     <>
@@ -52,6 +70,11 @@ function DiscoverPage() {
       </div>
 
       <Container size="wide">
+        {(trails.length > 0 || spots.length > 0) && (
+          <div className="mb-8">
+            <LazyAdventureMap trails={trails} spots={spots} height={420} zoom={7} />
+          </div>
+        )}
         {pages.length === 0 ? (
           <EmptyState icon={<MountainSnow className="h-8 w-8" />}>No adventure pages yet.</EmptyState>
         ) : (
