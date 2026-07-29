@@ -58,7 +58,7 @@ function ContributorProfilePage() {
 
       <div className="mt-6 grid grid-cols-3 gap-4">
         <StatCard icon={<FileEdit className="h-5 w-5" />} label="Pages edited" value={profile.pagesEditedCount} />
-        <StatCard icon={<MapPinned className="h-5 w-5" />} label="Trip reports" value={profile.tripReportCount} />
+        <StatCard icon={<MapPinned className="h-5 w-5" />} label="Stories" value={profile.tripReportCount} />
         <StatCard
           icon={<CheckCircle2 className="h-5 w-5" />}
           label="Confirmations given"

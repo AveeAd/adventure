@@ -1,0 +1,345 @@
+// Fake demo content for a fresh local dev DB - users, adventure pages (with
+// revisions/districts/seasons/tags), trails/spots, trip reports (with
+// media/kudos/comments), a trip group, and guide profiles - so the app
+// doesn't feel empty during local development. Not a source of truth for
+// anything; safe to run against an empty DB after seed-master-data and
+// import-locations. Re-running upserts by unique keys where practical, but
+// this is dev-only fixture data, not idempotent production seeding.
+//
+// Users here have fake `googleId`s since there's no way to pre-create a real
+// Google-authenticated account (see ARCHITECTURE.md Sec 8) - fine for local
+// dev, never something to run against a real environment.
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+function requireByKey<T extends { id: string }, K extends keyof T>(
+  rows: T[],
+  key: K,
+  value: T[K],
+  label: string,
+): T {
+  const row = rows.find((r) => r[key] === value);
+  if (!row) {
+    throw new Error(`Missing ${label} "${String(value)}" - run seed-master-data.ts (and import-locations.ts) first.`);
+  }
+  return row;
+}
+
+async function upsertDemoUser(email: string, googleId: string, name: string) {
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: {},
+    create: { email, googleId, role: 'USER' },
+  });
+  await prisma.profile.upsert({
+    where: { userId: user.id },
+    update: { name },
+    create: { userId: user.id, name },
+  });
+  return user;
+}
+
+async function main() {
+  const [activityTypes, difficultyLevels, seasons, tags, spotTypes, districts, languages] = await Promise.all([
+    prisma.activityType.findMany(),
+    prisma.difficultyLevel.findMany(),
+    prisma.season.findMany(),
+    prisma.tag.findMany(),
+    prisma.spotType.findMany(),
+    prisma.district.findMany(),
+    prisma.language.findMany(),
+  ]);
+
+  const teahouseTrekking = requireByKey(activityTypes, 'slug', 'teahouse-trekking', 'activity type');
+  const restrictedTrekking = requireByKey(activityTypes, 'slug', 'restricted-area-trekking', 'activity type');
+  const moderate = requireByKey(difficultyLevels, 'slug', 'moderate', 'difficulty level');
+  const strenuous = requireByKey(difficultyLevels, 'slug', 'strenuous', 'difficulty level');
+  const autumn = requireByKey(seasons, 'slug', 'autumn', 'season');
+  const spring = requireByKey(seasons, 'slug', 'spring', 'season');
+  const himalayanViews = requireByKey(tags, 'slug', 'himalayan-views', 'tag');
+  const unescoSite = requireByKey(tags, 'slug', 'unesco-site', 'tag');
+  const viewpoint = requireByKey(spotTypes, 'slug', 'viewpoint', 'spot type');
+  const teahouseSpot = requireByKey(spotTypes, 'slug', 'teahouse', 'spot type');
+  const kaski = requireByKey(districts, 'slug', 'kaski', 'district');
+  const gorkha = requireByKey(districts, 'slug', 'gorkha', 'district');
+  const soluDistrict = districts.find((d) => d.slug === 'solukhumbu') ?? kaski;
+  const english = requireByKey(languages, 'isoCode', 'en', 'language');
+  const nepali = requireByKey(languages, 'isoCode', 'ne', 'language');
+
+  const alice = await upsertDemoUser('alice.trekker@example.com', 'seed-google-alice', 'Alice Sharma');
+  const bob = await upsertDemoUser('bob.explorer@example.com', 'seed-google-bob', 'Bob Gurung');
+  const carol = await upsertDemoUser('carol.guide@example.com', 'seed-google-carol', 'Carol Tamang');
+  const dawa = await upsertDemoUser('dawa.guide@example.com', 'seed-google-dawa', 'Dawa Sherpa');
+
+  // --- Adventure page: Annapurna Base Camp Trek ---
+  const abc = await prisma.$transaction(async (tx) => {
+    const page = await tx.adventurePage.upsert({
+      where: { slug: 'annapurna-base-camp-trek' },
+      update: {},
+      create: {
+        title: 'Annapurna Base Camp Trek',
+        slug: 'annapurna-base-camp-trek',
+        summary: 'A classic teahouse trek through rhododendron forests to the Annapurna Sanctuary at 4,130m.',
+        activityTypeId: teahouseTrekking.id,
+        difficultyLevelId: moderate.id,
+        durationMinDays: 7,
+        durationMaxDays: 12,
+        maxAltitudeMeters: 4130,
+        districts: { create: [{ districtId: kaski.id }] },
+        seasons: { create: [{ seasonId: autumn.id }, { seasonId: spring.id }] },
+        tags: { create: [{ tagId: himalayanViews.id }] },
+      },
+    });
+    await tx.pageRevision.upsert({
+      where: { adventurePageId_version: { adventurePageId: page.id, version: 1 } },
+      update: {},
+      create: {
+        adventurePageId: page.id,
+        version: 1,
+        editorId: alice.id,
+        content:
+          '# Annapurna Base Camp Trek\n\nA 7-12 day teahouse trek from Nayapul through Ghandruk and the Modi Khola gorge ' +
+          'up to Annapurna Base Camp (4,130m), with 360-degree views of Annapurna I, Machapuchare, and Hiunchuli.',
+      },
+    });
+    return page;
+  });
+
+  // --- Adventure page: Manaslu Circuit Trek (restricted, needs registered agency) ---
+  const manaslu = await prisma.$transaction(async (tx) => {
+    const page = await tx.adventurePage.upsert({
+      where: { slug: 'manaslu-circuit-trek' },
+      update: {},
+      create: {
+        title: 'Manaslu Circuit Trek',
+        slug: 'manaslu-circuit-trek',
+        summary: 'A remote circuit around Mt. Manaslu (8,163m) crossing Larkya La pass at 5,106m. Restricted area - a licensed agency and special permit are required.',
+        activityTypeId: restrictedTrekking.id,
+        difficultyLevelId: strenuous.id,
+        durationMinDays: 14,
+        durationMaxDays: 18,
+        maxAltitudeMeters: 5106,
+        districts: { create: [{ districtId: gorkha.id }] },
+        seasons: { create: [{ seasonId: autumn.id }] },
+        tags: { create: [{ tagId: himalayanViews.id }, { tagId: unescoSite.id }] },
+      },
+    });
+    await tx.pageRevision.upsert({
+      where: { adventurePageId_version: { adventurePageId: page.id, version: 1 } },
+      update: {},
+      create: {
+        adventurePageId: page.id,
+        version: 1,
+        editorId: bob.id,
+        content:
+          '# Manaslu Circuit Trek\n\nA remote, restricted-area circuit around Mt. Manaslu, crossing the Larkya La pass ' +
+          '(5,106m). Requires a Manaslu Restricted Area Permit (MRAP), issued only through a licensed trekking agency.',
+      },
+    });
+    return page;
+  });
+
+  // --- Trails (LineString geometry - raw SQL, see geodata/trails.service.ts) ---
+  async function upsertTrail(pageId: string, name: string, coords: [number, number][], distanceMeters: number) {
+    const existing = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM trails WHERE "adventurePageId" = ${pageId} AND name = ${name} LIMIT 1
+    `;
+    if (existing.length > 0) return existing[0].id;
+    const geojson = JSON.stringify({ type: 'LineString', coordinates: coords });
+    const rows = await prisma.$queryRaw<{ id: string }[]>`
+      INSERT INTO trails (id, "adventurePageId", name, geometry, "distanceMeters", "verificationStatus", "isActive", "createdById", "lastEditedById", "createdAt", "updatedAt")
+      VALUES (gen_random_uuid(), ${pageId}, ${name}, ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326), ${distanceMeters}, 'VERIFIED', true, ${alice.id}, ${alice.id}, now(), now())
+      RETURNING id
+    `;
+    return rows[0].id;
+  }
+
+  await upsertTrail(
+    abc.id,
+    'Nayapul to ABC',
+    [
+      [83.5967, 28.2989],
+      [83.7167, 28.3833],
+      [83.8333, 28.4667],
+      [83.88, 28.53],
+    ],
+    58000,
+  );
+
+  await upsertTrail(
+    manaslu.id,
+    'Soti Khola to Larkya La',
+    [
+      [84.8333, 28.15],
+      [84.75, 28.35],
+      [84.63, 28.56],
+      [84.52, 28.63],
+    ],
+    150000,
+  );
+
+  // --- Spots (Point geometry) ---
+  async function upsertSpot(
+    pageId: string,
+    spotTypeId: string,
+    name: string,
+    coord: [number, number],
+    elevationMeters: number,
+  ) {
+    const existing = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM spots WHERE "adventurePageId" = ${pageId} AND name = ${name} LIMIT 1
+    `;
+    if (existing.length > 0) return existing[0].id;
+    const geojson = JSON.stringify({ type: 'Point', coordinates: coord });
+    const rows = await prisma.$queryRaw<{ id: string }[]>`
+      INSERT INTO spots (id, "adventurePageId", "spotTypeId", name, description, geometry, "elevationMeters", "verificationStatus", "isActive", "createdById", "lastEditedById", "createdAt", "updatedAt")
+      VALUES (gen_random_uuid(), ${pageId}, ${spotTypeId}, ${name}, NULL, ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326), ${elevationMeters}, 'VERIFIED', true, ${alice.id}, ${alice.id}, now(), now())
+      RETURNING id
+    `;
+    return rows[0].id;
+  }
+
+  await upsertSpot(abc.id, viewpoint.id, 'Annapurna Base Camp Viewpoint', [83.88, 28.53], 4130);
+  await upsertSpot(abc.id, teahouseSpot.id, 'Machhapuchhre Base Camp Teahouse', [83.87, 28.52], 3700);
+  await upsertSpot(manaslu.id, viewpoint.id, 'Larkya La Pass', [84.52, 28.63], 5106);
+
+  // --- Trip reports (no verification tier - personal accounts, see CLAUDE.md) ---
+  // No natural unique key on trip reports/groups/comments, so re-runs guard
+  // on (adventurePageId, title) to stay idempotent like the rest of this script.
+  async function getOrCreateTripReport(data: Parameters<typeof prisma.tripReport.create>[0]['data']) {
+    const existing = await prisma.tripReport.findFirst({
+      where: { adventurePageId: data.adventurePageId as string, title: data.title as string },
+    });
+    if (existing) return { report: existing, created: false };
+    return { report: await prisma.tripReport.create({ data }), created: true };
+  }
+
+  const { report: abcReport, created: abcReportCreated } = await getOrCreateTripReport({
+    adventurePageId: abc.id,
+    authorId: bob.id,
+    title: 'Perfect autumn weather on the ABC trail',
+    description: 'Did this over 9 days in October. Clear skies the whole way, teahouses were not too crowded.',
+    dateCompleted: new Date('2026-10-15'),
+    durationDays: 9,
+    actualCostAmount: 450,
+    currency: 'USD',
+    media: {
+      create: [{ url: 'https://example.com/media/abc-sanctuary.jpg', caption: 'Sunrise at the sanctuary' }],
+    },
+  });
+  if (abcReportCreated) {
+    await prisma.tripReportKudos.upsert({
+      where: { tripReportId_userId: { tripReportId: abcReport.id, userId: alice.id } },
+      update: {},
+      create: { tripReportId: abcReport.id, userId: alice.id },
+    });
+    const abcTopComment = await prisma.comment.create({
+      data: { tripReportId: abcReport.id, authorId: alice.id, content: 'Great write-up! Did you need microspikes in October?' },
+    });
+    await prisma.comment.create({
+      data: {
+        tripReportId: abcReport.id,
+        authorId: bob.id,
+        content: 'Not this time, trail was dry above Deurali too.',
+        parentCommentId: abcTopComment.id,
+      },
+    });
+  }
+
+  await getOrCreateTripReport({
+    adventurePageId: manaslu.id,
+    authorId: carol.id,
+    title: 'Larkya La in perfect conditions',
+    description: 'Went with a licensed agency out of Kathmandu. Crossed the pass early morning, no wind.',
+    dateCompleted: new Date('2026-04-05'),
+    durationDays: 16,
+    actualCostAmount: 1400,
+    currency: 'USD',
+  });
+
+  // --- Trip group (companion-finding, see TRIP_GROUPS.md) ---
+  const existingGroup = await prisma.tripGroup.findFirst({
+    where: { title: 'ABC in November - looking for 2-3 companions' },
+  });
+  if (!existingGroup) {
+    await prisma.tripGroup.create({
+      data: {
+        adventurePageId: abc.id,
+        title: 'ABC in November - looking for 2-3 companions',
+        description: 'Planning a 9-day trip starting Nov 10. Moderate pace, budget teahouses.',
+        dateStart: new Date('2026-11-10'),
+        dateEnd: new Date('2026-11-19'),
+        createdById: bob.id,
+        members: {
+          create: [
+            { userId: bob.id, role: 'ORGANIZER' },
+            { userId: alice.id, role: 'MEMBER' },
+          ],
+        },
+      },
+    });
+  }
+
+  // --- Guide profiles (manual-review-only trust, see CLAUDE.md) ---
+  const carolGuide = await prisma.guideProfile.upsert({
+    where: { userId: carol.id },
+    update: {},
+    create: {
+      userId: carol.id,
+      bio: 'Licensed trekking guide with 10 years of experience across the Annapurna region.',
+      rateMin: 30,
+      rateMax: 45,
+      rateUnit: 'PER_DAY',
+      verificationStatus: 'VERIFIED',
+      specialties: { create: [{ activityTypeId: teahouseTrekking.id }] },
+      regions: { create: [{ districtId: kaski.id }] },
+      languages: { create: [{ languageId: english.id }, { languageId: nepali.id }] },
+    },
+  });
+
+  await prisma.guideProfile.upsert({
+    where: { userId: dawa.id },
+    update: {},
+    create: {
+      userId: dawa.id,
+      licenseNumber: 'NTB-2026-00042',
+      bio: 'Specializes in restricted-area treks (Manaslu, Upper Mustang) with a registered agency.',
+      rateMin: 40,
+      rateUnit: 'PER_DAY',
+      verificationStatus: 'PENDING_LICENSE_REVIEW',
+      specialties: { create: [{ activityTypeId: restrictedTrekking.id }] },
+      regions: { create: [{ districtId: gorkha.id }, { districtId: soluDistrict.id }] },
+      languages: { create: [{ languageId: english.id }] },
+    },
+  });
+
+  async function getOrCreateNotification(data: Parameters<typeof prisma.notification.create>[0]['data']) {
+    const existing = await prisma.notification.findFirst({
+      where: { userId: data.userId as string, message: data.message as string },
+    });
+    if (!existing) await prisma.notification.create({ data });
+  }
+
+  await getOrCreateNotification({
+    userId: bob.id,
+    type: 'KUDOS',
+    message: 'Alice Sharma gave kudos on your trip report "Perfect autumn weather on the ABC trail".',
+    linkUrl: `/trip-reports/${abcReport.id}`,
+  });
+  await getOrCreateNotification({
+    userId: carol.id,
+    type: 'GUIDE_VERIFIED',
+    message: 'Your guide profile has been verified.',
+    linkUrl: `/guides/${carolGuide.id}`,
+  });
+
+  console.log('Dev data seeded: 4 users, 2 adventure pages, trails/spots, trip reports, 1 trip group, 2 guide profiles.');
+}
+
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());

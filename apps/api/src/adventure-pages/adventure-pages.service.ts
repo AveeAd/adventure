@@ -4,6 +4,7 @@ import { diffLines } from 'diff';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { UploadsService } from '../uploads/uploads.service';
 import { AddMediaDto } from './dto/add-media.dto';
 import { CreateAdventurePageDto } from './dto/create-adventure-page.dto';
 import { SubmitRevisionDto } from './dto/submit-revision.dto';
@@ -17,25 +18,76 @@ export class AdventurePagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly uploads: UploadsService,
   ) {}
 
-  async list(page = 1, pageSize = 20) {
+  async list(page = 1, pageSize = 20, sort: 'recent' | 'popular' | 'trending' = 'recent') {
     const where = { isActive: true };
+
+    if (sort === 'trending') {
+      return this.listTrending(page, pageSize, where);
+    }
+
+    const orderBy =
+      sort === 'popular'
+        ? [{ likes: { _count: 'desc' as const } }, { createdAt: 'desc' as const }]
+        : { createdAt: 'desc' as const };
     const [data, total] = await Promise.all([
       this.prisma.adventurePage.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           activityType: true,
           difficultyLevel: true,
           media: { take: 1, orderBy: { sortOrder: 'asc' } },
           tags: { include: { tag: true } },
+          _count: { select: { likes: true } },
         },
       }),
       this.prisma.adventurePage.count({ where }),
     ]);
+    return {
+      data: data.map(({ _count, ...page }) => ({ ...page, likeCount: _count.likes })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  // "Trending" = recent views (last 7 days) + total likes, equal weight -
+  // a simple, explainable heuristic, not a real analytics pipeline. Prisma's
+  // relation-count orderBy can't filter the counted relation by date *and*
+  // combine it with a second, differently-filtered count in one query, so
+  // this scores and sorts in memory instead of in SQL - fine at this site's
+  // scale (see DATABASE.md's "revisit if it becomes a problem" convention).
+  private async listTrending(page: number, pageSize: number, where: { isActive: boolean }) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const pages = await this.prisma.adventurePage.findMany({
+      where,
+      include: {
+        activityType: true,
+        difficultyLevel: true,
+        media: { take: 1, orderBy: { sortOrder: 'asc' } },
+        tags: { include: { tag: true } },
+        _count: { select: { likes: true, views: { where: { createdAt: { gte: sevenDaysAgo } } } } },
+      },
+    });
+
+    const scored = pages
+      .map(({ _count, ...page }) => ({
+        ...page,
+        likeCount: _count.likes,
+        trendingScore: _count.views + _count.likes,
+      }))
+      .sort((a, b) => b.trendingScore - a.trendingScore || b.createdAt.getTime() - a.createdAt.getTime());
+
+    const total = scored.length;
+    const data = scored
+      .slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
+      .map(({ trendingScore: _trendingScore, ...page }) => page);
+
     return { data, total, page, pageSize };
   }
 
@@ -366,6 +418,17 @@ export class AdventurePagesService {
     return this.likeCount(pageId);
   }
 
+  // Deliberately its own endpoint, called client-side on actual render, not
+  // logged inside getBySlug/get - those back the route *loader*, which
+  // TanStack Router also runs on hover/touch "intent" preload (see
+  // apps/public/src/router.tsx's defaultPreload), so counting there would
+  // inflate "trending" every time a card is merely hovered, not visited.
+  async recordView(pageId: string) {
+    await this.ensureExists(pageId);
+    await this.prisma.adventurePageView.create({ data: { adventurePageId: pageId } });
+    return { success: true };
+  }
+
   async addMedia(pageId: string, uploadedById: string, dto: AddMediaDto) {
     await this.ensureExists(pageId);
     return this.prisma.media.create({
@@ -389,6 +452,7 @@ export class AdventurePagesService {
       throw new ForbiddenException('Only the uploader or an admin can remove this photo');
     }
     await this.prisma.media.delete({ where: { id: mediaId } });
+    await this.uploads.deleteFile(media.url);
     return { success: true };
   }
 

@@ -14,6 +14,14 @@ const envSchema = z.object({
   GOOGLE_CALLBACK_URL: z.string().min(1, 'GOOGLE_CALLBACK_URL is required'),
   ADMIN_EMAILS: z.string().default(''),
   ALLOWED_REDIRECT_URLS: z.string().min(1, 'ALLOWED_REDIRECT_URLS is required'),
+  UPLOAD_DIR: z.string().min(1).default('/app/uploads'),
+  MAX_UPLOAD_SIZE_MB: z.coerce.number().int().positive().default(5),
+  // The API's own externally-reachable origin (same value the frontends bake
+  // in as VITE_API_URL) - needed so uploaded-file URLs returned to clients
+  // are absolute. A relative "/uploads/x.png" would resolve against
+  // whichever origin embeds it (the public site's domain in prod, not the
+  // API's), which is wrong across the multi-frontend/subdomain deploy.
+  PUBLIC_API_URL: z.string().min(1).default('http://localhost:3000'),
 });
 
 @Module({

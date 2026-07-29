@@ -1,9 +1,9 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { Calendar, CheckCircle2, Clock, Heart, MapPin, MountainSnow, Pencil, Plus, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Calendar, CheckCircle2, Clock, Hammer, Heart, ImagePlus, MapPin, MountainSnow, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { apiUrl } from '../../../lib/auth/api';
-import { authDelete, authPost } from '../../../lib/auth/auth-fetch';
-import { checkAuth } from '../../../lib/auth/session';
+import { authDelete, authPost, authUpload } from '../../../lib/auth/auth-fetch';
+import { checkAuth, fetchCurrentUser, type CurrentUser } from '../../../lib/auth/session';
 import { Badge, StatusBadge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -13,6 +13,15 @@ import { Textarea, Input, Field, Select } from '../../../components/FormField';
 import { MarkdownContent } from '../../../components/MarkdownContent';
 import { LazyAdventureMap } from '../../../components/LazyAdventureMap';
 import type { MapSpot, MapTrail } from '../../../components/AdventureMap';
+
+interface MediaItem {
+  id: string;
+  url: string;
+  caption: string | null;
+  altText: string | null;
+  sortOrder: number;
+  uploadedById: string;
+}
 
 interface AdventurePageDetail {
   id: string;
@@ -32,7 +41,7 @@ interface AdventurePageDetail {
   contributorIds: string[];
   likeCount: number;
   likedByMe: boolean;
-  media: { url: string; altText: string | null }[];
+  media: MediaItem[];
 }
 
 interface TripReportSummary {
@@ -89,7 +98,24 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string
 
 function AdventurePageView() {
   const { page, tripReports, trails, spots } = Route.useLoaderData();
+
+  // Fired from the component, not the loader - the loader also runs on
+  // TanStack Router's hover/touch "intent" preload (see router.tsx), which
+  // would otherwise count a merely-hovered Discover card as a real view.
+  // Mount only happens on an actual navigation to this page.
+  useEffect(() => {
+    fetch(apiUrl(`/adventure-pages/${page.id}/views`), { method: 'POST' }).catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page.id]);
   const { slug } = Route.useParams();
+  const [signedIn, setSignedIn] = useState(false);
+  const [contributeMode, setContributeMode] = useState(false);
+  const [storyFormOpen, setStoryFormOpen] = useState(false);
+  const [storyShared, setStoryShared] = useState(false);
+
+  useEffect(() => {
+    checkAuth().then(setSignedIn);
+  }, []);
 
   return (
     <>
@@ -102,23 +128,9 @@ function AdventurePageView() {
       </div>
 
       <Container>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">{page.title}</h1>
-            {page.summary && <p className="mt-1 text-stone-600 dark:text-stone-300">{page.summary}</p>}
-          </div>
-          <div className="flex gap-2">
-            <Link to="/adventures/$slug/edit" params={{ slug }}>
-              <Button variant="secondary" size="sm">
-                <Pencil className="h-3.5 w-3.5" /> Edit
-              </Button>
-            </Link>
-            <Link to="/adventures/$slug/history" params={{ slug }}>
-              <Button variant="ghost" size="sm">
-                History
-              </Button>
-            </Link>
-          </div>
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">{page.title}</h1>
+          {page.summary && <p className="mt-1 text-stone-600 dark:text-stone-300">{page.summary}</p>}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -164,11 +176,11 @@ function AdventurePageView() {
           <InfoItem icon={<Users className="h-4 w-4" />} label="Contributors" value={page.contributorIds.length} />
         </Card>
 
-        <TrailsAndSpotsSection slug={slug} trails={trails} spots={spots} />
+        <GallerySection pageId={page.id} initialMedia={page.media} contributeMode={contributeMode} />
 
-        <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
+        <TrailsAndSpotsSection slug={slug} trails={trails} spots={spots} contributeMode={contributeMode} />
 
-        <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} />
+        <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} contributeMode={contributeMode} />
 
         {page.currentRevision && (
           <div className="mt-6">
@@ -178,7 +190,7 @@ function AdventurePageView() {
 
         <section className="mt-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Trip reports</h2>
+            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Stories</h2>
             <Link
               to="/adventures/$slug/groups"
               params={{ slug }}
@@ -189,7 +201,7 @@ function AdventurePageView() {
           </div>
           {tripReports.length === 0 ? (
             <div className="mt-3">
-              <EmptyState>No trip reports logged yet.</EmptyState>
+              <EmptyState>No stories shared yet.</EmptyState>
             </div>
           ) : (
             <ul className="mt-3 flex flex-col gap-2">
@@ -201,7 +213,7 @@ function AdventurePageView() {
                       params={{ slug, tripReportId: report.id }}
                       className="font-medium text-primary-700 hover:underline dark:text-primary-400"
                     >
-                      {report.title ?? 'Trip report'}
+                      {report.title ?? 'Story'}
                     </Link>
                     <span className="text-sm text-stone-500 dark:text-stone-400">
                       {new Date(report.dateCompleted).toLocaleDateString()}
@@ -212,10 +224,56 @@ function AdventurePageView() {
               ))}
             </ul>
           )}
-          <div className="mt-4">
-            <LogTripForm pageId={page.id} />
-          </div>
         </section>
+
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-6 dark:border-stone-800">
+          <div className="flex flex-wrap items-center gap-2">
+            <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
+            {signedIn && !storyFormOpen && !storyShared && (
+              <Button variant="accent" size="sm" onClick={() => setStoryFormOpen(true)}>
+                Tell your story
+              </Button>
+            )}
+            {storyShared && (
+              <p className="text-sm text-primary-700 dark:text-primary-400">Story shared. Thanks for telling it!</p>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {signedIn && (
+              <Button
+                variant={contributeMode ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setContributeMode((v) => !v)}
+              >
+                {contributeMode ? <X className="h-3.5 w-3.5" /> : <Hammer className="h-3.5 w-3.5" />}
+                {contributeMode ? 'Done' : 'Contribute'}
+              </Button>
+            )}
+            {contributeMode && (
+              <Link to="/adventures/$slug/edit" params={{ slug }}>
+                <Button variant="secondary" size="sm">
+                  <Pencil className="h-3.5 w-3.5" /> Edit
+                </Button>
+              </Link>
+            )}
+            <Link to="/adventures/$slug/history" params={{ slug }}>
+              <Button variant="ghost" size="sm">
+                History
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {storyFormOpen && (
+          <StoryForm
+            pageId={page.id}
+            onDone={() => {
+              setStoryFormOpen(false);
+              setStoryShared(true);
+            }}
+            onCancel={() => setStoryFormOpen(false)}
+          />
+        )}
       </Container>
     </>
   );
@@ -256,19 +314,165 @@ function LikeButton({
     }
   }
 
+  return signedIn ? (
+    <Button variant={liked ? 'accent' : 'secondary'} size="sm" onClick={toggleLike} disabled={busy}>
+      <Heart className="h-4 w-4" fill={liked ? 'currentColor' : 'none'} />
+      {liked ? 'Liked' : 'Like'} ({likeCount})
+    </Button>
+  ) : (
+    <span className="flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
+      <Heart className="h-4 w-4" /> {likeCount} likes
+    </span>
+  );
+}
+
+function GallerySection({
+  pageId,
+  initialMedia,
+  contributeMode,
+}: {
+  pageId: string;
+  initialMedia: MediaItem[];
+  contributeMode: boolean;
+}) {
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [media, setMedia] = useState(initialMedia);
+  const [open, setOpen] = useState(false);
+  const [caption, setCaption] = useState('');
+  const [altText, setAltText] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchCurrentUser().then(setCurrentUser);
+  }, []);
+
+  // Mirrors the backend's uploader-or-admin check in removeMedia (see
+  // adventure-pages.service.ts) - purely a UI affordance, the API is the
+  // real enforcement, but showing the button to everyone would just earn
+  // non-owners a confusing 403 on click. Also gated on contributeMode so
+  // the delete affordance only shows up alongside the rest of this page's
+  // edit controls, not on every hover regardless of mode.
+  function canDelete(item: MediaItem) {
+    if (!contributeMode || !currentUser) return false;
+    return currentUser.userId === item.uploadedById || currentUser.role === 'ADMIN';
+  }
+
+  async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) {
+      setError('Choose a photo to upload');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { url } = await authUpload<{ url: string }>('/uploads/images', formData);
+      const created = await authPost<MediaItem>(`/adventure-pages/${pageId}/media`, {
+        url,
+        caption: caption || undefined,
+        altText: altText || undefined,
+      });
+      setMedia((prev) => [...prev, created]);
+      setCaption('');
+      setAltText('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload photo');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(mediaId: string) {
+    await authDelete(`/adventure-pages/${pageId}/media/${mediaId}`);
+    setMedia((prev) => prev.filter((item) => item.id !== mediaId));
+  }
+
+  if (media.length === 0 && !contributeMode) {
+    return null;
+  }
+
   return (
-    <div className="mt-4">
-      {signedIn ? (
-        <Button variant={liked ? 'accent' : 'secondary'} size="sm" onClick={toggleLike} disabled={busy}>
-          <Heart className="h-4 w-4" fill={liked ? 'currentColor' : 'none'} />
-          {liked ? 'Liked' : 'Like'} ({likeCount})
-        </Button>
+    <section className="mt-10">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Photos</h2>
+        {contributeMode && !open && (
+          <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+            <ImagePlus className="h-3.5 w-3.5" /> Add photo
+          </Button>
+        )}
+      </div>
+
+      {media.length === 0 ? (
+        <div className="mt-3">
+          <EmptyState>No photos yet.</EmptyState>
+        </div>
       ) : (
-        <span className="flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
-          <Heart className="h-4 w-4" /> {likeCount} likes
-        </span>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {media.map((item) => (
+            <figure key={item.id} className="group relative overflow-hidden rounded-lg">
+              <img
+                src={item.url}
+                alt={item.altText ?? ''}
+                className="h-32 w-full rounded-lg object-cover sm:h-36"
+              />
+              {item.caption && (
+                <figcaption className="mt-1 truncate text-xs text-stone-500 dark:text-stone-400">
+                  {item.caption}
+                </figcaption>
+              )}
+              {canDelete(item) && (
+                <button
+                  type="button"
+                  onClick={() => handleDelete(item.id)}
+                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  aria-label="Delete photo"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </figure>
+          ))}
+        </div>
       )}
-    </div>
+
+      {open && (
+        <Card className="mt-4 max-w-md p-5">
+          <form onSubmit={handleAdd} className="flex flex-col gap-4">
+            <Field label="Photo">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                required
+                className="block w-full text-sm text-stone-600 dark:text-stone-300"
+              />
+            </Field>
+            <Field label="Caption (optional)">
+              <Input value={caption} onChange={(e) => setCaption(e.target.value)} />
+            </Field>
+            <Field label="Alt text (optional)">
+              <Input value={altText} onChange={(e) => setAltText(e.target.value)} />
+            </Field>
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Uploading...' : 'Upload'}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+    </section>
   );
 }
 
@@ -276,17 +480,14 @@ function TrailsAndSpotsSection({
   slug,
   trails,
   spots,
+  contributeMode,
 }: {
   slug: string;
   trails: MapTrail[];
   spots: MapSpot[];
+  contributeMode: boolean;
 }) {
-  const [signedIn, setSignedIn] = useState(false);
   const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    checkAuth().then(setSignedIn);
-  }, []);
 
   async function confirmTrail(id: string) {
     await authPost(`/trails/${id}/confirmations`);
@@ -302,7 +503,7 @@ function TrailsAndSpotsSection({
     <section className="mt-10">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Trails &amp; spots</h2>
-        {signedIn && (
+        {contributeMode && (
           <div className="flex gap-2">
             <Link to="/adventures/$slug/trails/new" params={{ slug }}>
               <Button variant="secondary" size="sm">
@@ -335,7 +536,7 @@ function TrailsAndSpotsSection({
                     <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? 'Trail'}</div>
                     <StatusBadge status={trail.verificationStatus} />
                   </div>
-                  {signedIn && (
+                  {contributeMode && (
                     <Button
                       variant={confirmed.has(trail.id) ? 'ghost' : 'secondary'}
                       size="sm"
@@ -359,7 +560,7 @@ function TrailsAndSpotsSection({
                       <StatusBadge status={spot.verificationStatus} />
                     </div>
                   </div>
-                  {signedIn && (
+                  {contributeMode && (
                     <Button
                       variant={confirmed.has(spot.id) ? 'ghost' : 'secondary'}
                       size="sm"
@@ -383,20 +584,17 @@ function TrailsAndSpotsSection({
 function SeeAlsoSection({
   pageId,
   relatedPages,
+  contributeMode,
 }: {
   pageId: string;
   relatedPages: { id: string; title: string; slug: string; summary: string | null }[];
+  contributeMode: boolean;
 }) {
-  const [signedIn, setSignedIn] = useState(false);
   const [open, setOpen] = useState(false);
   const [slugInput, setSlugInput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [pages, setPages] = useState(relatedPages);
-
-  useEffect(() => {
-    checkAuth().then(setSignedIn);
-  }, []);
 
   async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -419,7 +617,7 @@ function SeeAlsoSection({
     }
   }
 
-  if (pages.length === 0 && !signedIn) {
+  if (pages.length === 0 && !contributeMode) {
     return null;
   }
 
@@ -427,7 +625,7 @@ function SeeAlsoSection({
     <section className="mt-10">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">See also</h2>
-        {signedIn && !open && (
+        {contributeMode && !open && (
           <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
             <Plus className="h-3.5 w-3.5" /> Add related page
           </Button>
@@ -484,32 +682,17 @@ function SeeAlsoSection({
   );
 }
 
-function LogTripForm({ pageId }: { pageId: string }) {
-  const [signedIn, setSignedIn] = useState(false);
-  const [open, setOpen] = useState(false);
+function StoryForm({
+  pageId,
+  onDone,
+  onCancel,
+}: {
+  pageId: string;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    checkAuth().then(setSignedIn);
-  }, []);
-
-  if (!signedIn) {
-    return null;
-  }
-
-  if (done) {
-    return <p className="text-sm text-primary-700 dark:text-primary-400">Trip report logged. Thanks for sharing!</p>;
-  }
-
-  if (!open) {
-    return (
-      <Button variant="accent" size="sm" onClick={() => setOpen(true)}>
-        Log your trip
-      </Button>
-    );
-  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -520,51 +703,61 @@ function LogTripForm({ pageId }: { pageId: string }) {
       await authPost(`/adventure-pages/${pageId}/trip-reports`, {
         title: formData.get('title') || undefined,
         description: formData.get('description') || undefined,
+        content: formData.get('content') || undefined,
         dateCompleted: formData.get('dateCompleted'),
         durationDays: formData.get('durationDays') ? Number(formData.get('durationDays')) : undefined,
         actualCostAmount: formData.get('actualCostAmount') ? Number(formData.get('actualCostAmount')) : undefined,
         currency: formData.get('actualCostAmount') ? formData.get('currency') : undefined,
       });
-      setDone(true);
+      onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to log trip');
+      setError(err instanceof Error ? err.message : 'Failed to share story');
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <Card className="max-w-md p-5">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <Card className="mt-6 w-full p-6">
+      <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Tell your story</h2>
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-5">
         <Field label="Title">
-          <Input name="title" />
+          <Input name="title" placeholder="Give your story a title" />
         </Field>
-        <Field label="Date completed">
-          <Input name="dateCompleted" type="date" required />
-        </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Field label="Date completed">
+            <Input name="dateCompleted" type="date" required />
+          </Field>
           <Field label="Duration (days)">
             <Input name="durationDays" type="number" min={0} />
           </Field>
           <Field label="Actual cost">
             <Input name="actualCostAmount" type="number" min={0} />
           </Field>
+          <Field label="Currency">
+            <Select name="currency" defaultValue="NPR">
+              <option value="NPR">NPR</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="INR">INR</option>
+            </Select>
+          </Field>
         </div>
-        <Field label="Currency">
-          <Select name="currency" defaultValue="NPR">
-            <option value="NPR">NPR</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="INR">INR</option>
-          </Select>
+        <Field label="Summary" hint="A short one-liner shown wherever this story is listed">
+          <Textarea name="description" rows={2} placeholder="e.g. Perfect weather, no crowds, best trip yet" />
         </Field>
-        <Field label="Notes">
-          <Textarea name="description" rows={3} />
+        <Field label="Your story" hint="The full story - markdown supported">
+          <Textarea name="content" rows={14} className="font-mono text-sm" placeholder="Tell it however long it needs to be..." />
         </Field>
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-        <Button type="submit" variant="accent" disabled={submitting}>
-          {submitting ? 'Logging...' : 'Log trip'}
-        </Button>
+        <div className="flex gap-2">
+          <Button type="submit" variant="accent" disabled={submitting}>
+            {submitting ? 'Sharing...' : 'Share story'}
+          </Button>
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
       </form>
     </Card>
   );

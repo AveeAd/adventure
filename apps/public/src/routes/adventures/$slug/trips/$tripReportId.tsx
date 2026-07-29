@@ -9,11 +9,13 @@ import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
 import { Textarea } from '../../../../components/FormField';
+import { MarkdownContent } from '../../../../components/MarkdownContent';
 
 interface TripReportDetail {
   id: string;
   title: string | null;
   description: string | null;
+  content: string | null;
   dateCompleted: string;
   durationDays: number | null;
   actualCostAmount: number | null;
@@ -44,7 +46,7 @@ export const Route = createFileRoute('/adventures/$slug/trips/$tripReportId')({
       throw notFound();
     }
     if (!reportRes.ok) {
-      throw new Error('Failed to load trip report');
+      throw new Error('Failed to load story');
     }
     const report: TripReportDetail = await reportRes.json();
 
@@ -55,7 +57,7 @@ export const Route = createFileRoute('/adventures/$slug/trips/$tripReportId')({
   },
   component: TripReportPage,
   head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: loaderData.report.title ?? 'Trip report' }] : [],
+    meta: loaderData ? [{ title: loaderData.report.title ?? 'Story' }] : [],
   }),
 });
 
@@ -138,7 +140,7 @@ function TripReportPage() {
       </Link>
 
       <h1 className="mt-3 text-2xl font-semibold text-stone-900 dark:text-stone-50">
-        {report.title ?? 'Trip report'}
+        {report.title ?? 'Story'}
       </h1>
       <div className="mt-2 flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
         <Avatar label={report.authorId} size="sm" />
@@ -156,7 +158,13 @@ function TripReportPage() {
       </div>
 
       {report.description && (
-        <p className="mt-4 whitespace-pre-wrap text-stone-700 dark:text-stone-300">{report.description}</p>
+        <p className="mt-4 whitespace-pre-wrap text-lg text-stone-700 dark:text-stone-300">{report.description}</p>
+      )}
+
+      {report.content && (
+        <div className="mt-4">
+          <MarkdownContent content={report.content} />
+        </div>
       )}
 
       <div className="mt-4">

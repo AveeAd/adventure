@@ -1,7 +1,14 @@
 import { DeleteButton, Show } from '@refinedev/antd';
-import { useShow } from '@refinedev/core';
-import { Descriptions, Tag, Typography } from 'antd';
+import { useCustomMutation, useInvalidate, useShow } from '@refinedev/core';
+import { Button, Descriptions, Image, Space, Tag, Typography, message } from 'antd';
 import { VerificationStatusControl } from '../common/VerificationStatusControl';
+
+interface MediaItem {
+  id: string;
+  url: string;
+  caption: string | null;
+  altText: string | null;
+}
 
 interface AdventurePageDetail {
   id: string;
@@ -15,6 +22,7 @@ interface AdventurePageDetail {
   currentRevision: { content: string } | null;
   contributorIds: string[];
   likeCount: number;
+  media: MediaItem[];
 }
 
 const STATUS_OPTIONS = ['UNVERIFIED', 'NEEDS_REVIEW', 'VERIFIED'];
@@ -62,8 +70,47 @@ export const AdventurePageShow = () => {
           >
             {record.currentRevision?.content ?? 'No content'}
           </Typography.Paragraph>
+
+          <Typography.Title level={5} style={{ marginTop: 24 }}>
+            Photos
+          </Typography.Title>
+          <MediaGallery pageId={record.id} media={record.media} />
         </>
       )}
     </Show>
   );
 };
+
+function MediaGallery({ pageId, media }: { pageId: string; media: MediaItem[] }) {
+  const { mutate, mutation } = useCustomMutation();
+  const invalidate = useInvalidate();
+
+  if (media.length === 0) {
+    return <Typography.Text type="secondary">No photos.</Typography.Text>;
+  }
+
+  const remove = (mediaId: string) => {
+    mutate(
+      { url: `/adventure-pages/${pageId}/media/${mediaId}`, method: 'delete', values: {} },
+      {
+        onSuccess: () => {
+          message.success('Photo deleted');
+          invalidate({ resource: 'adventure-pages', invalidates: ['detail'], id: pageId });
+        },
+      },
+    );
+  };
+
+  return (
+    <Space wrap>
+      {media.map((item) => (
+        <Space key={item.id} direction="vertical" align="center" size="small">
+          <Image src={item.url} alt={item.altText ?? ''} width={120} height={90} style={{ objectFit: 'cover' }} />
+          <Button danger size="small" loading={mutation.isPending} onClick={() => remove(item.id)}>
+            Delete
+          </Button>
+        </Space>
+      ))}
+    </Space>
+  );
+}

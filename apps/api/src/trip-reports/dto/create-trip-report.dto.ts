@@ -11,6 +11,10 @@ export class CreateTripReportDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
+  @IsString()
+  content?: string;
+
   @IsDateString()
   dateCompleted: string;
 

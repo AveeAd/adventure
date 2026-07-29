@@ -9,6 +9,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { TripReportsModule } from './trip-reports/trip-reports.module';
 import { TripGroupsModule } from './trip-groups/trip-groups.module';
+import { UploadsModule } from './uploads/uploads.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -23,6 +24,7 @@ import { HealthController } from './health/health.controller';
     TripReportsModule,
     TripGroupsModule,
     GuideProfilesModule,
+    UploadsModule,
   ],
   controllers: [HealthController],
 })

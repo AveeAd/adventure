@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
 
 const fieldClasses =
@@ -15,9 +16,11 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${fieldClasses} ${props.className ?? ''}`} />;
 }
 
-export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={`${fieldClasses} ${props.className ?? ''}`} />;
-}
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(
+  function Textarea(props, ref) {
+    return <textarea {...props} ref={ref} className={`${fieldClasses} ${props.className ?? ''}`} />;
+  },
+);
 
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={`${fieldClasses} ${props.className ?? ''}`} />;

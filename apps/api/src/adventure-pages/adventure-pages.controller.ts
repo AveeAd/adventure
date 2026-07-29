@@ -27,8 +27,9 @@ export class AdventurePagesController {
 
   @Public()
   @Get()
-  list(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.adventurePagesService.list(Number(page) || 1, Number(pageSize) || 20);
+  list(@Query('page') page?: string, @Query('pageSize') pageSize?: string, @Query('sort') sort?: string) {
+    const validSort = sort === 'popular' || sort === 'trending' ? sort : 'recent';
+    return this.adventurePagesService.list(Number(page) || 1, Number(pageSize) || 20, validSort);
   }
 
   // 2 path segments, so this can't collide with ':id' (1 segment) regardless
@@ -124,6 +125,15 @@ export class AdventurePagesController {
   @Delete(':id/likes')
   unlike(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.adventurePagesService.unlike(id, user.userId);
+  }
+
+  // Unauthenticated on purpose - anonymous visitors' views count toward
+  // "trending" same as signed-in ones (see recordView's comment on why this
+  // isn't logged inside the route loader itself).
+  @Public()
+  @Post(':id/views')
+  recordView(@Param('id') id: string) {
+    return this.adventurePagesService.recordView(id);
   }
 
   @Post(':id/media')

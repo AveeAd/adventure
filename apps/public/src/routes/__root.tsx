@@ -1,6 +1,6 @@
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
-import { Menu, Mountain, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { FilePlus, LogOut, Menu, Mountain, UserRound, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 import appCss from '../styles.css?url'
 import { Button } from '../components/Button'
@@ -32,7 +32,40 @@ export const Route = createRootRoute({
 })
 
 const navLinkClass =
-  'text-sm font-medium text-stone-600 hover:text-primary-700 dark:text-stone-300 dark:hover:text-primary-400 [&.active]:text-primary-700 dark:[&.active]:text-primary-400'
+  'flex items-center gap-1.5 text-sm font-medium text-stone-600 hover:text-primary-700 dark:text-stone-300 dark:hover:text-primary-400'
+
+// A filled waypoint dot marks the current stop on the trail - on-theme for
+// a map/trail app, and a clearer active-state signal than a color change
+// alone once the surrounding links carry more visual weight (buttons, avatar).
+function WaypointDot({ show }: { show: boolean }) {
+  return (
+    <span
+      className={`h-1.5 w-1.5 rounded-full bg-accent-500 transition-opacity ${show ? 'opacity-100' : 'opacity-0'}`}
+      aria-hidden="true"
+    />
+  )
+}
+
+function PrimaryNavLink({
+  to,
+  children,
+  onClick,
+}: {
+  to: string
+  children: React.ReactNode
+  onClick?: () => void
+}) {
+  return (
+    <Link to={to} onClick={onClick} className={navLinkClass}>
+      {({ isActive }) => (
+        <>
+          <WaypointDot show={isActive} />
+          {children}
+        </>
+      )}
+    </Link>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -51,12 +84,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             </Link>
 
             <nav className="hidden items-center gap-6 sm:flex">
-              <Link to="/" className={navLinkClass}>
-                Discover
-              </Link>
-              <Link to="/guides" className={navLinkClass}>
-                Guides
-              </Link>
+              <PrimaryNavLink to="/">Discover</PrimaryNavLink>
+              <PrimaryNavLink to="/guides">Guides</PrimaryNavLink>
+              <span className="h-5 w-px bg-stone-200 dark:bg-stone-800" aria-hidden="true" />
               <AuthStatus />
             </nav>
 
@@ -71,15 +101,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </div>
 
           {menuOpen && (
-            <nav className="flex flex-col gap-4 border-t border-stone-200 px-4 py-4 sm:hidden dark:border-stone-800">
-              <Link to="/" className={navLinkClass} onClick={() => setMenuOpen(false)}>
-                Discover
-              </Link>
-              <Link to="/guides" className={navLinkClass} onClick={() => setMenuOpen(false)}>
-                Guides
-              </Link>
-              <AuthStatus stacked />
-            </nav>
+            <div className="flex flex-col gap-4 border-t border-stone-200 px-4 py-4 sm:hidden dark:border-stone-800">
+              <nav className="flex flex-col gap-4">
+                <PrimaryNavLink to="/" onClick={() => setMenuOpen(false)}>
+                  Discover
+                </PrimaryNavLink>
+                <PrimaryNavLink to="/guides" onClick={() => setMenuOpen(false)}>
+                  Guides
+                </PrimaryNavLink>
+              </nav>
+              <div className="border-t border-stone-200 pt-4 dark:border-stone-800">
+                <AuthStatus stacked />
+              </div>
+            </div>
           )}
         </header>
 
@@ -126,27 +160,111 @@ function AuthStatus({ stacked = false }: { stacked?: boolean }) {
   return (
     <span className={stacked ? 'flex flex-col gap-4' : 'flex items-center gap-4'}>
       <NotificationBell />
-      <Link to="/adventures/new" className={navLinkClass}>
-        New page
-      </Link>
-      <Link to="/account/guide-profile" className={navLinkClass}>
-        Guide profile
-      </Link>
-      <Link to="/users/$id" params={{ id: user.userId }} className={navLinkClass}>
-        {user.email}
-      </Link>
-      <Button
-        variant="secondary"
-        size="sm"
-        type="button"
-        onClick={async () => {
-          await logout()
-          setUser(null)
-          window.location.reload()
-        }}
-      >
-        Sign out
-      </Button>
+      <AccountMenu user={user} stacked={stacked} onSignOut={() => setUser(null)} />
     </span>
+  )
+}
+
+// One avatar replaces what used to be three separate flat links (email,
+// guide profile, sign out) - patterned directly on NotificationBell's
+// toggle-button + absolute panel so the two dropdowns in this header look
+// like they belong to the same design, not two different ones.
+function AccountMenu({
+  user,
+  stacked,
+  onSignOut,
+}: {
+  user: CurrentUser
+  stacked: boolean
+  onSignOut: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const initial = user.email[0]?.toUpperCase() ?? '?'
+
+  useEffect(() => {
+    if (!open) return
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
+
+  async function handleSignOut() {
+    setOpen(false)
+    await logout()
+    onSignOut()
+    window.location.reload()
+  }
+
+  // On the mobile stacked menu there's no room for a floating panel to make
+  // sense - just lay the same rows out inline instead of behind a toggle.
+  if (stacked) {
+    return (
+      <div className="flex flex-col gap-3">
+        <Link to="/users/$id" params={{ id: user.userId }} className="truncate text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400">
+          {user.email}
+        </Link>
+        <Link to="/adventures/new" className={navLinkClass}>
+          <FilePlus className="h-4 w-4" /> Contribute
+        </Link>
+        <Link to="/account/guide-profile" className={navLinkClass}>
+          <UserRound className="h-4 w-4" /> Guide profile
+        </Link>
+        <button type="button" onClick={handleSignOut} className={`${navLinkClass} text-left`}>
+          <LogOut className="h-4 w-4" /> Sign out
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((wasOpen) => !wasOpen)}
+        aria-label="Account menu"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white transition-colors hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600"
+      >
+        {initial}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-900">
+          <Link
+            to="/users/$id"
+            params={{ id: user.userId }}
+            onClick={() => setOpen(false)}
+            className="block truncate border-b border-stone-200 px-3 py-2 text-sm text-stone-500 hover:bg-stone-50 hover:text-primary-700 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-primary-400"
+          >
+            {user.email}
+          </Link>
+          <Link
+            to="/adventures/new"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            <FilePlus className="h-4 w-4" /> Contribute
+          </Link>
+          <Link
+            to="/account/guide-profile"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            <UserRound className="h-4 w-4" /> Guide profile
+          </Link>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            <LogOut className="h-4 w-4" /> Sign out
+          </button>
+        </div>
+      )}
+    </div>
   )
 }

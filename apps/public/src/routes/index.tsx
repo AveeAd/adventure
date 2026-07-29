@@ -1,13 +1,14 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
-import { Compass, MountainSnow, Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ChevronDown, Compass, Map as MapIcon, MapPin, MountainSnow, Route as RouteIcon, Search, TrendingUp } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { apiUrl } from '../lib/auth/api';
+import { useInView } from '../lib/useInView';
 import { Badge, StatusBadge } from '../components/Badge';
 import { Card } from '../components/Card';
 import { Container } from '../components/Container';
 import { EmptyState } from '../components/EmptyState';
-import { Input } from '../components/FormField';
 import { LazyAdventureMap } from '../components/LazyAdventureMap';
+import { TopoLines } from '../components/TopoLines';
 import type { MapSpot, MapTrail } from '../components/AdventureMap';
 
 interface SearchResult {
@@ -35,6 +36,7 @@ interface AdventurePageSummary {
   difficultyLevel: { name: string } | null;
   tags: { tag: { id: string; name: string } }[];
   media: { url: string; altText: string | null }[];
+  likeCount: number;
 }
 
 export const Route = createFileRoute('/')({
@@ -46,7 +48,7 @@ export const Route = createFileRoute('/')({
       maxLat: String(NEPAL_BBOX.maxLat),
     });
     const [pagesRes, trailsRes, spotsRes] = await Promise.all([
-      fetch(apiUrl('/adventure-pages?pageSize=50')),
+      fetch(apiUrl('/adventure-pages?pageSize=50&sort=trending')),
       fetch(apiUrl(`/trails/bbox?${bboxParams}`)),
       fetch(apiUrl(`/spots/bbox?${bboxParams}`)),
     ]);
@@ -61,11 +63,56 @@ export const Route = createFileRoute('/')({
   component: DiscoverPage,
 });
 
+// Counts up from 0 once, when the number first scrolls into view - a small
+// bit of life for the map section's stats. Skips straight to the final
+// value if the visitor has reduced motion set.
+function AnimatedNumber({ value }: { value: number }) {
+  const { ref, isInView } = useInView<HTMLDivElement>();
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplay(value);
+      return;
+    }
+    const durationMs = 600;
+    const start = performance.now();
+    let frame: number;
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / durationMs, 1);
+      setDisplay(Math.round(value * (1 - (1 - progress) ** 3)));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [isInView, value]);
+
+  return (
+    <div ref={ref} className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+      {display}
+    </div>
+  );
+}
+
 function DiscoverPage() {
   const { pages, trails, spots } = Route.useLoaderData();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const mapSectionRef = useRef<HTMLDivElement>(null);
+  const { ref: trendingRef, isInView: trendingInView } = useInView<HTMLDivElement>();
+
+  function toggleMap() {
+    setShowMap((wasShown) => {
+      const next = !wasShown;
+      if (next) {
+        requestAnimationFrame(() => mapSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
+      return next;
+    });
+  }
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -85,28 +132,58 @@ function DiscoverPage() {
 
   return (
     <>
-      <div className="border-b border-stone-200 bg-gradient-to-b from-primary-50 to-stone-50 dark:border-stone-800 dark:from-primary-950/40 dark:to-stone-950">
-        <Container>
-          <div className="flex items-center gap-2 text-primary-700 dark:text-primary-400">
+      <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-stone-200 bg-gradient-to-b from-primary-50 to-stone-50 dark:border-stone-800 dark:from-primary-950/40 dark:to-stone-950">
+        <TopoLines className="absolute inset-x-0 top-0 h-full w-full text-primary-600/25 dark:text-primary-400/15" />
+        <Container size="wide" className="relative">
+          <div
+            className="animate-fade-up flex items-center gap-2 text-primary-700 dark:text-primary-400"
+            style={{ animationDelay: '0ms' }}
+          >
             <Compass className="h-5 w-5" />
             <span className="text-sm font-medium uppercase tracking-wide">Discover Nepal</span>
           </div>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-stone-900 sm:text-4xl dark:text-stone-50">
+          <h1
+            className="animate-fade-up mt-4 text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl lg:text-6xl dark:text-stone-50"
+            style={{ animationDelay: '80ms' }}
+          >
             Trails, treks, and adventures &mdash; mapped and written by the community
           </h1>
-          <p className="mt-3 max-w-2xl text-stone-600 dark:text-stone-300">
+          <p
+            className="animate-fade-up mt-5 max-w-2xl text-lg text-stone-600 dark:text-stone-300"
+            style={{ animationDelay: '160ms' }}
+          >
             A free, open guide to adventure in Nepal &mdash; built and verified by the people who've been there.
           </p>
-          <div className="relative mt-6 max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-            <Input
+          <div className="animate-fade-up relative mt-10 w-full" style={{ animationDelay: '240ms' }}>
+            <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
+            <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search adventure pages..."
-              className="pl-9"
+              className="w-full rounded-full border-2 border-stone-300/70 bg-white/60 py-4 pl-14 pr-16 text-base text-stone-900 shadow-sm backdrop-blur-md placeholder:text-stone-400 transition-shadow hover:shadow-md focus:border-primary-500 focus:shadow-md focus:outline-none focus:ring-4 focus:ring-primary-100 dark:border-stone-600/70 dark:bg-stone-900/50 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:ring-primary-900/50 sm:pr-40"
             />
+            {(trails.length > 0 || spots.length > 0) && (
+              <button
+                type="button"
+                onClick={toggleMap}
+                aria-pressed={showMap}
+                aria-label={showMap ? 'Hide map' : 'Search on map'}
+                className={`absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-full p-3 text-sm font-medium transition-colors sm:px-4 sm:py-2.5 ${
+                  showMap
+                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
+                }`}
+              >
+                <MapIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">{showMap ? 'Hide map' : 'Search on map'}</span>
+              </button>
+            )}
           </div>
         </Container>
+
+        <div className="absolute inset-x-0 bottom-6 flex justify-center">
+          <ChevronDown className="h-5 w-5 animate-bounce text-primary-600/50 dark:text-primary-400/40" aria-hidden="true" />
+        </div>
       </div>
 
       <Container size="wide">
@@ -114,9 +191,39 @@ function DiscoverPage() {
           <SearchResults query={query} results={results} searching={searching} />
         ) : (
           <>
-            {(trails.length > 0 || spots.length > 0) && (
-              <div className="mb-8">
-                <LazyAdventureMap trails={trails} spots={spots} height={420} zoom={7} />
+            {showMap && (trails.length > 0 || spots.length > 0) && (
+              <div ref={mapSectionRef} className="animate-fade-up scroll-mt-6 mb-10">
+                <div className="mb-4 flex items-center gap-2 text-primary-700 dark:text-primary-400">
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase tracking-wide">On the map</span>
+                </div>
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                  <div className="lg:col-span-2">
+                    <LazyAdventureMap trails={trails} spots={spots} height={420} zoom={7} />
+                  </div>
+                  <Card className="flex flex-col gap-5 p-5">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <AnimatedNumber value={trails.length} />
+                        <div className="text-xs text-stone-500 dark:text-stone-400">Trails mapped</div>
+                      </div>
+                      <div>
+                        <AnimatedNumber value={spots.length} />
+                        <div className="text-xs text-stone-500 dark:text-stone-400">Spots marked</div>
+                      </div>
+                    </div>
+                    <div className="border-t border-stone-200 pt-4 dark:border-stone-800">
+                      <div className="flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-300">
+                        <RouteIcon className="h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400" />
+                        Trail routes, confirmed by contributors
+                      </div>
+                      <div className="mt-2.5 flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-300">
+                        <MapPin className="h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400" />
+                        Points of interest along the way
+                      </div>
+                    </div>
+                  </Card>
+                </div>
               </div>
             )}
           </>
@@ -124,47 +231,94 @@ function DiscoverPage() {
         {results === null && (pages.length === 0 ? (
           <EmptyState icon={<MountainSnow className="h-8 w-8" />}>No adventure pages yet.</EmptyState>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {pages.map((page) => (
-              <Link key={page.id} to="/adventures/$slug" params={{ slug: page.slug }} className="group">
-                <Card className="flex h-full flex-col overflow-hidden transition-shadow group-hover:shadow-md">
-                  <div className="flex h-36 items-center justify-center bg-gradient-to-br from-primary-100 to-accent-100 dark:from-primary-900 dark:to-accent-900">
+          <div ref={trendingRef}>
+            <div
+              className={`flex items-center gap-2 text-accent-600 dark:text-accent-400 ${trendingInView ? 'animate-fade-up' : 'opacity-0'}`}
+            >
+              <TrendingUp className="h-4 w-4" />
+              <span className="text-xs font-medium uppercase tracking-wide">Trending destinations</span>
+            </div>
+            <div className="mt-4 columns-1 gap-6 sm:columns-2 lg:columns-3">
+              {pages.map((page, index) => {
+                const aspect = ['aspect-[3/4]', 'aspect-square', 'aspect-[4/5]', 'aspect-[5/6]'][index % 4];
+                return (
+                  <Link
+                    key={page.id}
+                    to="/adventures/$slug"
+                    params={{ slug: page.slug }}
+                    className={`group mb-6 block break-inside-avoid ${trendingInView ? 'animate-fade-up' : 'opacity-0'}`}
+                    style={{ animationDelay: trendingInView ? `${Math.min(index, 8) * 60}ms` : undefined }}
+                  >
                     {page.media[0] ? (
-                      <img
-                        src={page.media[0].url}
-                        alt={page.media[0].altText ?? ''}
-                        className="h-full w-full object-cover"
-                      />
+                      <div
+                        className={`relative w-full overflow-hidden rounded-2xl shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-primary-900/10 ${aspect}`}
+                      >
+                        <img
+                          src={page.media[0].url}
+                          alt={page.media[0].altText ?? ''}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-4">
+                          <h2 className="flex items-center gap-1.5 font-semibold text-white">
+                            <span
+                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent-400 opacity-0 transition-opacity group-hover:opacity-100"
+                              aria-hidden="true"
+                            />
+                            {page.title}
+                          </h2>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {page.activityType && (
+                              <span className="rounded-full border border-white/30 bg-white/15 px-2.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+                                {page.activityType.name}
+                              </span>
+                            )}
+                            {page.difficultyLevel && (
+                              <span className="rounded-full border border-white/30 bg-white/15 px-2.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+                                {page.difficultyLevel.name}
+                              </span>
+                            )}
+                          </div>
+                          {(page.durationMinDays || page.maxAltitudeMeters) && (
+                            <p className="mt-1.5 text-xs text-white/80">
+                              {page.durationMinDays && page.durationMaxDays
+                                ? `${page.durationMinDays}-${page.durationMaxDays} days`
+                                : null}
+                              {page.maxAltitudeMeters ? ` · up to ${page.maxAltitudeMeters}m` : null}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     ) : (
-                      <MountainSnow className="h-10 w-10 text-primary-500 dark:text-primary-300" />
+                      <Card className="flex flex-col gap-2 overflow-hidden p-4 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary-900/5">
+                        <div className="flex items-center gap-1.5 font-semibold text-stone-900 group-hover:text-primary-700 dark:text-stone-50 dark:group-hover:text-primary-400">
+                          <MountainSnow className="h-4 w-4 shrink-0 text-primary-500 dark:text-primary-300" />
+                          {page.title}
+                        </div>
+                        {page.summary && <p className="line-clamp-3 text-sm text-stone-600 dark:text-stone-400">{page.summary}</p>}
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          {page.activityType && <Badge tone="neutral">{page.activityType.name}</Badge>}
+                          {page.difficultyLevel && <Badge tone="neutral">{page.difficultyLevel.name}</Badge>}
+                          {page.tags.slice(0, 3).map(({ tag }) => (
+                            <Badge key={tag.id} tone="neutral">
+                              #{tag.name}
+                            </Badge>
+                          ))}
+                        </div>
+                        {(page.durationMinDays || page.maxAltitudeMeters) && (
+                          <p className="text-xs text-stone-500 dark:text-stone-400">
+                            {page.durationMinDays && page.durationMaxDays
+                              ? `${page.durationMinDays}-${page.durationMaxDays} days`
+                              : null}
+                            {page.maxAltitudeMeters ? ` · up to ${page.maxAltitudeMeters}m` : null}
+                          </p>
+                        )}
+                      </Card>
                     )}
-                  </div>
-                  <div className="flex flex-1 flex-col gap-2 p-4">
-                    <h2 className="font-semibold text-stone-900 group-hover:text-primary-700 dark:text-stone-50 dark:group-hover:text-primary-400">
-                      {page.title}
-                    </h2>
-                    {page.summary && <p className="line-clamp-2 text-sm text-stone-600 dark:text-stone-400">{page.summary}</p>}
-                    <div className="mt-auto flex flex-wrap gap-2 pt-2">
-                      {page.activityType && <Badge tone="neutral">{page.activityType.name}</Badge>}
-                      {page.difficultyLevel && <Badge tone="neutral">{page.difficultyLevel.name}</Badge>}
-                      {page.tags.slice(0, 3).map(({ tag }) => (
-                        <Badge key={tag.id} tone="neutral">
-                          #{tag.name}
-                        </Badge>
-                      ))}
-                    </div>
-                    {(page.durationMinDays || page.maxAltitudeMeters) && (
-                      <p className="text-xs text-stone-500 dark:text-stone-400">
-                        {page.durationMinDays && page.durationMaxDays
-                          ? `${page.durationMinDays}-${page.durationMaxDays} days`
-                          : null}
-                        {page.maxAltitudeMeters ? ` · up to ${page.maxAltitudeMeters}m` : null}
-                      </p>
-                    )}
-                  </div>
-                </Card>
-              </Link>
-            ))}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         ))}
       </Container>

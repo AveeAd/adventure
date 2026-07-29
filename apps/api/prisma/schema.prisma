@@ -235,8 +235,24 @@ model AdventurePage {
   tags      AdventurePageTag[]
   relatedTo   RelatedAdventurePage[] @relation("PageRelations")
   relatedFrom RelatedAdventurePage[] @relation("RelatedByPage")
+  views       AdventurePageView[]
 
   @@map("adventure_pages")
+}
+
+// Append-only view log for the "trending" Discover sort (recent views +
+// likes) - deliberately anonymous/unauthenticated (no userId), since public
+// page views aren't gated on sign-in. Not deduped by session/IP; a simple
+// per-load counter is enough for a non-commercial community site, revisit
+// if it ever needs to resist inflation.
+model AdventurePageView {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+
+  @@index([adventurePageId, createdAt])
+  @@map("adventure_page_views")
 }
 
 model PageRevision {
@@ -458,7 +474,8 @@ model TripReport {
   authorId          String
   author            User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
   title             String?
-  description       String?
+  description       String? // short summary shown in list views
+  content           String? // full story, markdown - rendered like AdventurePage content
   dateCompleted     DateTime
   durationDays      Int?
   actualCostAmount  Int?

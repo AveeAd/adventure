@@ -33,3 +33,14 @@ async function authFetchJson<T>(path: string, method: string, body?: unknown): P
 export const authPost = <T>(path: string, body?: unknown) => authFetchJson<T>(path, 'POST', body);
 export const authPatch = <T>(path: string, body?: unknown) => authFetchJson<T>(path, 'PATCH', body);
 export const authDelete = <T>(path: string) => authFetchJson<T>(path, 'DELETE');
+
+// No Content-Type header here on purpose - the browser sets the multipart
+// boundary itself when the body is a FormData instance.
+export async function authUpload<T>(path: string, formData: FormData): Promise<T> {
+  const res = await authFetch(path, { method: 'POST', body: formData });
+  if (!res.ok) {
+    const message = await res.text().catch(() => res.statusText);
+    throw new Error(message || `Request failed: ${res.status}`);
+  }
+  return res.json();
+}

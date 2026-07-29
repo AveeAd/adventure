@@ -3,7 +3,7 @@ import 'leaflet/dist/leaflet.css';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GeoJSON, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 
 // react-leaflet's bundled default marker icon URLs break under Vite - point
@@ -52,6 +52,41 @@ function FitBounds({ trails, spots }: { trails: MapTrail[]; spots: MapSpot[] }) 
   return null;
 }
 
+// leaflet sizes its canvas from the container's dimensions at mount time, so
+// toggling fullscreen (which resizes the container via CSS) needs an explicit
+// invalidateSize or the map stays clipped to its old size
+function InvalidateSizeOnChange({ dependency }: { dependency: unknown }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const id = window.setTimeout(() => map.invalidateSize(), 0);
+    return () => window.clearTimeout(id);
+  }, [map, dependency]);
+
+  return null;
+}
+
+function FullscreenToggle({ isFullscreen, onToggle }: { isFullscreen: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
+      className="absolute right-2 top-2 z-[1000] rounded-lg border border-stone-200 bg-white/90 p-2 text-stone-600 shadow-sm hover:bg-white dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300 dark:hover:bg-stone-900"
+    >
+      {isFullscreen ? (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 9 4 4m0 0v4m0-4h4m6 6 5-5m0 0v4m0-4h-4M9 15l-5 5m0 0v-4m0 4h4m6-6 5 5m0 0v-4m0 4h-4" />
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4m12-4v4h-4" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export function AdventureMap({
   trails,
   spots,
@@ -63,8 +98,27 @@ export function AdventureMap({
   height?: number;
   zoom?: number;
 }) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isFullscreen]);
+
   return (
-    <div style={{ height }} className="overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800">
+    <div
+      style={isFullscreen ? undefined : { height }}
+      className={
+        isFullscreen
+          ? 'fixed inset-0 z-[1000]'
+          : 'relative overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800'
+      }
+    >
+      <FullscreenToggle isFullscreen={isFullscreen} onToggle={() => setIsFullscreen((v) => !v)} />
       <MapContainer center={NEPAL_CENTER} zoom={zoom} style={{ height: '100%', width: '100%' }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -103,6 +157,7 @@ export function AdventureMap({
           </Marker>
         ))}
         <FitBounds trails={trails} spots={spots} />
+        <InvalidateSizeOnChange dependency={isFullscreen} />
       </MapContainer>
     </div>
   );

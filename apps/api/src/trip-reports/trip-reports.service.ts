@@ -77,6 +77,7 @@ export class TripReportsService {
         authorId,
         title: dto.title,
         description: dto.description,
+        content: dto.content,
         dateCompleted: new Date(dto.dateCompleted),
         durationDays: dto.durationDays,
         actualCostAmount: dto.actualCostAmount,
@@ -92,6 +93,7 @@ export class TripReportsService {
       data: {
         title: dto.title,
         description: dto.description,
+        content: dto.content,
         dateCompleted: dto.dateCompleted ? new Date(dto.dateCompleted) : undefined,
         durationDays: dto.durationDays,
         actualCostAmount: dto.actualCostAmount,

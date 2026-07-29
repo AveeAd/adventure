@@ -1,9 +1,11 @@
+import { FullscreenExitOutlined, FullscreenOutlined } from '@ant-design/icons';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { useEffect } from 'react';
+import { Button } from 'antd';
+import { useEffect, useState } from 'react';
 import { GeoJSON, MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -25,9 +27,51 @@ function FitToGeometry({ geometry }: { geometry: GeoJSON.Geometry }) {
   return null;
 }
 
+// leaflet sizes its canvas from the container's dimensions at mount time, so
+// toggling fullscreen (which resizes the container via CSS) needs an explicit
+// invalidateSize or the map stays clipped to its old size - mirrors
+// apps/public/src/components/AdventureMap.tsx's InvalidateSizeOnChange.
+function InvalidateSizeOnChange({ dependency }: { dependency: unknown }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const id = window.setTimeout(() => map.invalidateSize(), 0);
+    return () => window.clearTimeout(id);
+  }, [map, dependency]);
+
+  return null;
+}
+
+// apps/admin has no Tailwind (see CLAUDE.md - antd + ConfigProvider tokens
+// instead), so positioning here is plain inline styles, not utility classes.
 export function GeometryMap({ geometry, height = 240 }: { geometry: GeoJSON.Geometry; height?: number }) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isFullscreen]);
+
   return (
-    <div style={{ height }}>
+    <div
+      style={
+        isFullscreen
+          ? { position: 'fixed', inset: 0, zIndex: 1000 }
+          : { height, position: 'relative' }
+      }
+    >
+      <Button
+        type="default"
+        size="small"
+        onClick={() => setIsFullscreen((v) => !v)}
+        aria-label={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
+        icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+        style={{ position: 'absolute', right: 8, top: 8, zIndex: 1000 }}
+      />
       <MapContainer center={[28.3949, 84.124]} zoom={7} style={{ height: '100%', width: '100%' }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -39,6 +83,7 @@ export function GeometryMap({ geometry, height = 240 }: { geometry: GeoJSON.Geom
           <GeoJSON data={geometry} pathOptions={{ color: '#2f6b4f', weight: 4 }} />
         )}
         <FitToGeometry geometry={geometry} />
+        <InvalidateSizeOnChange dependency={isFullscreen} />
       </MapContainer>
     </div>
   );

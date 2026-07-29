@@ -11,24 +11,46 @@ export interface CurrentUser {
 // Mirrors apps/admin's authProvider.check(): the access token only lives in
 // memory (never localStorage), so a fresh page load has none - fall back to
 // the httpOnly refresh cookie once before deciding the visitor is anonymous.
+//
+// Deduped via a shared in-flight promise: on a page like the adventure page
+// view, several independent components (the Contribute toggle, LikeButton,
+// LogTripForm, ...) each call checkAuth() on mount. Refresh tokens are
+// single-use/rotating (see auth.service.ts's refresh() - it revokes the old
+// row before issuing a new pair), so without dedup, concurrent calls each
+// fire their own POST /auth/refresh with the same not-yet-rotated cookie;
+// only the first actually succeeds and every other one loses the race and
+// gets a 401, resolving to `false` even though the visitor is signed in.
+// That's what made these buttons intermittently vanish. One shared in-flight
+// promise means only one real request goes out, and every caller - no
+// matter how many components asked at once - gets the same true/false result.
+let inFlightCheck: Promise<boolean> | null = null;
+
 export async function checkAuth(): Promise<boolean> {
   if (tokenStore.get()) {
     return true;
   }
-  try {
-    const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-    if (res.ok) {
-      const { accessToken } = await res.json();
-      tokenStore.set(accessToken);
-      return true;
-    }
-  } catch {
-    // fall through to unauthenticated
+  if (inFlightCheck) {
+    return inFlightCheck;
   }
-  return false;
+  inFlightCheck = (async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const { accessToken } = await res.json();
+        tokenStore.set(accessToken);
+        return true;
+      }
+    } catch {
+      // fall through to unauthenticated
+    } finally {
+      inFlightCheck = null;
+    }
+    return false;
+  })();
+  return inFlightCheck;
 }
 
 export async function fetchCurrentUser(): Promise<CurrentUser | null> {

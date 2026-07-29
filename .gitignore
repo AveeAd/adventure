@@ -11,6 +11,9 @@ build/
 .next/
 .output/
 
+# User-uploaded files (local disk storage, see UPLOAD_DIR)
+/uploads/
+
 # Logs
 *.log
 npm-debug.log*
