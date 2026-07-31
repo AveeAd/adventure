@@ -536,17 +536,26 @@ function TrailsAndSpotsSection({
                     <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? 'Trail'}</div>
                     <StatusBadge status={trail.verificationStatus} />
                   </div>
-                  {contributeMode && (
-                    <Button
-                      variant={confirmed.has(trail.id) ? 'ghost' : 'secondary'}
-                      size="sm"
-                      disabled={confirmed.has(trail.id)}
-                      onClick={() => confirmTrail(trail.id)}
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/adventures/$slug/trails/$trailId/history"
+                      params={{ slug, trailId: trail.id }}
+                      className="text-sm text-stone-500 hover:underline dark:text-stone-400"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {confirmed.has(trail.id) ? 'Confirmed' : 'Confirm accurate'}
-                    </Button>
-                  )}
+                      History
+                    </Link>
+                    {contributeMode && (
+                      <Button
+                        variant={confirmed.has(trail.id) ? 'ghost' : 'secondary'}
+                        size="sm"
+                        disabled={confirmed.has(trail.id)}
+                        onClick={() => confirmTrail(trail.id)}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {confirmed.has(trail.id) ? 'Confirmed' : 'Confirm accurate'}
+                      </Button>
+                    )}
+                  </div>
                 </Card>
               </li>
             ))}
@@ -560,17 +569,26 @@ function TrailsAndSpotsSection({
                       <StatusBadge status={spot.verificationStatus} />
                     </div>
                   </div>
-                  {contributeMode && (
-                    <Button
-                      variant={confirmed.has(spot.id) ? 'ghost' : 'secondary'}
-                      size="sm"
-                      disabled={confirmed.has(spot.id)}
-                      onClick={() => confirmSpot(spot.id)}
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/adventures/$slug/spots/$spotId/history"
+                      params={{ slug, spotId: spot.id }}
+                      className="text-sm text-stone-500 hover:underline dark:text-stone-400"
                     >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {confirmed.has(spot.id) ? 'Confirmed' : 'Confirm accurate'}
-                    </Button>
-                  )}
+                      History
+                    </Link>
+                    {contributeMode && (
+                      <Button
+                        variant={confirmed.has(spot.id) ? 'ghost' : 'secondary'}
+                        size="sm"
+                        disabled={confirmed.has(spot.id)}
+                        onClick={() => confirmSpot(spot.id)}
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        {confirmed.has(spot.id) ? 'Confirmed' : 'Confirm accurate'}
+                      </Button>
+                    )}
+                  </div>
                 </Card>
               </li>
             ))}

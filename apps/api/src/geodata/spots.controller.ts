@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
@@ -76,5 +76,32 @@ export class SpotsController {
   @Patch(':id/verification-status')
   updateVerificationStatus(@Param('id') id: string, @Body() dto: UpdateGeoVerificationStatusDto) {
     return this.spotsService.updateVerificationStatus(id, dto.status);
+  }
+
+  @Public()
+  @Get(':id/revisions')
+  listRevisions(@Param('id') id: string) {
+    return this.spotsService.listRevisions(id);
+  }
+
+  @Public()
+  @Get(':id/revisions/:version')
+  getRevision(@Param('id') id: string, @Param('version', ParseIntPipe) version: number) {
+    return this.spotsService.getRevision(id, version);
+  }
+
+  @Public()
+  @Get(':id/diff')
+  diff(@Param('id') id: string, @Query('from', ParseIntPipe) from: number, @Query('to', ParseIntPipe) to: number) {
+    return this.spotsService.diff(id, from, to);
+  }
+
+  @Post(':id/revisions/:version/revert')
+  revert(
+    @Param('id') id: string,
+    @Param('version', ParseIntPipe) version: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.spotsService.revert(id, user.userId, version);
   }
 }

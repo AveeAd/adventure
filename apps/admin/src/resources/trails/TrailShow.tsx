@@ -1,7 +1,8 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
-import { Descriptions } from 'antd';
+import { Descriptions, Typography } from 'antd';
 import { GeometryMap } from '../../components/GeometryMap';
+import { GeodataHistory } from '../common/GeodataHistory';
 import { VerificationStatusControl } from '../common/VerificationStatusControl';
 
 interface TrailDetail {
@@ -43,6 +44,11 @@ export const TrailShow = () => {
               status={record.verificationStatus}
               options={STATUS_OPTIONS}
             />
+          </div>
+
+          <div style={{ marginTop: 24 }}>
+            <Typography.Title level={5}>History</Typography.Title>
+            <GeodataHistory resource="trails" id={record.id} />
           </div>
         </>
       )}

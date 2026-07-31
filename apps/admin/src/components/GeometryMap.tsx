@@ -15,14 +15,26 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-function FitToGeometry({ geometry }: { geometry: GeoJSON.Geometry }) {
+function toLayer(geometry: GeoJSON.Geometry): L.Layer {
+  return geometry.type === 'Point' ? L.marker([geometry.coordinates[1], geometry.coordinates[0]]) : L.geoJSON(geometry);
+}
+
+function toBounds(layer: L.Layer): L.LatLngBounds {
+  return 'getBounds' in layer
+    ? (layer as L.GeoJSON).getBounds()
+    : L.latLngBounds([(layer as L.Marker).getLatLng(), (layer as L.Marker).getLatLng()]);
+}
+
+function FitToGeometry({ geometry, compareGeometry }: { geometry: GeoJSON.Geometry; compareGeometry?: GeoJSON.Geometry }) {
   const map = useMap();
 
   useEffect(() => {
-    const layer = geometry.type === 'Point' ? L.marker([geometry.coordinates[1], geometry.coordinates[0]]) : L.geoJSON(geometry);
-    const bounds = 'getBounds' in layer ? layer.getBounds() : L.latLngBounds([layer.getLatLng(), layer.getLatLng()]);
+    const bounds = toBounds(toLayer(geometry));
+    if (compareGeometry) {
+      bounds.extend(toBounds(toLayer(compareGeometry)));
+    }
     map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 });
-  }, [map, geometry]);
+  }, [map, geometry, compareGeometry]);
 
   return null;
 }
@@ -44,7 +56,18 @@ function InvalidateSizeOnChange({ dependency }: { dependency: unknown }) {
 
 // apps/admin has no Tailwind (see CLAUDE.md - antd + ConfigProvider tokens
 // instead), so positioning here is plain inline styles, not utility classes.
-export function GeometryMap({ geometry, height = 240 }: { geometry: GeoJSON.Geometry; height?: number }) {
+// compareGeometry (optional) renders muted/dashed alongside geometry solid -
+// the revision-diff overlay GEODATA_HISTORY.md calls for, reusing this
+// component rather than building a second map component.
+export function GeometryMap({
+  geometry,
+  compareGeometry,
+  height = 240,
+}: {
+  geometry: GeoJSON.Geometry;
+  compareGeometry?: GeoJSON.Geometry;
+  height?: number;
+}) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -77,12 +100,19 @@ export function GeometryMap({ geometry, height = 240 }: { geometry: GeoJSON.Geom
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        {compareGeometry && (
+          compareGeometry.type === 'Point' ? (
+            <Marker position={[compareGeometry.coordinates[1], compareGeometry.coordinates[0]]} opacity={0.5} />
+          ) : (
+            <GeoJSON data={compareGeometry} pathOptions={{ color: '#94a3b8', weight: 3, dashArray: '6 6' }} />
+          )
+        )}
         {geometry.type === 'Point' ? (
           <Marker position={[geometry.coordinates[1], geometry.coordinates[0]]} />
         ) : (
           <GeoJSON data={geometry} pathOptions={{ color: '#2f6b4f', weight: 4 }} />
         )}
-        <FitToGeometry geometry={geometry} />
+        <FitToGeometry geometry={geometry} compareGeometry={compareGeometry} />
         <InvalidateSizeOnChange dependency={isFullscreen} />
       </MapContainer>
     </div>

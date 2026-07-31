@@ -27,6 +27,10 @@ import { Route as AdventuresSlugHistoryVersionRouteImport } from './routes/adven
 import { Route as AdventuresSlugSpotsNewRouteImport } from './routes/adventures/$slug/spots/new'
 import { Route as AdventuresSlugTrailsNewRouteImport } from './routes/adventures/$slug/trails/new'
 import { Route as AdventuresSlugTripsTripReportIdRouteImport } from './routes/adventures/$slug/trips/$tripReportId'
+import { Route as AdventuresSlugSpotsSpotIdHistoryIndexRouteImport } from './routes/adventures/$slug/spots/$spotId/history/index'
+import { Route as AdventuresSlugSpotsSpotIdHistoryVersionRouteImport } from './routes/adventures/$slug/spots/$spotId/history/$version'
+import { Route as AdventuresSlugTrailsTrailIdHistoryIndexRouteImport } from './routes/adventures/$slug/trails/$trailId/history/index'
+import { Route as AdventuresSlugTrailsTrailIdHistoryVersionRouteImport } from './routes/adventures/$slug/trails/$trailId/history/$version'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -123,6 +127,30 @@ const AdventuresSlugTripsTripReportIdRoute =
     path: '/adventures/$slug/trips/$tripReportId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AdventuresSlugSpotsSpotIdHistoryIndexRoute =
+  AdventuresSlugSpotsSpotIdHistoryIndexRouteImport.update({
+    id: '/adventures/$slug/spots/$spotId/history/',
+    path: '/adventures/$slug/spots/$spotId/history/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdventuresSlugSpotsSpotIdHistoryVersionRoute =
+  AdventuresSlugSpotsSpotIdHistoryVersionRouteImport.update({
+    id: '/adventures/$slug/spots/$spotId/history/$version',
+    path: '/adventures/$slug/spots/$spotId/history/$version',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdventuresSlugTrailsTrailIdHistoryIndexRoute =
+  AdventuresSlugTrailsTrailIdHistoryIndexRouteImport.update({
+    id: '/adventures/$slug/trails/$trailId/history/',
+    path: '/adventures/$slug/trails/$trailId/history/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdventuresSlugTrailsTrailIdHistoryVersionRoute =
+  AdventuresSlugTrailsTrailIdHistoryVersionRouteImport.update({
+    id: '/adventures/$slug/trails/$trailId/history/$version',
+    path: '/adventures/$slug/trails/$trailId/history/$version',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -143,6 +171,10 @@ export interface FileRoutesByFullPath {
   '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
   '/adventures/$slug/groups/': typeof AdventuresSlugGroupsIndexRoute
   '/adventures/$slug/history/': typeof AdventuresSlugHistoryIndexRoute
+  '/adventures/$slug/spots/$spotId/history/$version': typeof AdventuresSlugSpotsSpotIdHistoryVersionRoute
+  '/adventures/$slug/trails/$trailId/history/$version': typeof AdventuresSlugTrailsTrailIdHistoryVersionRoute
+  '/adventures/$slug/spots/$spotId/history/': typeof AdventuresSlugSpotsSpotIdHistoryIndexRoute
+  '/adventures/$slug/trails/$trailId/history/': typeof AdventuresSlugTrailsTrailIdHistoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -163,6 +195,10 @@ export interface FileRoutesByTo {
   '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
   '/adventures/$slug/groups': typeof AdventuresSlugGroupsIndexRoute
   '/adventures/$slug/history': typeof AdventuresSlugHistoryIndexRoute
+  '/adventures/$slug/spots/$spotId/history/$version': typeof AdventuresSlugSpotsSpotIdHistoryVersionRoute
+  '/adventures/$slug/trails/$trailId/history/$version': typeof AdventuresSlugTrailsTrailIdHistoryVersionRoute
+  '/adventures/$slug/spots/$spotId/history': typeof AdventuresSlugSpotsSpotIdHistoryIndexRoute
+  '/adventures/$slug/trails/$trailId/history': typeof AdventuresSlugTrailsTrailIdHistoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -184,6 +220,10 @@ export interface FileRoutesById {
   '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
   '/adventures/$slug/groups/': typeof AdventuresSlugGroupsIndexRoute
   '/adventures/$slug/history/': typeof AdventuresSlugHistoryIndexRoute
+  '/adventures/$slug/spots/$spotId/history/$version': typeof AdventuresSlugSpotsSpotIdHistoryVersionRoute
+  '/adventures/$slug/trails/$trailId/history/$version': typeof AdventuresSlugTrailsTrailIdHistoryVersionRoute
+  '/adventures/$slug/spots/$spotId/history/': typeof AdventuresSlugSpotsSpotIdHistoryIndexRoute
+  '/adventures/$slug/trails/$trailId/history/': typeof AdventuresSlugTrailsTrailIdHistoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -206,6 +246,10 @@ export interface FileRouteTypes {
     | '/adventures/$slug/trips/$tripReportId'
     | '/adventures/$slug/groups/'
     | '/adventures/$slug/history/'
+    | '/adventures/$slug/spots/$spotId/history/$version'
+    | '/adventures/$slug/trails/$trailId/history/$version'
+    | '/adventures/$slug/spots/$spotId/history/'
+    | '/adventures/$slug/trails/$trailId/history/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -226,6 +270,10 @@ export interface FileRouteTypes {
     | '/adventures/$slug/trips/$tripReportId'
     | '/adventures/$slug/groups'
     | '/adventures/$slug/history'
+    | '/adventures/$slug/spots/$spotId/history/$version'
+    | '/adventures/$slug/trails/$trailId/history/$version'
+    | '/adventures/$slug/spots/$spotId/history'
+    | '/adventures/$slug/trails/$trailId/history'
   id:
     | '__root__'
     | '/'
@@ -246,6 +294,10 @@ export interface FileRouteTypes {
     | '/adventures/$slug/trips/$tripReportId'
     | '/adventures/$slug/groups/'
     | '/adventures/$slug/history/'
+    | '/adventures/$slug/spots/$spotId/history/$version'
+    | '/adventures/$slug/trails/$trailId/history/$version'
+    | '/adventures/$slug/spots/$spotId/history/'
+    | '/adventures/$slug/trails/$trailId/history/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -267,6 +319,10 @@ export interface RootRouteChildren {
   AdventuresSlugTripsTripReportIdRoute: typeof AdventuresSlugTripsTripReportIdRoute
   AdventuresSlugGroupsIndexRoute: typeof AdventuresSlugGroupsIndexRoute
   AdventuresSlugHistoryIndexRoute: typeof AdventuresSlugHistoryIndexRoute
+  AdventuresSlugSpotsSpotIdHistoryVersionRoute: typeof AdventuresSlugSpotsSpotIdHistoryVersionRoute
+  AdventuresSlugTrailsTrailIdHistoryVersionRoute: typeof AdventuresSlugTrailsTrailIdHistoryVersionRoute
+  AdventuresSlugSpotsSpotIdHistoryIndexRoute: typeof AdventuresSlugSpotsSpotIdHistoryIndexRoute
+  AdventuresSlugTrailsTrailIdHistoryIndexRoute: typeof AdventuresSlugTrailsTrailIdHistoryIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -397,6 +453,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdventuresSlugTripsTripReportIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/adventures/$slug/spots/$spotId/history/': {
+      id: '/adventures/$slug/spots/$spotId/history/'
+      path: '/adventures/$slug/spots/$spotId/history'
+      fullPath: '/adventures/$slug/spots/$spotId/history/'
+      preLoaderRoute: typeof AdventuresSlugSpotsSpotIdHistoryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adventures/$slug/spots/$spotId/history/$version': {
+      id: '/adventures/$slug/spots/$spotId/history/$version'
+      path: '/adventures/$slug/spots/$spotId/history/$version'
+      fullPath: '/adventures/$slug/spots/$spotId/history/$version'
+      preLoaderRoute: typeof AdventuresSlugSpotsSpotIdHistoryVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adventures/$slug/trails/$trailId/history/': {
+      id: '/adventures/$slug/trails/$trailId/history/'
+      path: '/adventures/$slug/trails/$trailId/history'
+      fullPath: '/adventures/$slug/trails/$trailId/history/'
+      preLoaderRoute: typeof AdventuresSlugTrailsTrailIdHistoryIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adventures/$slug/trails/$trailId/history/$version': {
+      id: '/adventures/$slug/trails/$trailId/history/$version'
+      path: '/adventures/$slug/trails/$trailId/history/$version'
+      fullPath: '/adventures/$slug/trails/$trailId/history/$version'
+      preLoaderRoute: typeof AdventuresSlugTrailsTrailIdHistoryVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -419,6 +503,14 @@ const rootRouteChildren: RootRouteChildren = {
   AdventuresSlugTripsTripReportIdRoute: AdventuresSlugTripsTripReportIdRoute,
   AdventuresSlugGroupsIndexRoute: AdventuresSlugGroupsIndexRoute,
   AdventuresSlugHistoryIndexRoute: AdventuresSlugHistoryIndexRoute,
+  AdventuresSlugSpotsSpotIdHistoryVersionRoute:
+    AdventuresSlugSpotsSpotIdHistoryVersionRoute,
+  AdventuresSlugTrailsTrailIdHistoryVersionRoute:
+    AdventuresSlugTrailsTrailIdHistoryVersionRoute,
+  AdventuresSlugSpotsSpotIdHistoryIndexRoute:
+    AdventuresSlugSpotsSpotIdHistoryIndexRoute,
+  AdventuresSlugTrailsTrailIdHistoryIndexRoute:
+    AdventuresSlugTrailsTrailIdHistoryIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

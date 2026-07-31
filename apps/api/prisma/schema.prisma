@@ -32,9 +32,11 @@ model User {
   createdTrails      Trail[] @relation("TrailCreatedBy")
   lastEditedTrails   Trail[] @relation("TrailLastEditedBy")
   trailConfirmations TrailConfirmation[]
+  trailRevisions     TrailRevision[] @relation("TrailRevisionEditor")
   createdSpots       Spot[] @relation("SpotCreatedBy")
   lastEditedSpots    Spot[] @relation("SpotLastEditedBy")
   spotConfirmations  SpotConfirmation[]
+  spotRevisions      SpotRevision[] @relation("SpotRevisionEditor")
 
   tripReports     TripReport[]
   tripReportKudos TripReportKudos[]
@@ -393,7 +395,8 @@ model SpotType {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  spots Spot[]
+  spots         Spot[]
+  spotRevisions SpotRevision[]
 
   @@map("spot_types")
 }
@@ -414,21 +417,45 @@ model Trail {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  confirmations TrailConfirmation[]
+  revisions TrailRevision[]
 
   @@map("trails")
 }
 
+// CHANGED, not new - retargeted from trailId to revisionId, arriving at
+// exactly PageConfirmation's shape (@@unique([revisionId, userId]), no
+// trailId-equivalent on this table either). See GEODATA_HISTORY.md.
 model TrailConfirmation {
-  id        String   @id @default(uuid())
-  trailId   String
-  trail     Trail    @relation(fields: [trailId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id         String        @id @default(uuid())
+  revisionId String
+  revision   TrailRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime      @default(now())
 
-  @@unique([trailId, userId])
+  @@unique([revisionId, userId])
   @@map("trail_confirmations")
+}
+
+// Full snapshot per edit, mirrors PageRevision.content - see GEODATA_HISTORY.md.
+model TrailRevision {
+  id                   String   @id @default(uuid())
+  trailId              String
+  trail                Trail    @relation(fields: [trailId], references: [id], onDelete: Cascade)
+  version              Int
+  geometry             Unsupported("geometry(LineString, 4326)")
+  name                 String?
+  distanceMeters       Int?
+  editSummary          String?
+  isSafetyCriticalEdit Boolean  @default(false)
+  editorId             String
+  editor               User     @relation("TrailRevisionEditor", fields: [editorId], references: [id], onDelete: Restrict)
+  createdAt            DateTime @default(now())
+
+  confirmations TrailConfirmation[]
+
+  @@unique([trailId, version])
+  @@map("trail_revisions")
 }
 
 model Spot {
@@ -450,21 +477,46 @@ model Spot {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  confirmations SpotConfirmation[]
+  revisions SpotRevision[]
 
   @@map("spots")
 }
 
+// CHANGED, not new - retargeted from spotId to revisionId. See GEODATA_HISTORY.md.
 model SpotConfirmation {
-  id        String   @id @default(uuid())
-  spotId    String
-  spot      Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id         String       @id @default(uuid())
+  revisionId String
+  revision   SpotRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
 
-  @@unique([spotId, userId])
+  @@unique([revisionId, userId])
   @@map("spot_confirmations")
+}
+
+// Full snapshot per edit, mirrors PageRevision.content - see GEODATA_HISTORY.md.
+model SpotRevision {
+  id                   String   @id @default(uuid())
+  spotId               String
+  spot                 Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  version              Int
+  geometry             Unsupported("geometry(Point, 4326)")
+  spotTypeId           String
+  spotType             SpotType @relation(fields: [spotTypeId], references: [id], onDelete: Restrict)
+  name                 String
+  description          String?
+  elevationMeters      Int?
+  editSummary          String?
+  isSafetyCriticalEdit Boolean  @default(false)
+  editorId             String
+  editor               User     @relation("SpotRevisionEditor", fields: [editorId], references: [id], onDelete: Restrict)
+  createdAt            DateTime @default(now())
+
+  confirmations SpotConfirmation[]
+
+  @@unique([spotId, version])
+  @@map("spot_revisions")
 }
 
 model TripReport {

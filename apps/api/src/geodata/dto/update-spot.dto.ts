@@ -1,10 +1,14 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { CreateSpotDto } from './create-spot.dto';
 
 export class UpdateSpotDto extends PartialType(CreateSpotDto) {
-  // transient - not a stored column, same reasoning as UpdateTrailDto
+  // Stored on the SpotRevision this edit creates - see UpdateTrailDto.
   @IsOptional()
   @IsBoolean()
   isSafetyCriticalEdit?: boolean;
+
+  @IsOptional()
+  @IsString()
+  editSummary?: string;
 }

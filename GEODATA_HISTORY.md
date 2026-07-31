@@ -2,7 +2,7 @@
 
 Full OSM-style changeset history for `Trail`/`Spot`, closing the gap FEATURE.md §4 names as "a real gap": `PageConfirmation` ties to a specific revision precisely so an edit can't ride on stale trust, and geodata has no revision to tie to — until this doc. Companion to FEATURE.md §3 (`PageRevision`/`PageConfirmation`, the pattern mirrored here) and §4 (the tables being versioned). Depends on nothing else being built first; supersedes FEATURE.md §4's service-layer confirmation-reset rule once implemented.
 
-**Status**: designed, not built.
+**Status**: built (Milestone 2 Phase 15 — see FEATURE.md §1). Schema, migration, service-layer, API, admin, and public UI are all live; this doc is kept as the design record.
 
 ## Scope
 
@@ -160,7 +160,7 @@ erDiagram
 | `SpotType` | `spotRevisions SpotRevision[]` |
 | `User` | `trailRevisions TrailRevision[]`, `spotRevisions SpotRevision[]` |
 
-Not added retroactively now, same reasoning as every other "required additions" table in this project's docs — added when this phase is actually implemented, to keep FEATURE.md §2's "Phase 1–5" scope honest until the migration happens.
+**Applied** — see `apps/api/prisma/migrations/20260731000000_geodata_changeset_history` and the live `apps/api/prisma/schema.prisma`, the actual source of truth per CLAUDE.md.
 
 ## Migration notes — the riskiest part of this round
 

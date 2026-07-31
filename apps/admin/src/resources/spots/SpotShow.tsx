@@ -2,6 +2,7 @@ import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
 import { Descriptions, Typography } from 'antd';
 import { GeometryMap } from '../../components/GeometryMap';
+import { GeodataHistory } from '../common/GeodataHistory';
 import { VerificationStatusControl } from '../common/VerificationStatusControl';
 
 interface SpotDetail {
@@ -49,6 +50,11 @@ export const SpotShow = () => {
               status={record.verificationStatus}
               options={STATUS_OPTIONS}
             />
+          </div>
+
+          <div style={{ marginTop: 24 }}>
+            <Typography.Title level={5}>History</Typography.Title>
+            <GeodataHistory resource="spots" id={record.id} />
           </div>
         </>
       )}
