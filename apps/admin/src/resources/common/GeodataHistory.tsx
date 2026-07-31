@@ -42,7 +42,7 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
   const { mutate: revertMutate, mutation: revertMutation } = useCustomMutation();
   const { t } = useTranslation('resources');
 
-  const revisions = [...(result?.data ?? [])].sort((a, b) => b.version - a.version);
+  const revisions = (Array.isArray(result?.data) ? [...result.data] : []).sort((a, b) => b.version - a.version);
 
   const revert = (version: number) => {
     revertMutate(
@@ -115,7 +115,7 @@ function RevisionDiffPanel({
     );
   }
 
-  if (query.isLoading || !result?.data) {
+  if (query.isLoading || !result?.data || !('changes' in result.data)) {
     return <p>{t('geodataHistory.loadingDiff')}</p>;
   }
 

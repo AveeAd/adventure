@@ -54,8 +54,8 @@ export const dataProvider: DataProvider = {
 
   // escape hatch for actions that aren't plain list/get/create/update/delete,
   // e.g. PATCH /:id/verification-status - a sub-path, not a resource root
-  custom: async ({ url, method, payload }) => {
-    const { data } = await axiosInstance.request({ url: `${apiUrl}${url}`, method, data: payload });
+  custom: async ({ url, method, payload, query }) => {
+    const { data } = await axiosInstance.request({ url: `${apiUrl}${url}`, method, data: payload, params: query });
     return { data };
   },
 };
