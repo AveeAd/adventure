@@ -84,6 +84,7 @@ export class GuideProfilesService {
         rateMin: dto.rateMin,
         rateMax: dto.rateMax,
         rateUnit: dto.rateUnit,
+        currency: dto.currency,
         specialties: dto.specialtyActivityTypeIds?.length
           ? { create: dto.specialtyActivityTypeIds.map((activityTypeId) => ({ activityTypeId })) }
           : undefined,
@@ -138,6 +139,7 @@ export class GuideProfilesService {
           rateMin: dto.rateMin,
           rateMax: dto.rateMax,
           rateUnit: dto.rateUnit,
+          currency: dto.currency,
         },
       });
     });

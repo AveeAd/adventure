@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { authFetch } from '../../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../../lib/auth/session';
 import { useRequireAuth } from '../../../lib/auth/require-auth';
+import { formatDate } from '../../../lib/format';
 import { Badge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -73,7 +74,7 @@ function MyActivityTracksPage() {
                   <div>
                     <div className="font-medium text-stone-900 dark:text-stone-50">{track.name ?? 'Untitled track'}</div>
                     <div className="mt-1 flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
-                      <span>{new Date(track.startedAt).toLocaleDateString()}</span>
+                      <span>{formatDate(track.startedAt)}</span>
                       <span>{(track.distanceMeters / 1000).toFixed(1)} km</span>
                     </div>
                   </div>

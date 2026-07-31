@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authFetch, authPatch, authPost } from '../../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../../lib/auth/require-auth';
+import { formatDateTime } from '../../../lib/format';
 import { Badge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -124,7 +125,7 @@ function ActivityTrackDetailPage() {
       </div>
 
       <div className="mt-2 flex gap-4 text-sm text-stone-500 dark:text-stone-400">
-        <span>{new Date(track.startedAt).toLocaleString()}</span>
+        <span>{formatDateTime(track.startedAt)}</span>
         <span>{(track.distanceMeters / 1000).toFixed(1)} km</span>
         <span>{Math.round(track.elapsedSeconds / 60)} min</span>
         <span>{track.source === 'IMPORTED' ? 'Imported' : 'Recorded'}</span>

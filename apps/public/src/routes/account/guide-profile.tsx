@@ -21,6 +21,7 @@ interface OwnGuideProfile {
   rateMin: number | null;
   rateMax: number | null;
   rateUnit: 'PER_DAY' | 'PER_TRIP' | 'PER_HOUR' | null;
+  currency: string;
   specialties: { activityType: MasterDataOption }[];
   regions: { district: MasterDataOption }[];
   languages: { language: MasterDataOption }[];
@@ -82,6 +83,7 @@ function GuideProfileAccountPage() {
       rateMin: formData.get('rateMin') ? Number(formData.get('rateMin')) : undefined,
       rateMax: formData.get('rateMax') ? Number(formData.get('rateMax')) : undefined,
       rateUnit: formData.get('rateUnit') || undefined,
+      currency: formData.get('currency') || undefined,
       specialtyActivityTypeIds: selectedChipValues(form, 'specialtyActivityTypeIds'),
       regionDistrictIds: selectedChipValues(form, 'regionDistrictIds'),
       languageIds: selectedChipValues(form, 'languageIds'),
@@ -119,12 +121,20 @@ function GuideProfileAccountPage() {
           <Field label="Bio">
             <Textarea name="bio" rows={4} defaultValue={existing?.bio ?? ''} />
           </Field>
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="Rate min (NPR)">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Field label="Rate min">
               <Input name="rateMin" type="number" min={0} defaultValue={existing?.rateMin ?? ''} />
             </Field>
-            <Field label="Rate max (NPR)">
+            <Field label="Rate max">
               <Input name="rateMax" type="number" min={0} defaultValue={existing?.rateMax ?? ''} />
+            </Field>
+            <Field label="Currency">
+              <Select name="currency" defaultValue={existing?.currency ?? 'NPR'}>
+                <option value="NPR">NPR</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="INR">INR</option>
+              </Select>
             </Field>
             <Field label="Rate unit">
               <Select name="rateUnit" defaultValue={existing?.rateUnit ?? ''}>

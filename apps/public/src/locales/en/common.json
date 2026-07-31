@@ -1,0 +1,38 @@
+{
+  "appName": "Adventure Nepal",
+  "tagline": "Adventure Nepal — a non-commercial map, wiki, and activity log for Nepal, built by contributors.",
+  "nav": {
+    "discover": "Discover",
+    "guides": "Guides",
+    "toggleMenu": "Toggle menu",
+    "accountMenu": "Account menu",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "contribute": "Contribute",
+    "guideProfile": "Guide profile"
+  },
+  "actions": {
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "confirmed": "Confirmed",
+    "confirmAccurate": "Confirm accurate",
+    "loading": "Loading...",
+    "checkingSignIn": "Checking sign-in...",
+    "history": "History"
+  },
+  "status": {
+    "VERIFIED": "Verified",
+    "UNVERIFIED": "Unverified",
+    "NEEDS_REVIEW": "Needs review",
+    "PENDING_LICENSE_REVIEW": "Pending license review"
+  },
+  "rateUnit": {
+    "PER_DAY": "per day",
+    "PER_TRIP": "per trip",
+    "PER_HOUR": "per hour"
+  }
+}

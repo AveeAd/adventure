@@ -1,7 +1,8 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { Globe, MapPin, Wallet } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
-import { formatRateUnit } from '../../lib/format';
+import { formatNumber, formatRateUnit } from '../../lib/format';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
@@ -14,6 +15,7 @@ interface GuideProfileDetail {
   rateMin: number | null;
   rateMax: number | null;
   rateUnit: string | null;
+  currency: string;
   verificationStatus: string;
   specialties: { activityType: { name: string } }[];
   regions: { district: { name: string } }[];
@@ -38,12 +40,13 @@ export const Route = createFileRoute('/guides/$id')({
 
 function GuideProfilePage() {
   const { guide } = Route.useLoaderData();
+  const { t } = useTranslation('guides');
 
   return (
     <Container>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-          {guide.specialties.map((s) => s.activityType.name).join(', ') || 'Guide'}
+          {guide.specialties.map((s) => s.activityType.name).join(', ') || t('guideFallbackName')}
         </h1>
         <StatusBadge status={guide.verificationStatus} />
       </div>
@@ -54,7 +57,7 @@ function GuideProfilePage() {
         <div className="flex items-start gap-2">
           <MapPin className="mt-0.5 h-4 w-4 text-primary-600 dark:text-primary-400" />
           <div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Regions</div>
+            <div className="text-xs text-stone-500 dark:text-stone-400">{t('regions')}</div>
             <div className="flex flex-wrap gap-1.5 mt-1">
               {guide.regions.length > 0 ? (
                 guide.regions.map((r) => (
@@ -63,7 +66,7 @@ function GuideProfilePage() {
                   </Badge>
                 ))
               ) : (
-                <span className="text-sm text-stone-500 dark:text-stone-400">Not specified</span>
+                <span className="text-sm text-stone-500 dark:text-stone-400">{t('notSpecified')}</span>
               )}
             </div>
           </div>
@@ -71,9 +74,9 @@ function GuideProfilePage() {
         <div className="flex items-start gap-2">
           <Globe className="mt-0.5 h-4 w-4 text-primary-600 dark:text-primary-400" />
           <div>
-            <div className="text-xs text-stone-500 dark:text-stone-400">Languages</div>
+            <div className="text-xs text-stone-500 dark:text-stone-400">{t('languages')}</div>
             <div className="text-sm font-medium text-stone-800 dark:text-stone-200">
-              {guide.languages.map((l) => l.language.name).join(', ') || 'Not specified'}
+              {guide.languages.map((l) => l.language.name).join(', ') || t('notSpecified')}
             </div>
           </div>
         </div>
@@ -81,9 +84,14 @@ function GuideProfilePage() {
           <div className="flex items-start gap-2">
             <Wallet className="mt-0.5 h-4 w-4 text-primary-600 dark:text-primary-400" />
             <div>
-              <div className="text-xs text-stone-500 dark:text-stone-400">Rate</div>
+              <div className="text-xs text-stone-500 dark:text-stone-400">{t('rate')}</div>
               <div className="text-sm font-medium text-stone-800 dark:text-stone-200">
-                NPR {guide.rateMin}-{guide.rateMax} {formatRateUnit(guide.rateUnit)}
+                {t('rateRange', {
+                  currency: guide.currency,
+                  min: formatNumber(guide.rateMin ?? 0),
+                  max: formatNumber(guide.rateMax ?? 0),
+                  rateUnit: formatRateUnit(t, guide.rateUnit),
+                })}
               </div>
             </div>
           </div>
@@ -92,7 +100,7 @@ function GuideProfilePage() {
 
       <p className="mt-5">
         <Link to="/users/$id" params={{ id: guide.userId }} className="text-primary-700 hover:underline dark:text-primary-400">
-          View contributor profile
+          {t('viewContributorProfile')}
         </Link>
       </p>
     </Container>

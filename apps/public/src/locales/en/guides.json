@@ -1,0 +1,16 @@
+{
+  "pageTitle": "Guide profile",
+  "directoryTitle": "Guide directory",
+  "directoryHeading": "Find a local guide for your trek",
+  "guideFallbackName": "Guide",
+  "regions": "Regions",
+  "languages": "Languages",
+  "rate": "Rate",
+  "notSpecified": "Not specified",
+  "viewContributorProfile": "View contributor profile",
+  "allSpecialties": "All specialties",
+  "allRegions": "All regions",
+  "allLanguages": "All languages",
+  "noGuidesMatchFilters": "No guides match those filters.",
+  "rateRange": "{{currency}} {{min}}–{{max}} {{rateUnit}}"
+}

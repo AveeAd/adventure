@@ -1,6 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { ChevronDown, Compass, Map as MapIcon, MapPin, MountainSnow, Route as RouteIcon, Search, TrendingUp } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../lib/auth/api';
 import { useInView } from '../lib/useInView';
 import { Badge, StatusBadge } from '../components/Badge';
@@ -96,6 +97,7 @@ function AnimatedNumber({ value }: { value: number }) {
 }
 
 function DiscoverPage() {
+  const { t } = useTranslation('discover');
   const { pages, trails, spots } = Route.useLoaderData();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[] | null>(null);
@@ -140,26 +142,26 @@ function DiscoverPage() {
             style={{ animationDelay: '0ms' }}
           >
             <Compass className="h-5 w-5" />
-            <span className="text-sm font-medium uppercase tracking-wide">Discover Nepal</span>
+            <span className="text-sm font-medium uppercase tracking-wide">{t('eyebrow')}</span>
           </div>
           <h1
             className="animate-fade-up mt-4 text-4xl font-semibold tracking-tight text-stone-900 sm:text-5xl lg:text-6xl dark:text-stone-50"
             style={{ animationDelay: '80ms' }}
           >
-            Trails, treks, and adventures &mdash; mapped and written by the community
+            {t('heading')}
           </h1>
           <p
             className="animate-fade-up mt-5 max-w-2xl text-lg text-stone-600 dark:text-stone-300"
             style={{ animationDelay: '160ms' }}
           >
-            A free, open guide to adventure in Nepal &mdash; built and verified by the people who've been there.
+            {t('subheading')}
           </p>
           <div className="animate-fade-up relative mt-10 w-full" style={{ animationDelay: '240ms' }}>
             <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400 dark:text-stone-500" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search adventure pages..."
+              placeholder={t('searchPlaceholder')}
               className="w-full rounded-full border-2 border-stone-300/70 bg-white/60 py-4 pl-14 pr-16 text-base text-stone-900 shadow-sm backdrop-blur-md placeholder:text-stone-400 transition-shadow hover:shadow-md focus:border-primary-500 focus:shadow-md focus:outline-none focus:ring-4 focus:ring-primary-100 dark:border-stone-600/70 dark:bg-stone-900/50 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:ring-primary-900/50 sm:pr-40"
             />
             {(trails.length > 0 || spots.length > 0) && (
@@ -167,7 +169,7 @@ function DiscoverPage() {
                 type="button"
                 onClick={toggleMap}
                 aria-pressed={showMap}
-                aria-label={showMap ? 'Hide map' : 'Search on map'}
+                aria-label={showMap ? t('hideMap') : t('showMap')}
                 className={`absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-full p-3 text-sm font-medium transition-colors sm:px-4 sm:py-2.5 ${
                   showMap
                     ? 'bg-primary-600 text-white hover:bg-primary-700'
@@ -175,7 +177,7 @@ function DiscoverPage() {
                 }`}
               >
                 <MapIcon className="h-4 w-4" />
-                <span className="hidden sm:inline">{showMap ? 'Hide map' : 'Search on map'}</span>
+                <span className="hidden sm:inline">{showMap ? t('hideMap') : t('showMap')}</span>
               </button>
             )}
           </div>
@@ -195,7 +197,7 @@ function DiscoverPage() {
               <div ref={mapSectionRef} className="animate-fade-up scroll-mt-6 mb-10">
                 <div className="mb-4 flex items-center gap-2 text-primary-700 dark:text-primary-400">
                   <MapPin className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase tracking-wide">On the map</span>
+                  <span className="text-xs font-medium uppercase tracking-wide">{t('onTheMap')}</span>
                 </div>
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                   <div className="lg:col-span-2">
@@ -205,21 +207,21 @@ function DiscoverPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <AnimatedNumber value={trails.length} />
-                        <div className="text-xs text-stone-500 dark:text-stone-400">Trails mapped</div>
+                        <div className="text-xs text-stone-500 dark:text-stone-400">{t('trailsMapped')}</div>
                       </div>
                       <div>
                         <AnimatedNumber value={spots.length} />
-                        <div className="text-xs text-stone-500 dark:text-stone-400">Spots marked</div>
+                        <div className="text-xs text-stone-500 dark:text-stone-400">{t('spotsMarked')}</div>
                       </div>
                     </div>
                     <div className="border-t border-stone-200 pt-4 dark:border-stone-800">
                       <div className="flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-300">
                         <RouteIcon className="h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400" />
-                        Trail routes, confirmed by contributors
+                        {t('trailRoutesConfirmed')}
                       </div>
                       <div className="mt-2.5 flex items-center gap-2.5 text-sm text-stone-600 dark:text-stone-300">
                         <MapPin className="h-4 w-4 shrink-0 text-primary-600 dark:text-primary-400" />
-                        Points of interest along the way
+                        {t('pointsOfInterest')}
                       </div>
                     </div>
                   </Card>
@@ -229,14 +231,14 @@ function DiscoverPage() {
           </>
         )}
         {results === null && (pages.length === 0 ? (
-          <EmptyState icon={<MountainSnow className="h-8 w-8" />}>No adventure pages yet.</EmptyState>
+          <EmptyState icon={<MountainSnow className="h-8 w-8" />}>{t('noAdventurePages')}</EmptyState>
         ) : (
           <div ref={trendingRef}>
             <div
               className={`flex items-center gap-2 text-accent-600 dark:text-accent-400 ${trendingInView ? 'animate-fade-up' : 'opacity-0'}`}
             >
               <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-medium uppercase tracking-wide">Trending destinations</span>
+              <span className="text-xs font-medium uppercase tracking-wide">{t('trendingDestinations')}</span>
             </div>
             <div className="mt-4 columns-1 gap-6 sm:columns-2 lg:columns-3">
               {pages.map((page, index) => {
@@ -282,9 +284,9 @@ function DiscoverPage() {
                           {(page.durationMinDays || page.maxAltitudeMeters) && (
                             <p className="mt-1.5 text-xs text-white/80">
                               {page.durationMinDays && page.durationMaxDays
-                                ? `${page.durationMinDays}-${page.durationMaxDays} days`
+                                ? t('durationDays', { min: page.durationMinDays, max: page.durationMaxDays })
                                 : null}
-                              {page.maxAltitudeMeters ? ` · up to ${page.maxAltitudeMeters}m` : null}
+                              {page.maxAltitudeMeters ? ` · ${t('upToAltitude', { altitude: page.maxAltitudeMeters })}` : null}
                             </p>
                           )}
                         </div>
@@ -308,9 +310,9 @@ function DiscoverPage() {
                         {(page.durationMinDays || page.maxAltitudeMeters) && (
                           <p className="text-xs text-stone-500 dark:text-stone-400">
                             {page.durationMinDays && page.durationMaxDays
-                              ? `${page.durationMinDays}-${page.durationMaxDays} days`
+                              ? t('durationDays', { min: page.durationMinDays, max: page.durationMaxDays })
                               : null}
-                            {page.maxAltitudeMeters ? ` · up to ${page.maxAltitudeMeters}m` : null}
+                            {page.maxAltitudeMeters ? ` · ${t('upToAltitude', { altitude: page.maxAltitudeMeters })}` : null}
                           </p>
                         )}
                       </Card>
@@ -327,12 +329,14 @@ function DiscoverPage() {
 }
 
 function SearchResults({ query, results, searching }: { query: string; results: SearchResult[]; searching: boolean }) {
+  const { t } = useTranslation('discover');
+
   if (searching && results.length === 0) {
-    return <p className="text-sm text-stone-500 dark:text-stone-400">Searching...</p>;
+    return <p className="text-sm text-stone-500 dark:text-stone-400">{t('searching')}</p>;
   }
 
   if (results.length === 0) {
-    return <EmptyState icon={<Search className="h-8 w-8" />}>No results for &ldquo;{query}&rdquo;.</EmptyState>;
+    return <EmptyState icon={<Search className="h-8 w-8" />}>{t('noResultsFor', { query })}</EmptyState>;
   }
 
   return (

@@ -1,6 +1,7 @@
 import { List, ShowButton, useTable } from '@refinedev/antd';
 import type { BaseRecord } from '@refinedev/core';
 import { Space, Table, Tag } from 'antd';
+import { formatDate } from '../../lib/format';
 
 const STATUS_COLOR: Record<string, string> = {
   VERIFIED: 'green',
@@ -29,7 +30,7 @@ export const AdventurePageList = () => {
         <Table.Column
           dataIndex="createdAt"
           title="Created"
-          render={(value: string) => new Date(value).toLocaleDateString()}
+          render={(value: string) => formatDate(value)}
         />
         <Table.Column
           title="Actions"

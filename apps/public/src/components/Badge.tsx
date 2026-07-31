@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 type Tone = 'success' | 'warning' | 'neutral' | 'danger';
 
 const toneClasses: Record<Tone, string> = {
@@ -14,13 +16,6 @@ const STATUS_TONE: Record<string, Tone> = {
   PENDING_LICENSE_REVIEW: 'warning',
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  VERIFIED: 'Verified',
-  UNVERIFIED: 'Unverified',
-  NEEDS_REVIEW: 'Needs review',
-  PENDING_LICENSE_REVIEW: 'Pending license review',
-};
-
 export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: React.ReactNode }) {
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClasses[tone]}`}>
@@ -29,6 +24,11 @@ export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: R
   );
 }
 
+// One of I18N.md's two named "natural first extraction" enum-label maps -
+// moved into common.json's status namespace rather than staying hardcoded.
 export function StatusBadge({ status }: { status: string }) {
-  return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{STATUS_LABEL[status] ?? status}</Badge>;
+  const { t } = useTranslation();
+  const key = `status.${status}`;
+  const label = t(key, { defaultValue: status });
+  return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{label}</Badge>;
 }

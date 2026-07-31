@@ -1,6 +1,7 @@
 import { EditButton, List, useTable } from '@refinedev/antd';
 import type { BaseRecord } from '@refinedev/core';
 import { Space, Table, Tag } from 'antd';
+import { formatDate } from '../../lib/format';
 
 export const UserList = () => {
   const { tableProps } = useTable({ resource: 'users', syncWithLocation: true });
@@ -23,7 +24,7 @@ export const UserList = () => {
         <Table.Column
           dataIndex="createdAt"
           title="Joined"
-          render={(value: string) => new Date(value).toLocaleDateString()}
+          render={(value: string) => formatDate(value)}
         />
         <Table.Column
           title="Actions"

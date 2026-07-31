@@ -1,6 +1,7 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
 import { Descriptions, Tag } from 'antd';
+import { formatDateTime } from '../../lib/format';
 import { GeometryMap } from '../../components/GeometryMap';
 
 interface ActivityTrackDetail {
@@ -36,7 +37,7 @@ export const ActivityTrackShow = () => {
             <Descriptions.Item label="Elapsed">{Math.round(record.elapsedSeconds / 60)} min</Descriptions.Item>
             <Descriptions.Item label="Ascent">{record.ascentMeters ?? '—'} m</Descriptions.Item>
             <Descriptions.Item label="Descent">{record.descentMeters ?? '—'} m</Descriptions.Item>
-            <Descriptions.Item label="Started">{new Date(record.startedAt).toLocaleString()}</Descriptions.Item>
+            <Descriptions.Item label="Started">{formatDateTime(record.startedAt)}</Descriptions.Item>
             <Descriptions.Item label="Source">
               <Tag>{record.source}</Tag>
             </Descriptions.Item>

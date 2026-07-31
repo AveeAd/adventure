@@ -1,6 +1,7 @@
 import { List, ShowButton, useTable } from '@refinedev/antd';
 import type { BaseRecord } from '@refinedev/core';
 import { Space, Table } from 'antd';
+import { formatDate } from '../../lib/format';
 
 export const TripGroupList = () => {
   const { tableProps } = useTable({ resource: 'trip-groups', syncWithLocation: true });
@@ -14,7 +15,7 @@ export const TripGroupList = () => {
           dataIndex="dateStart"
           title="Dates"
           render={(_, record: BaseRecord) =>
-            `${new Date(record.dateStart).toLocaleDateString()} – ${new Date(record.dateEnd).toLocaleDateString()}`
+            `${formatDate(record.dateStart)} – ${formatDate(record.dateEnd)}`
           }
         />
         <Table.Column dataIndex={['_count', 'members']} title="Members" />

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authPost, authUpload } from '../../../lib/auth/auth-fetch';
 import { checkAuth, fetchCurrentUser, type CurrentUser } from '../../../lib/auth/session';
+import { formatDate } from '../../../lib/format';
 import { Badge, StatusBadge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -217,7 +218,7 @@ function AdventurePageView() {
                       {report.title ?? 'Story'}
                     </Link>
                     <span className="text-sm text-stone-500 dark:text-stone-400">
-                      {new Date(report.dateCompleted).toLocaleDateString()}
+                      {formatDate(report.dateCompleted)}
                       {report.durationDays ? ` · ${report.durationDays} days` : null}
                     </span>
                   </Card>

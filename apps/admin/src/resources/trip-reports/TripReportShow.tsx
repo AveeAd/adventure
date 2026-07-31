@@ -1,6 +1,7 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
 import { Descriptions, Typography } from 'antd';
+import { formatDate } from '../../lib/format';
 
 interface TripReportDetail {
   id: string;
@@ -29,7 +30,7 @@ export const TripReportShow = () => {
             <Descriptions.Item label="Title">{record.title ?? 'Trip report'}</Descriptions.Item>
             <Descriptions.Item label="Author ID">{record.authorId}</Descriptions.Item>
             <Descriptions.Item label="Date completed">
-              {new Date(record.dateCompleted).toLocaleDateString()}
+              {formatDate(record.dateCompleted)}
             </Descriptions.Item>
             <Descriptions.Item label="Duration">
               {record.durationDays ? `${record.durationDays} days` : '—'}

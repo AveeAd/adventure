@@ -1,0 +1,19 @@
+{
+  "eyebrow": "Discover Nepal",
+  "heading": "Trails, treks, and adventures — mapped and written by the community",
+  "subheading": "A free, open guide to adventure in Nepal — built and verified by the people who've been there.",
+  "searchPlaceholder": "Search adventure pages...",
+  "showMap": "Search on map",
+  "hideMap": "Hide map",
+  "onTheMap": "On the map",
+  "trailsMapped": "Trails mapped",
+  "spotsMarked": "Spots marked",
+  "trailRoutesConfirmed": "Trail routes, confirmed by contributors",
+  "pointsOfInterest": "Points of interest along the way",
+  "noAdventurePages": "No adventure pages yet.",
+  "trendingDestinations": "Trending destinations",
+  "durationDays": "{{min}}-{{max}} days",
+  "upToAltitude": "up to {{altitude}}m",
+  "searching": "Searching...",
+  "noResultsFor": "No results for “{{query}}”."
+}

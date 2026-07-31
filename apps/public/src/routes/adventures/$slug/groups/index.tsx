@@ -1,6 +1,7 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { Plus, Users } from 'lucide-react';
 import { apiUrl } from '../../../../lib/auth/api';
+import { formatDate } from '../../../../lib/format';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
@@ -71,7 +72,7 @@ function TripGroupsListPage() {
                     </span>
                   </div>
                   <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                    {new Date(group.dateStart).toLocaleDateString()} – {new Date(group.dateEnd).toLocaleDateString()}
+                    {formatDate(group.dateStart)} – {formatDate(group.dateEnd)}
                   </p>
                   {group.description && (
                     <p className="mt-2 line-clamp-2 text-sm text-stone-600 dark:text-stone-400">{group.description}</p>

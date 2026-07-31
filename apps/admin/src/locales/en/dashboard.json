@@ -1,0 +1,28 @@
+{
+  "welcomeBack": "Welcome back",
+  "signedInAs": "Signed in as {{email}}",
+  "logOut": "Log out",
+  "sections": {
+    "contentAndUsers": "Content & Users",
+    "masterData": "Master Data",
+    "locations": "Locations"
+  },
+  "descriptions": {
+    "adventure-pages": "Moderate content & verification status",
+    "trip-reports": "View and remove trip logs",
+    "trip-groups": "Companion groups by route & date",
+    "trails": "Moderate trail geometry & verification",
+    "spots": "Moderate points of interest",
+    "guide-profiles": "License verification review queue",
+    "users": "Manage roles and access",
+    "activity-types": "Trekking, biking, paragliding...",
+    "difficulty-levels": "Easy through expert",
+    "seasons": "Best-time-to-visit tags",
+    "languages": "Guides' spoken languages",
+    "spot-types": "Point-of-interest categories",
+    "countries": "Root of the location hierarchy",
+    "provinces": "Nepal's 7 provinces",
+    "districts": "Includes restricted-agency flag",
+    "municipalities": "Finest location tier"
+  }
+}

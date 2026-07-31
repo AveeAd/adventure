@@ -2,10 +2,13 @@ import { Authenticated, Refine } from '@refinedev/core';
 import { ThemedLayout } from '@refinedev/antd';
 import routerProvider, { CatchAllNavigate } from '@refinedev/react-router';
 import { ConfigProvider } from 'antd';
+import enUS from 'antd/locale/en_US';
+import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { authProvider } from './auth/auth-provider';
 import { dataProvider } from './data-provider';
 import { usePrefersDark } from './hooks/usePrefersDark';
+import i18n from './lib/i18n';
 import { AuthCallbackPage } from './pages/AuthCallback';
 import { DashboardPage } from './pages/Dashboard';
 import { LoginPage } from './pages/Login';
@@ -60,105 +63,111 @@ const masterDataResourceConfigs = [
 
 function App() {
   const prefersDark = usePrefersDark();
+  const { t } = useTranslation('resources');
 
   return (
-    <ConfigProvider theme={prefersDark ? darkTheme : lightTheme}>
+    <ConfigProvider theme={prefersDark ? darkTheme : lightTheme} locale={enUS}>
       <BrowserRouter>
         <Refine
           routerProvider={routerProvider}
           authProvider={authProvider}
           dataProvider={dataProvider}
+          i18nProvider={{
+            translate: (key, options) => i18n.t(key, options),
+            changeLocale: (lang) => i18n.changeLanguage(lang),
+            getLocale: () => i18n.language,
+          }}
           resources={[
-            { name: 'master-data', meta: { label: 'Master Data' } },
+            { name: 'master-data', meta: { label: t('master-data.label') } },
             ...masterDataResourceConfigs.map((config) => ({
               name: config.resource,
               list: `/${config.resource}`,
               create: `/${config.resource}/create`,
               edit: `/${config.resource}/edit/:id`,
-              meta: { label: config.label, parent: 'master-data' },
+              meta: { label: t(`${config.resource}.label`, { defaultValue: config.label }), parent: 'master-data' },
             })),
 
-            { name: 'locations', meta: { label: 'Locations' } },
+            { name: 'locations', meta: { label: t('locations.label') } },
             {
               name: 'countries',
               list: '/countries',
               create: '/countries/create',
               edit: '/countries/edit/:id',
-              meta: { label: 'Countries', parent: 'locations' },
+              meta: { label: t('countries.label'), parent: 'locations' },
             },
             {
               name: 'provinces',
               list: '/provinces',
               create: '/provinces/create',
               edit: '/provinces/edit/:id',
-              meta: { label: 'Provinces', parent: 'locations' },
+              meta: { label: t('provinces.label'), parent: 'locations' },
             },
             {
               name: 'districts',
               list: '/districts',
               create: '/districts/create',
               edit: '/districts/edit/:id',
-              meta: { label: 'Districts', parent: 'locations' },
+              meta: { label: t('districts.label'), parent: 'locations' },
             },
             {
               name: 'municipalities',
               list: '/municipalities',
               create: '/municipalities/create',
               edit: '/municipalities/edit/:id',
-              meta: { label: 'Municipalities', parent: 'locations' },
+              meta: { label: t('municipalities.label'), parent: 'locations' },
             },
 
-            { name: 'content', meta: { label: 'Content' } },
+            { name: 'content', meta: { label: t('content.label') } },
             {
               name: 'adventure-pages',
               list: '/adventure-pages',
               show: '/adventure-pages/show/:id',
-              meta: { label: 'Adventure Pages', parent: 'content' },
+              meta: { label: t('adventure-pages.label'), parent: 'content' },
             },
             {
               name: 'trip-reports',
               list: '/trip-reports',
               show: '/trip-reports/show/:id',
-              meta: { label: 'Trip Reports', parent: 'content' },
+              meta: { label: t('trip-reports.label'), parent: 'content' },
             },
             {
               name: 'trip-groups',
               list: '/trip-groups',
               show: '/trip-groups/show/:id',
-              meta: { label: 'Trip Groups', parent: 'content' },
+              meta: { label: t('trip-groups.label'), parent: 'content' },
             },
 
-            { name: 'geodata', meta: { label: 'Trails & Spots' } },
+            { name: 'geodata', meta: { label: t('geodata.label') } },
             {
               name: 'trails',
               list: '/trails',
               show: '/trails/show/:id',
-              meta: { label: 'Trails', parent: 'geodata' },
+              meta: { label: t('trails.label'), parent: 'geodata' },
             },
             {
               name: 'spots',
               list: '/spots',
               show: '/spots/show/:id',
-              meta: { label: 'Spots', parent: 'geodata' },
+              meta: { label: t('spots.label'), parent: 'geodata' },
             },
             {
               name: 'activity-tracks',
               list: '/activity-tracks',
               show: '/activity-tracks/show/:id',
-              meta: { label: 'Activity Tracks', parent: 'geodata' },
+              meta: { label: t('activity-tracks.label'), parent: 'geodata' },
             },
 
             {
               name: 'guide-profiles',
               list: '/guide-profiles',
               show: '/guide-profiles/show/:id',
-              meta: { label: 'Guide Profiles' },
+              meta: { label: t('guide-profiles.label') },
             },
             {
               name: 'users',
               list: '/users',
               edit: '/users/edit/:id',
-              meta: { label: 'Users' },
+              meta: { label: t('users.label') },
             },
           ]}
         >

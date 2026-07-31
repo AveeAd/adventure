@@ -1,6 +1,7 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
 import { Descriptions, Table, Tag, Typography } from 'antd';
+import { formatDate } from '../../lib/format';
 
 interface TripGroupMember {
   id: string;
@@ -31,7 +32,7 @@ export const TripGroupShow = () => {
           <Descriptions bordered column={2} size="small">
             <Descriptions.Item label="Title">{record.title}</Descriptions.Item>
             <Descriptions.Item label="Dates">
-              {new Date(record.dateStart).toLocaleDateString()} – {new Date(record.dateEnd).toLocaleDateString()}
+              {formatDate(record.dateStart)} – {formatDate(record.dateEnd)}
             </Descriptions.Item>
           </Descriptions>
 

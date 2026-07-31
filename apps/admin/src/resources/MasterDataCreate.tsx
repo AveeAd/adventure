@@ -1,13 +1,16 @@
 import { Create, useForm } from '@refinedev/antd';
 import { Form } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { MasterDataFormFields } from './MasterDataForm';
 import type { MasterDataResourceConfig } from './config';
 
 export const MasterDataCreate = ({ config }: { config: MasterDataResourceConfig }) => {
   const { formProps, saveButtonProps } = useForm({ resource: config.resource, action: 'create' });
+  const { t } = useTranslation(['common', 'resources']);
+  const resourceLabel = t(`resources:${config.resource}.label`, { defaultValue: config.label });
 
   return (
-    <Create resource={config.resource} saveButtonProps={saveButtonProps} title={`Create ${config.label}`}>
+    <Create resource={config.resource} saveButtonProps={saveButtonProps} title={t('createResourceTitle', { resource: resourceLabel })}>
       <Form {...formProps} layout="vertical">
         <MasterDataFormFields config={config} />
       </Form>

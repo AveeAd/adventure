@@ -11,6 +11,7 @@ interface GuideProfileDetail {
   rateMin: number | null;
   rateMax: number | null;
   rateUnit: string | null;
+  currency: string;
   verificationStatus: string;
   specialties: { activityType: { name: string } }[];
   regions: { district: { name: string; requiresRegisteredAgency: boolean } }[];
@@ -50,7 +51,9 @@ export const GuideProfileShow = () => {
               {record.languages.map((l) => l.language.name).join(', ') || '—'}
             </Descriptions.Item>
             <Descriptions.Item label="Rate">
-              {record.rateMin || record.rateMax ? `NPR ${record.rateMin}-${record.rateMax} ${record.rateUnit ?? ''}` : '—'}
+              {record.rateMin || record.rateMax
+                ? `${record.currency} ${record.rateMin}-${record.rateMax} ${record.rateUnit ?? ''}`
+                : '—'}
             </Descriptions.Item>
           </Descriptions>
 

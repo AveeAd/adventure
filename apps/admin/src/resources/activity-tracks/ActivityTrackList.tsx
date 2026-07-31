@@ -1,6 +1,7 @@
 import { List, ShowButton, useTable } from '@refinedev/antd';
 import type { BaseRecord } from '@refinedev/core';
 import { Space, Table, Tag } from 'antd';
+import { formatDate } from '../../lib/format';
 
 const SOURCE_COLOR: Record<string, string> = { RECORDED: 'blue', IMPORTED: 'purple' };
 const VISIBILITY_COLOR: Record<string, string> = { PUBLIC: 'green', PRIVATE: 'default' };
@@ -27,7 +28,7 @@ export const ActivityTrackList = () => {
           title="Visibility"
           render={(visibility: string) => <Tag color={VISIBILITY_COLOR[visibility]}>{visibility}</Tag>}
         />
-        <Table.Column dataIndex="startedAt" title="Started" render={(value: string) => new Date(value).toLocaleDateString()} />
+        <Table.Column dataIndex="startedAt" title="Started" render={(value: string) => formatDate(value)} />
         <Table.Column
           title="Actions"
           dataIndex="actions"

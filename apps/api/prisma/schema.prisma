@@ -781,6 +781,11 @@ model GuideProfile {
   rateMin            Int?
   rateMax            Int?
   rateUnit           RateUnit?
+  // I18N.md: was missing entirely - GuideProfile had rateMin/rateMax/
+  // rateUnit but no currency column, so NPR was hardcoded at four UI sites
+  // while TripReport.currency has existed since Phase 13. Same shape as
+  // that column: a fixed short list validated in the DTO, not a Prisma enum.
+  currency           String   @default("NPR")
   verificationStatus GuideVerificationStatus @default(UNVERIFIED)
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())

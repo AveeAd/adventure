@@ -1,5 +1,6 @@
 import { useCustom, useCustomMutation, useInvalidate } from '@refinedev/core';
 import { Button, Collapse, Descriptions, Space, Tag, message } from 'antd';
+import { formatDateTime } from '../../lib/format';
 import { GeometryMap } from '../../components/GeometryMap';
 
 interface RevisionSummary {
@@ -61,7 +62,7 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
         label: (
           <Space>
             <strong>v{revision.version}</strong>
-            <span>{new Date(revision.createdAt).toLocaleString()}</span>
+            <span>{formatDateTime(revision.createdAt)}</span>
             {revision.isSafetyCriticalEdit && <Tag color="orange">safety-critical</Tag>}
             {revision.editSummary && <span style={{ color: '#888' }}>{revision.editSummary}</span>}
           </Space>

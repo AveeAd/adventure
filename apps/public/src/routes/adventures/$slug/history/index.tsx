@@ -1,6 +1,7 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { AlertTriangle } from 'lucide-react';
 import { apiUrl } from '../../../../lib/auth/api';
+import { formatDateTime } from '../../../../lib/format';
 import { Container } from '../../../../components/Container';
 
 interface RevisionSummary {
@@ -57,7 +58,7 @@ function HistoryPage() {
                 v{revision.version}
               </Link>
               <span className="ml-2 text-sm text-stone-500 dark:text-stone-400">
-                {new Date(revision.createdAt).toLocaleString()}
+                {formatDateTime(revision.createdAt)}
               </span>
               {revision.isSafetyCriticalEdit && (
                 <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">

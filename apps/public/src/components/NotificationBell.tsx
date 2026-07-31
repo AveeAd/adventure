@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Bell } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { authFetch, authPatch, authPost } from '../lib/auth/auth-fetch';
+import { formatDateTime } from '../lib/format';
 
 interface NotificationItem {
   id: string;
@@ -100,7 +101,7 @@ export function NotificationBell() {
                   >
                     {item.message}
                     <div className="mt-0.5 text-xs text-stone-400 dark:text-stone-500">
-                      {new Date(item.createdAt).toLocaleString()}
+                      {formatDateTime(item.createdAt)}
                     </div>
                   </Link>
                 </li>

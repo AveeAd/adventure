@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiUrl } from '../../../../lib/auth/api';
 import { authDelete, authPost } from '../../../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../../../lib/auth/session';
+import { formatDate } from '../../../../lib/format';
 import { Avatar } from '../../../../components/Avatar';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
@@ -115,7 +116,7 @@ function TripGroupDetailPage() {
       <h1 className="mt-3 text-2xl font-semibold text-stone-900 dark:text-stone-50">{group.title}</h1>
       <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
         <Calendar className="h-4 w-4" />
-        {new Date(group.dateStart).toLocaleDateString()} – {new Date(group.dateEnd).toLocaleDateString()}
+        {formatDate(group.dateStart)} – {formatDate(group.dateEnd)}
       </p>
 
       {group.description && <p className="mt-4 whitespace-pre-wrap text-stone-700 dark:text-stone-300">{group.description}</p>}

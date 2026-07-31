@@ -1,13 +1,17 @@
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
 import { FilePlus, LogOut, Menu, Mountain, UserRound, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import appCss from '../styles.css?url'
 import { Button } from '../components/Button'
 import { NotificationBell } from '../components/NotificationBell'
 import { fetchCurrentUser, logout, type CurrentUser } from '../lib/auth/session'
+import '../lib/i18n' // side-effect: initializes the shared i18next instance
+import { resolveLocale } from '../lib/i18n/locale'
 
 export const Route = createRootRoute({
+  loader: async () => ({ locale: await resolveLocale() }),
   head: () => ({
     meta: [
       {
@@ -69,9 +73,11 @@ function PrimaryNavLink({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { t } = useTranslation()
+  const { locale } = Route.useLoaderData()
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         <HeadContent />
       </head>
@@ -80,12 +86,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
             <Link to="/" className="flex items-center gap-2 text-primary-800 dark:text-primary-300">
               <Mountain className="h-6 w-6" strokeWidth={2.5} />
-              <span className="text-lg font-semibold tracking-tight">Adventure Nepal</span>
+              <span className="text-lg font-semibold tracking-tight">{t('appName')}</span>
             </Link>
 
             <nav className="hidden items-center gap-6 sm:flex">
-              <PrimaryNavLink to="/">Discover</PrimaryNavLink>
-              <PrimaryNavLink to="/guides">Guides</PrimaryNavLink>
+              <PrimaryNavLink to="/">{t('nav.discover')}</PrimaryNavLink>
+              <PrimaryNavLink to="/guides">{t('nav.guides')}</PrimaryNavLink>
               <span className="h-5 w-px bg-stone-200 dark:bg-stone-800" aria-hidden="true" />
               <AuthStatus />
             </nav>
@@ -94,7 +100,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               type="button"
               className="inline-flex items-center justify-center rounded-lg p-2 text-stone-600 hover:bg-stone-100 sm:hidden dark:text-stone-300 dark:hover:bg-stone-800"
               onClick={() => setMenuOpen((open) => !open)}
-              aria-label="Toggle menu"
+              aria-label={t('nav.toggleMenu')}
             >
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -104,10 +110,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             <div className="flex flex-col gap-4 border-t border-stone-200 px-4 py-4 sm:hidden dark:border-stone-800">
               <nav className="flex flex-col gap-4">
                 <PrimaryNavLink to="/" onClick={() => setMenuOpen(false)}>
-                  Discover
+                  {t('nav.discover')}
                 </PrimaryNavLink>
                 <PrimaryNavLink to="/guides" onClick={() => setMenuOpen(false)}>
-                  Guides
+                  {t('nav.guides')}
                 </PrimaryNavLink>
               </nav>
               <div className="border-t border-stone-200 pt-4 dark:border-stone-800">
@@ -120,7 +126,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div className="flex-1">{children}</div>
 
         <footer className="border-t border-stone-200 py-8 text-center text-sm text-stone-500 dark:border-stone-800 dark:text-stone-400">
-          Adventure Nepal &mdash; a non-commercial map, wiki, and activity log for Nepal, built by contributors.
+          {t('tagline')}
         </footer>
 
         <Scripts />
@@ -134,6 +140,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 // on the server and reconciles client-side after hydration.
 function AuthStatus({ stacked = false }: { stacked?: boolean }) {
   const [user, setUser] = useState<CurrentUser | null | 'loading'>('loading')
+  const { t } = useTranslation()
 
   useEffect(() => {
     let cancelled = false
@@ -152,7 +159,7 @@ function AuthStatus({ stacked = false }: { stacked?: boolean }) {
   if (!user) {
     return (
       <Link to="/login">
-        <Button size="sm">Sign in</Button>
+        <Button size="sm">{t('nav.signIn')}</Button>
       </Link>
     )
   }
@@ -181,6 +188,7 @@ function AccountMenu({
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const initial = user.email[0]?.toUpperCase() ?? '?'
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (!open) return
@@ -209,13 +217,13 @@ function AccountMenu({
           {user.email}
         </Link>
         <Link to="/adventures/new" className={navLinkClass}>
-          <FilePlus className="h-4 w-4" /> Contribute
+          <FilePlus className="h-4 w-4" /> {t('nav.contribute')}
         </Link>
         <Link to="/account/guide-profile" className={navLinkClass}>
-          <UserRound className="h-4 w-4" /> Guide profile
+          <UserRound className="h-4 w-4" /> {t('nav.guideProfile')}
         </Link>
         <button type="button" onClick={handleSignOut} className={`${navLinkClass} text-left`}>
-          <LogOut className="h-4 w-4" /> Sign out
+          <LogOut className="h-4 w-4" /> {t('nav.signOut')}
         </button>
       </div>
     )
@@ -226,7 +234,7 @@ function AccountMenu({
       <button
         type="button"
         onClick={() => setOpen((wasOpen) => !wasOpen)}
-        aria-label="Account menu"
+        aria-label={t('nav.accountMenu')}
         className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white transition-colors hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600"
       >
         {initial}
@@ -247,21 +255,21 @@ function AccountMenu({
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
           >
-            <FilePlus className="h-4 w-4" /> Contribute
+            <FilePlus className="h-4 w-4" /> {t('nav.contribute')}
           </Link>
           <Link
             to="/account/guide-profile"
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
           >
-            <UserRound className="h-4 w-4" /> Guide profile
+            <UserRound className="h-4 w-4" /> {t('nav.guideProfile')}
           </Link>
           <button
             type="button"
             onClick={handleSignOut}
             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
           >
-            <LogOut className="h-4 w-4" /> Sign out
+            <LogOut className="h-4 w-4" /> {t('nav.signOut')}
           </button>
         </div>
       )}

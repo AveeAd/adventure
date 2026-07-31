@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiUrl } from '../../../../lib/auth/api';
 import { authDelete, authPost } from '../../../../lib/auth/auth-fetch';
 import { checkAuth } from '../../../../lib/auth/session';
+import { formatCurrency, formatDate, formatDateTime } from '../../../../lib/format';
 import { Avatar } from '../../../../components/Avatar';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
@@ -148,11 +149,11 @@ function TripReportPage() {
           Contributor
         </Link>
         <span>·</span>
-        <span>{new Date(report.dateCompleted).toLocaleDateString()}</span>
+        <span>{formatDate(report.dateCompleted)}</span>
         {report.durationDays ? <span>· {report.durationDays} days</span> : null}
         {report.actualCostAmount ? (
           <span>
-            · {report.currency} {report.actualCostAmount}
+            · {formatCurrency(report.actualCostAmount, report.currency)}
           </span>
         ) : null}
       </div>
@@ -254,7 +255,7 @@ function CommentThread({
         <div className="flex items-center gap-2">
           <Avatar label={comment.authorId} size="sm" />
           <span className="text-xs text-stone-500 dark:text-stone-400">
-            {new Date(comment.createdAt).toLocaleString()}
+            {formatDateTime(comment.createdAt)}
           </span>
         </div>
         <p className="mt-2 text-sm text-stone-700 dark:text-stone-300">{comment.content}</p>
