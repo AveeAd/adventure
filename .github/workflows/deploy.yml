@@ -24,7 +24,18 @@ jobs:
           # that on a modest VPS. The Dockerfile now caches npm ci across
           # deploys (see its comment), but this headroom stays as a safety
           # margin for the first build after a dependency change.
-          command_timeout: 20m
+          #
+          # 20m still wasn't enough (run 30638446816 timed out at exactly
+          # 20m while exporting the final `public` image layers - the
+          # `COPY --from=build node_modules` steps into the api and public
+          # stages each took ~500s on their own, since every final stage
+          # that needs node_modules at runtime copies the *entire* shared
+          # workspace install, devDependencies included). Bumped to 40m;
+          # the real fix would be pruning devDependencies before those
+          # COPYs, but apps/api's runtime CMD needs the (currently
+          # dev-only) `prisma` CLI for `prisma migrate deploy`, so that's
+          # a bigger change than this timeout bump.
+          command_timeout: 40m
           script: |
             set -e
             cd ${{ secrets.DEPLOY_PATH }}
