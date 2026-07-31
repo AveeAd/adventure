@@ -1486,7 +1486,7 @@ Consolidated from every section above. Where a companion doc already resolves an
 3. Tags are set at page-creation time only, not editable afterward (§3) — a real gap.
 4. Related-page suggestions have no moderation queue (§3) — a spam vector, not yet a problem.
 
-**Geodata** — elevation profiles (TRAIL_ELEVATION.md), spatially-derived district tagging (§4, above), and full changeset history (GEODATA_HISTORY.md) are all designed, superseding the original "not designed here" note in §4.
+**Geodata** — elevation profiles (TRAIL_ELEVATION.md), spatially-derived district tagging (§4, above), and full changeset history (GEODATA_HISTORY.md) are all **built** (Milestone 2 Phases 15–17), superseding the original "not designed here" note in §4.
 
 **Trip groups**
 5. No group size cap.
@@ -1516,4 +1516,4 @@ Consolidated from every section above. Where a companion doc already resolves an
 21. Whether the full-country `nepal.pmtiles` offline basemap is ever built, or per-page offline packs stay sufficient permanently.
 22. Push notification transport (FCM/APNs) — the current `Notification` model is DB-rows-polled-every-60s, unusable for a backgrounded phone; no device-token table designed yet.
 
-All six items previously listed here as fully undesigned are now designed, not yet built: UI-language i18n (I18N.md); elevation-along-path trail profiles + the GPX import that feeds them (TRAIL_ELEVATION.md); spatially-derived district tagging + district boundary import (§4, above); full OSM-style geodata changeset history (GEODATA_HISTORY.md); personal activity tracks + file import (ACTIVITY_TRACKS.md); mobile client readiness (MOBILE_CLIENT.md).
+Of the six items previously listed here as fully undesigned, five are now **built** (Milestone 2, Phases 15–18): UI-language i18n (I18N.md); elevation-along-path trail profiles + the GPX import that feeds them (TRAIL_ELEVATION.md); spatially-derived district tagging + district boundary import (§4, above); full OSM-style geodata changeset history (GEODATA_HISTORY.md); personal activity tracks + file import (ACTIVITY_TRACKS.md). Only mobile client readiness (MOBILE_CLIENT.md) remains designed-not-built, deliberately — see CLAUDE.md's summary.
