@@ -17,8 +17,23 @@ WORKDIR /app
 # why the server-side fetch path doesn't need this.
 ARG VITE_API_URL
 
-COPY . .
+# Copy only the package manifests first (npm workspaces needs every
+# workspace's package.json to resolve the install, but none of their source)
+# so this layer - the slow one - stays cached across deploys where
+# dependencies haven't changed, instead of re-running npm ci from scratch on
+# every commit. COPY . . below still invalidates on any file change, but by
+# then npm ci has already run.
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/package.json
+COPY apps/admin/package.json ./apps/admin/package.json
+COPY apps/public/package.json ./apps/public/package.json
+# apps/api's postinstall runs `prisma generate`, which needs the schema
+# present at install time - not just source, so it has to come before npm ci
+# too, even though it isn't a package manifest.
+COPY apps/api/prisma ./apps/api/prisma
 RUN npm ci
+
+COPY . .
 
 RUN npm run build --workspace=apps/api
 RUN VITE_API_URL=${VITE_API_URL} npm run build --workspace=apps/admin
