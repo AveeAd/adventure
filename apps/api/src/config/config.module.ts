@@ -16,6 +16,9 @@ const envSchema = z.object({
   ALLOWED_REDIRECT_URLS: z.string().min(1, 'ALLOWED_REDIRECT_URLS is required'),
   UPLOAD_DIR: z.string().min(1).default('/app/uploads'),
   MAX_UPLOAD_SIZE_MB: z.coerce.number().int().positive().default(5),
+  // Separate from MAX_UPLOAD_SIZE_MB - a long GPX/KML track file is easily
+  // bigger than a photo. See ACTIVITY_TRACKS.md's guardrails.
+  MAX_TRACK_UPLOAD_SIZE_MB: z.coerce.number().int().positive().default(25),
   // The API's own externally-reachable origin (same value the frontends bake
   // in as VITE_API_URL) - needed so uploaded-file URLs returned to clients
   // are absolute. A relative "/uploads/x.png" would resolve against

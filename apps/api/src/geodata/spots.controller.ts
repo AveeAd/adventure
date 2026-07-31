@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, ValidationPipe } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { BboxQueryDto } from './dto/bbox-query.dto';
 import { CreateSpotDto } from './dto/create-spot.dto';
 import { UpdateSpotDto } from './dto/update-spot.dto';
 import { UpdateGeoVerificationStatusDto } from './dto/update-verification-status.dto';
@@ -41,13 +42,8 @@ export class SpotsController {
   // must come before ':id' - otherwise Nest would match "bbox" as an :id
   @Public()
   @Get('bbox')
-  bbox(
-    @Query('minLng') minLng: string,
-    @Query('minLat') minLat: string,
-    @Query('maxLng') maxLng: string,
-    @Query('maxLat') maxLat: string,
-  ) {
-    return this.spotsService.inBoundingBox(Number(minLng), Number(minLat), Number(maxLng), Number(maxLat));
+  bbox(@Query(new ValidationPipe({ transform: true })) query: BboxQueryDto) {
+    return this.spotsService.inBoundingBox(query.minLng, query.minLat, query.maxLng, query.maxLat);
   }
 
   @Public()

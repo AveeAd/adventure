@@ -19,6 +19,9 @@ import { Route as GuidesIdRouteImport } from './routes/guides/$id'
 import { Route as UsersIdRouteImport } from './routes/users/$id'
 import { Route as AdventuresSlugIndexRouteImport } from './routes/adventures/$slug/index'
 import { Route as AdventuresSlugEditRouteImport } from './routes/adventures/$slug/edit'
+import { Route as MeActivityTracksIndexRouteImport } from './routes/me/activity-tracks/index'
+import { Route as MeActivityTracksTrackIdRouteImport } from './routes/me/activity-tracks/$trackId'
+import { Route as MeActivityTracksUploadRouteImport } from './routes/me/activity-tracks/upload'
 import { Route as AdventuresSlugGroupsIndexRouteImport } from './routes/adventures/$slug/groups/index'
 import { Route as AdventuresSlugGroupsGroupIdRouteImport } from './routes/adventures/$slug/groups/$groupId'
 import { Route as AdventuresSlugGroupsNewRouteImport } from './routes/adventures/$slug/groups/new'
@@ -80,6 +83,21 @@ const AdventuresSlugIndexRoute = AdventuresSlugIndexRouteImport.update({
 const AdventuresSlugEditRoute = AdventuresSlugEditRouteImport.update({
   id: '/adventures/$slug/edit',
   path: '/adventures/$slug/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeActivityTracksIndexRoute = MeActivityTracksIndexRouteImport.update({
+  id: '/me/activity-tracks/',
+  path: '/me/activity-tracks/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeActivityTracksTrackIdRoute = MeActivityTracksTrackIdRouteImport.update({
+  id: '/me/activity-tracks/$trackId',
+  path: '/me/activity-tracks/$trackId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeActivityTracksUploadRoute = MeActivityTracksUploadRouteImport.update({
+  id: '/me/activity-tracks/upload',
+  path: '/me/activity-tracks/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdventuresSlugGroupsIndexRoute =
@@ -162,7 +180,10 @@ export interface FileRoutesByFullPath {
   '/users/$id': typeof UsersIdRoute
   '/guides/': typeof GuidesIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
+  '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
+  '/me/activity-tracks/upload': typeof MeActivityTracksUploadRoute
   '/adventures/$slug/': typeof AdventuresSlugIndexRoute
+  '/me/activity-tracks/': typeof MeActivityTracksIndexRoute
   '/adventures/$slug/groups/$groupId': typeof AdventuresSlugGroupsGroupIdRoute
   '/adventures/$slug/groups/new': typeof AdventuresSlugGroupsNewRoute
   '/adventures/$slug/history/$version': typeof AdventuresSlugHistoryVersionRoute
@@ -186,7 +207,10 @@ export interface FileRoutesByTo {
   '/users/$id': typeof UsersIdRoute
   '/guides': typeof GuidesIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
+  '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
+  '/me/activity-tracks/upload': typeof MeActivityTracksUploadRoute
   '/adventures/$slug': typeof AdventuresSlugIndexRoute
+  '/me/activity-tracks': typeof MeActivityTracksIndexRoute
   '/adventures/$slug/groups/$groupId': typeof AdventuresSlugGroupsGroupIdRoute
   '/adventures/$slug/groups/new': typeof AdventuresSlugGroupsNewRoute
   '/adventures/$slug/history/$version': typeof AdventuresSlugHistoryVersionRoute
@@ -211,7 +235,10 @@ export interface FileRoutesById {
   '/users/$id': typeof UsersIdRoute
   '/guides/': typeof GuidesIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
+  '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
+  '/me/activity-tracks/upload': typeof MeActivityTracksUploadRoute
   '/adventures/$slug/': typeof AdventuresSlugIndexRoute
+  '/me/activity-tracks/': typeof MeActivityTracksIndexRoute
   '/adventures/$slug/groups/$groupId': typeof AdventuresSlugGroupsGroupIdRoute
   '/adventures/$slug/groups/new': typeof AdventuresSlugGroupsNewRoute
   '/adventures/$slug/history/$version': typeof AdventuresSlugHistoryVersionRoute
@@ -237,7 +264,10 @@ export interface FileRouteTypes {
     | '/users/$id'
     | '/guides/'
     | '/adventures/$slug/edit'
+    | '/me/activity-tracks/$trackId'
+    | '/me/activity-tracks/upload'
     | '/adventures/$slug/'
+    | '/me/activity-tracks/'
     | '/adventures/$slug/groups/$groupId'
     | '/adventures/$slug/groups/new'
     | '/adventures/$slug/history/$version'
@@ -261,7 +291,10 @@ export interface FileRouteTypes {
     | '/users/$id'
     | '/guides'
     | '/adventures/$slug/edit'
+    | '/me/activity-tracks/$trackId'
+    | '/me/activity-tracks/upload'
     | '/adventures/$slug'
+    | '/me/activity-tracks'
     | '/adventures/$slug/groups/$groupId'
     | '/adventures/$slug/groups/new'
     | '/adventures/$slug/history/$version'
@@ -285,7 +318,10 @@ export interface FileRouteTypes {
     | '/users/$id'
     | '/guides/'
     | '/adventures/$slug/edit'
+    | '/me/activity-tracks/$trackId'
+    | '/me/activity-tracks/upload'
     | '/adventures/$slug/'
+    | '/me/activity-tracks/'
     | '/adventures/$slug/groups/$groupId'
     | '/adventures/$slug/groups/new'
     | '/adventures/$slug/history/$version'
@@ -310,7 +346,10 @@ export interface RootRouteChildren {
   UsersIdRoute: typeof UsersIdRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   AdventuresSlugEditRoute: typeof AdventuresSlugEditRoute
+  MeActivityTracksTrackIdRoute: typeof MeActivityTracksTrackIdRoute
+  MeActivityTracksUploadRoute: typeof MeActivityTracksUploadRoute
   AdventuresSlugIndexRoute: typeof AdventuresSlugIndexRoute
+  MeActivityTracksIndexRoute: typeof MeActivityTracksIndexRoute
   AdventuresSlugGroupsGroupIdRoute: typeof AdventuresSlugGroupsGroupIdRoute
   AdventuresSlugGroupsNewRoute: typeof AdventuresSlugGroupsNewRoute
   AdventuresSlugHistoryVersionRoute: typeof AdventuresSlugHistoryVersionRoute
@@ -395,6 +434,27 @@ declare module '@tanstack/react-router' {
       path: '/adventures/$slug/edit'
       fullPath: '/adventures/$slug/edit'
       preLoaderRoute: typeof AdventuresSlugEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me/activity-tracks/': {
+      id: '/me/activity-tracks/'
+      path: '/me/activity-tracks'
+      fullPath: '/me/activity-tracks/'
+      preLoaderRoute: typeof MeActivityTracksIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me/activity-tracks/$trackId': {
+      id: '/me/activity-tracks/$trackId'
+      path: '/me/activity-tracks/$trackId'
+      fullPath: '/me/activity-tracks/$trackId'
+      preLoaderRoute: typeof MeActivityTracksTrackIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me/activity-tracks/upload': {
+      id: '/me/activity-tracks/upload'
+      path: '/me/activity-tracks/upload'
+      fullPath: '/me/activity-tracks/upload'
+      preLoaderRoute: typeof MeActivityTracksUploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/adventures/$slug/groups/': {
@@ -494,7 +554,10 @@ const rootRouteChildren: RootRouteChildren = {
   UsersIdRoute: UsersIdRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   AdventuresSlugEditRoute: AdventuresSlugEditRoute,
+  MeActivityTracksTrackIdRoute: MeActivityTracksTrackIdRoute,
+  MeActivityTracksUploadRoute: MeActivityTracksUploadRoute,
   AdventuresSlugIndexRoute: AdventuresSlugIndexRoute,
+  MeActivityTracksIndexRoute: MeActivityTracksIndexRoute,
   AdventuresSlugGroupsGroupIdRoute: AdventuresSlugGroupsGroupIdRoute,
   AdventuresSlugGroupsNewRoute: AdventuresSlugGroupsNewRoute,
   AdventuresSlugHistoryVersionRoute: AdventuresSlugHistoryVersionRoute,

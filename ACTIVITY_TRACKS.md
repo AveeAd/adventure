@@ -2,7 +2,7 @@
 
 A user-owned, private-by-default record of a hike/ride/etc. — the Strava-analogue geometry `TripReport` never had — plus a GPX/KML/KMZ/GeoJSON import pipeline and a path to promote a recording into a public `Trail`. Companion to FEATURE.md §4 (`Trail`/`Spot`, the tables a track can feed) and §5 (`TripReport`, which gains a geometry it never had) and TRAIL_ELEVATION.md (shares its parser module and the sample-sidecar pattern; extends its `TrailSource` enum and resolves its open multi-`<trkseg>` question). Depends on nothing else being built first. Buildable now — no mobile app required; the existing web app can upload a GPX from maps.me/Strava/Garmin today. Design-process record: TRACKS_AND_MOBILE_PLAN.md.
 
-**Status**: designed, not built.
+**Status**: built (Milestone 2 Phase 16, together with TRAIL_ELEVATION.md - see FEATURE.md §1), with three pieces deliberately scoped out of this round and named below rather than silently dropped: `GET /adventure-pages/:slug/offline-bundle` (its only real consumer is a future mobile client, and mobile stays out of Milestone 2 - see MOBILE_CLIENT.md); the `ST_DWithin` proximity query (named as "also needed" but not tied to a concrete endpoint this round); and the public UI for `propose-trail-update` (the endpoint is built and tested, but the contribute-a-track page only wires up `promote-to-trail` - proposing an update to an *existing* trail needs a trail picker the UI doesn't have yet). Waypoint→`Spot` candidates and `TripReport`'s "attach a day's track" picker (both named below) are also not built.
 
 ## Scope
 
@@ -169,7 +169,7 @@ Two operations, both reusing existing write paths rather than adding parallel on
 1. `POST /activity-tracks/:id/promote-to-trail` `{ adventurePageId, name }` — creates a new `Trail` from the simplified, time-stripped geometry, `source: RECORDED_ACTIVITY` (a third `TrailSource` variant, extending TRAIL_ELEVATION.md's `DRAWN`/`GPX_IMPORT`).
 2. `POST /activity-tracks/:id/propose-trail-update` `{ trailId }` — routes through the existing `TrailsService.update`, so once GEODATA_HISTORY.md lands this becomes a `TrailRevision` with `editSummary: "From recorded activity"` and inherits revision-scoped confirmation invalidation for free.
 
-A raw GPS trace is a poor canonical trail — noise, switchback jitter, point clusters where someone stopped. Promotion always simplifies (`ST_SimplifyPreserveTopology`) and should show a preview diff first. GEODATA_HISTORY.md's `ST_HausdorffDistance` stat is exactly the primitive for "your track deviates up to N m from the existing trail."
+A raw GPS trace is a poor canonical trail — noise, switchback jitter, point clusters where someone stopped. **As built**: the simplification happens once, at import/record time (Douglas-Peucker, ~5m tolerance, in `track-geometry.util.ts`) rather than a second time at promotion — `promoteToTrail` passes the already-simplified `ActivityTrack.geometry` straight through to `TrailsService.create`, which doesn't re-simplify. A **preview diff before promoting is not built** — promotion is immediate, no confirmation step showing the deviation from an existing trail first. GEODATA_HISTORY.md's `ST_HausdorffDistance` stat remains the right primitive for that preview if it's built later.
 
 ## Retrieval — including two pre-existing holes this must fix
 
@@ -200,7 +200,7 @@ Also needed and currently absent: the codebase's only spatial predicate is `ST_I
 | `AdventurePage` | `activityTracks ActivityTrack[]` reverse relation |
 | `ActivityType` | `activityTracks ActivityTrack[]` reverse relation |
 
-Not added retroactively now, same reasoning as every other "required additions" table in this project's docs — `apps/api/prisma/schema.prisma` stays untouched until this is actually implemented.
+**Applied** — see `apps/api/prisma/migrations/20260731120000_trail_elevation_and_activity_tracks` and the live schema.
 
 ## API (`apps/api/src/tracks/`)
 
@@ -213,23 +213,25 @@ Not added retroactively now, same reasoning as every other "required additions" 
 | `DELETE /activity-tracks/:id` | soft delete, owner or admin |
 | `GET /users/:id/activity-tracks` | cursor-paginated |
 | `GET /me/activity-tracks?since=` | delta sync |
-| `POST /activity-tracks/:id/promote-to-trail` | creates a `Trail`, `source: RECORDED_ACTIVITY` |
-| `POST /activity-tracks/:id/propose-trail-update` | routes through `TrailsService.update` |
-| `GET /adventure-pages/:slug/offline-bundle` | `ETag`/`If-None-Match`, bundled page+geodata payload |
+| `POST /activity-tracks/:id/promote-to-trail` | creates a `Trail`, `source: RECORDED_ACTIVITY` — built, and wired to a public UI form |
+| `POST /activity-tracks/:id/propose-trail-update` | routes through `TrailsService.update` — built and tested (see TrailsService's own test coverage), but **no public UI wires it yet** (no existing-trail picker built this round) |
+| `GET /adventure-pages/:slug/offline-bundle` | **not built this round** — its only real consumer is a future mobile client, and MOBILE_CLIENT.md is deliberately out of Milestone 2 |
+| `GET /activity-tracks` (admin) | **added beyond the original spec** — admin-only flat listing across all users, needed for the admin list/show area named below; mirrors `TrailsController`/`SpotsController`'s `listAll` |
 
 ## Public UI (`apps/public/src/routes/`)
 
-- New route group `me/activity-tracks/` — list (map thumbnail + stats per row), detail (map + elevation chart, reusing `ElevationProfile.tsx` from TRAIL_ELEVATION.md), upload form (drag-and-drop GPX/KML/KMZ/GeoJSON).
-- Activity-track detail page gets "Contribute to trail" — either flow from Contributing a track to a trail, above — surfaced only when an `adventurePageId` link exists or is chosen at promote time.
-- `TripReport` edit flow gains an optional "attach a day's track" picker sourced from the user's own tracks.
+- New route group `me/activity-tracks/` — list (stats per row, upload button), detail (map + elevation chart via `ElevationProfile.tsx`, edit name/notes/visibility, delete), upload form (GPX/KML/KMZ/GeoJSON file input, not drag-and-drop).
+- Activity-track detail page gets "Contribute to the map" — **only the `promote-to-trail` flow is built** (adventure-page slug → new `Trail`); `propose-trail-update` (proposing an edit to an *existing* trail) has no picker UI yet, though the API endpoint works.
+- ~~`TripReport` edit flow gains an optional "attach a day's track" picker~~ **not built this round** — named here as a still-open piece of public UI, not silently dropped.
 
 ## Admin (`apps/admin/src/resources/`)
 
-Read + moderate only, per CLAUDE.md's convention: list/show for `ActivityTrack` (owner, visibility, distance, source), no authoring. A moderation action exists for abuse (e.g. a track deliberately mislabeled to spam a page's contribution feed) — delete only, same as other content resources.
+Read + moderate only, per CLAUDE.md's convention: list/show for `ActivityTrack` (owner email, visibility, distance, source), no authoring. Delete (via the existing `DELETE /activity-tracks/:id`, which already allows owner-or-admin) is the moderation action for abuse — no separate admin-only delete route was needed.
 
 ## Open decisions
 
-1. **Whether GPX/KML waypoints (maps.me bookmarks) become candidate `Spot`s automatically or only via a manual "create spot from waypoint" action.** Named, not designed.
+1. **Whether GPX/KML waypoints (maps.me bookmarks) become candidate `Spot`s automatically or only via a manual "create spot from waypoint" action.** Named, not designed, not built.
 2. **Whether `ActivityTrack` needs its own kudos/comments**, or whether social interaction stays scoped to the `TripReport` it's attached to. Leaning toward the latter (no verification tier here either, mirroring `TripReport`'s reasoning) but left open.
-3. **Whether promote-to-trail requires moderator approval** or is a normal peer-confirmable wiki edit like any other `Trail` update. Left open — the simplest version treats it as a normal edit through `TrailsService.update`.
+3. **Whether promote-to-trail requires moderator approval** or is a normal peer-confirmable wiki edit like any other `Trail` update. **Implemented as the simplest version**: a normal edit through `TrailsService.create`/`update`, no approval gate.
 4. **Whether a `FOLLOWERS` visibility tier is worth adding later**, once/if a follow graph exists. Not designed; `PRIVATE`/`PUBLIC` is deliberately minimal for now.
+5. **The propose-trail-update UI picker and the offline-bundle endpoint** — both named above as not built this round. Pick up when there's a concrete need (a trail picker component, or an actual mobile client consuming the bundle).

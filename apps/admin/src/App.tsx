@@ -42,6 +42,8 @@ import { TrailList } from './resources/trails/TrailList';
 import { TrailShow } from './resources/trails/TrailShow';
 import { SpotList } from './resources/spots/SpotList';
 import { SpotShow } from './resources/spots/SpotShow';
+import { ActivityTrackList } from './resources/activity-tracks/ActivityTrackList';
+import { ActivityTrackShow } from './resources/activity-tracks/ActivityTrackShow';
 import { UserList } from './resources/users/UserList';
 import { UserEdit } from './resources/users/UserEdit';
 import { AppTitle } from './components/AppTitle';
@@ -139,6 +141,12 @@ function App() {
               show: '/spots/show/:id',
               meta: { label: 'Spots', parent: 'geodata' },
             },
+            {
+              name: 'activity-tracks',
+              list: '/activity-tracks',
+              show: '/activity-tracks/show/:id',
+              meta: { label: 'Activity Tracks', parent: 'geodata' },
+            },
 
             {
               name: 'guide-profiles',
@@ -223,6 +231,11 @@ function App() {
               <Route path="/spots">
                 <Route index element={<SpotList />} />
                 <Route path="show/:id" element={<SpotShow />} />
+              </Route>
+
+              <Route path="/activity-tracks">
+                <Route index element={<ActivityTrackList />} />
+                <Route path="show/:id" element={<ActivityTrackShow />} />
               </Route>
 
               <Route path="/guide-profiles">

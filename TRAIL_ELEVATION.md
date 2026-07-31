@@ -2,7 +2,7 @@
 
 Elevation-along-path profiles for trails, sourced from uploaded GPX tracks. Companion to FEATURE.md §4 (`Trail`/`Spot`, the tables this extends), GEODATA_HISTORY.md (the profile-invalidation rule here is a second instance of that doc's/FEATURE.md §4's load-bearing edit-resets-trust rule), and ACTIVITY_TRACKS.md (shares this doc's GPX parser module and sample-sidecar pattern; extends `TrailSource` with `RECORDED_ACTIVITY`; resolves the multi-`<trkseg>` open question below). Depends on nothing else being built first.
 
-**Status**: designed, not built.
+**Status**: built (Milestone 2 Phase 16, together with ACTIVITY_TRACKS.md - see FEATURE.md §1). Schema, GPX import, the invalidation rule, admin + public UI are all live; this doc is kept as the design record.
 
 ## Scope
 
@@ -105,7 +105,7 @@ erDiagram
 |---|---|
 | `Trail` | `source TrailSource @default(DRAWN)`, `elevationProfile TrailElevationProfile?` |
 
-Not added retroactively now, same reasoning as every other "required additions" table in this project's docs.
+**Applied** — see `apps/api/prisma/migrations/20260731120000_trail_elevation_and_activity_tracks` and the live schema.
 
 ## API (`apps/api/src/geodata/`)
 
@@ -127,7 +127,7 @@ Not added retroactively now, same reasoning as every other "required additions" 
 
 ## Open decisions
 
-1. **Whether GPX import may update an existing trail's geometry, or only create new trails.** Left open — the simplest version only creates.
-2. **Whether `Spot.elevationMeters` should be auto-filled from a nearby trail profile** instead of staying hand-entered. Not designed.
-3. ~~Whether multi-`<trkseg>` GPX files become one trail or several.~~ **Resolved in ACTIVITY_TRACKS.md**: segments join into one track/trail (a segment break is GPS signal loss, not a new activity); separate `<trk>` elements become separate tracks/trails. Applies to this endpoint too, since the parser is shared.
-4. **Whether `TrailElevationProfile` is versioned alongside `TrailRevision`** (GEODATA_HISTORY.md) or stays current-state-only — cross-referenced there too.
+1. ~~Whether GPX import may update an existing trail's geometry, or only create new trails.~~ **Implemented as the simplest version: only creates.** `POST /adventure-pages/:pageId/trails/import-gpx` always inserts a new `Trail`; a multi-`<trk>` file only uses the first track (a Trail is one LineString, and multi-track files are ACTIVITY_TRACKS.md's territory).
+2. **Whether `Spot.elevationMeters` should be auto-filled from a nearby trail profile** instead of staying hand-entered. Not designed, not built.
+3. ~~Whether multi-`<trkseg>` GPX files become one trail or several.~~ **Resolved in ACTIVITY_TRACKS.md and implemented**: segments join into one track/trail (a segment break is GPS signal loss, not a new activity); separate `<trk>` elements become separate tracks/trails.
+4. **Whether `TrailElevationProfile` is versioned alongside `TrailRevision`** (GEODATA_HISTORY.md) or stays current-state-only. **Implemented as current-state-only** — no `TrailElevationProfileRevision` table; the profile is deleted (not versioned) on a geometry-changing edit, per the invalidation rule above.

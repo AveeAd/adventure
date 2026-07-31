@@ -41,6 +41,7 @@ model User {
   tripReports     TripReport[]
   tripReportKudos TripReportKudos[]
   comments        Comment[]
+  activityTracks  ActivityTrack[]
 
   createdTripGroups    TripGroup[]
   tripGroupMemberships TripGroupMember[]
@@ -93,6 +94,7 @@ model ActivityType {
 
   adventurePages   AdventurePage[]
   guideSpecialties GuideSpecialty[]
+  activityTracks   ActivityTrack[]
 
   @@map("activity_types")
 }
@@ -234,6 +236,7 @@ model AdventurePage {
   spots     Spot[]
   tripReports TripReport[]
   tripGroups TripGroup[]
+  activityTracks ActivityTrack[]
   tags      AdventurePageTag[]
   relatedTo   RelatedAdventurePage[] @relation("PageRelations")
   relatedFrom RelatedAdventurePage[] @relation("RelatedByPage")
@@ -401,6 +404,15 @@ model SpotType {
   @@map("spot_types")
 }
 
+// TRAIL_ELEVATION.md - provenance, independent of whether a profile exists
+// (a GPX import with no <ele> data still sets GPX_IMPORT but has no profile
+// row). RECORDED_ACTIVITY extends this for ACTIVITY_TRACKS.md's promote flow.
+enum TrailSource {
+  DRAWN
+  GPX_IMPORT
+  RECORDED_ACTIVITY
+}
+
 model Trail {
   id                 String   @id @default(uuid())
   adventurePageId    String
@@ -408,6 +420,7 @@ model Trail {
   name               String?
   geometry           Unsupported("geometry(LineString, 4326)")
   distanceMeters     Int?
+  source             TrailSource @default(DRAWN)
   verificationStatus GeoVerificationStatus @default(UNVERIFIED)
   isActive           Boolean  @default(true)
   createdById        String
@@ -417,9 +430,29 @@ model Trail {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  revisions TrailRevision[]
+  revisions        TrailRevision[]
+  elevationProfile TrailElevationProfile?
 
   @@map("trails")
+}
+
+// Sidecar, not LineStringZ - see TRAIL_ELEVATION.md's "Core design decision".
+// samples is a whole-object read (chart data), never queried into, so Json
+// beats a normalized samples table.
+model TrailElevationProfile {
+  id                 String   @id @default(uuid())
+  trailId            String   @unique
+  trail              Trail    @relation(fields: [trailId], references: [id], onDelete: Cascade)
+  samples            Json
+  sampleCount        Int
+  ascentMeters       Int
+  descentMeters      Int
+  minElevationMeters Int
+  maxElevationMeters Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("trail_elevation_profiles")
 }
 
 // CHANGED, not new - retargeted from trailId to revisionId, arriving at
@@ -536,11 +569,83 @@ model TripReport {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  media    TripReportMedia[]
-  kudos    TripReportKudos[]
-  comments Comment[]
+  media          TripReportMedia[]
+  kudos          TripReportKudos[]
+  comments       Comment[]
+  activityTracks ActivityTrack[]
 
   @@map("trip_reports")
+}
+
+// ACTIVITY_TRACKS.md - user-owned, private-by-default recording. Deliberately
+// a separate table from Trail, not a nullable Trail.userId - see the doc's
+// "Core design decision" for why (ownership/mutability/trust/timestamps/
+// visibility all diverge from Trail simultaneously).
+enum ActivityTrackVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum ActivityTrackSource {
+  RECORDED
+  IMPORTED
+}
+
+model ActivityTrack {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Nullable, unlike TripReport.adventurePageId - recording an unlisted route
+  // is the case that grows the map. SetNull, not Cascade: deleting a page
+  // must not destroy someone's personal record of their own hike.
+  adventurePageId String?
+  adventurePage   AdventurePage? @relation(fields: [adventurePageId], references: [id], onDelete: SetNull)
+  // Many tracks per report - a multi-day trek is one track per day, one story.
+  tripReportId String?
+  tripReport   TripReport? @relation(fields: [tripReportId], references: [id], onDelete: SetNull)
+
+  activityTypeId String
+  activityType   ActivityType @relation(fields: [activityTypeId], references: [id], onDelete: Restrict)
+  name           String?
+  notes          String?
+
+  // Simplified path, for map rendering and spatial queries only. Full-fidelity
+  // series lives in `samples` - the same sidecar split TrailElevationProfile
+  // uses, for the same reason: geometry(LineString, 4326) forbids Z and M.
+  geometry Unsupported("geometry(LineString, 4326)")
+  // [{ t: <s from startedAt>, d: <m along path>, e: <m elevation> }, ...]
+  // Whole-object read, never queried into. Timestamps are legitimate here -
+  // this row is user-owned and private by default, unlike a public Trail.
+  samples     Json
+  sampleCount Int
+
+  startedAt          DateTime
+  finishedAt         DateTime
+  elapsedSeconds     Int
+  movingSeconds      Int?
+  distanceMeters     Int
+  ascentMeters       Int?
+  descentMeters      Int?
+  minElevationMeters Int?
+  maxElevationMeters Int?
+
+  source            ActivityTrackSource
+  visibility        ActivityTrackVisibility @default(PRIVATE)
+  privacyTrimMeters Int? // metres trimmed from each end for non-owners
+  // Client-generated, so an offline upload retry is idempotent instead of
+  // duplicating the track. Nullable; Postgres treats two NULLs as unequal,
+  // so the composite unique still permits many server-created rows.
+  clientUuid      String?
+  originalFileUrl String? // uploaded GPX/KML retained for re-parsing
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, clientUuid])
+  @@index([userId, startedAt])
+  @@map("activity_tracks")
 }
 
 model TripReportMedia {

@@ -24,6 +24,11 @@ export interface MapTrail {
   verificationStatus: string;
   pageSlug?: string;
   pageTitle?: string;
+  // present on the adventure-page trail list (TrailsService.listForPage's
+  // LEFT JOIN), absent on the bbox/Discover map feed which doesn't need it
+  elevationSamples?: { d: number; e: number }[] | null;
+  ascentMeters?: number | null;
+  descentMeters?: number | null;
 }
 
 export interface MapSpot {

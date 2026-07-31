@@ -7,6 +7,7 @@ import { GuideProfilesModule } from './guide-profiles/guide-profiles.module';
 import { MasterDataModule } from './master-data/master-data.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { TracksModule } from './tracks/tracks.module';
 import { TripReportsModule } from './trip-reports/trip-reports.module';
 import { TripGroupsModule } from './trip-groups/trip-groups.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -25,6 +26,7 @@ import { HealthController } from './health/health.controller';
     TripGroupsModule,
     GuideProfilesModule,
     UploadsModule,
+    TracksModule,
   ],
   controllers: [HealthController],
 })

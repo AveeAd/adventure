@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, TrailElevationProfile } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { assertWithinNepal, buildSamples, computeAggregates, simplifyPoints } from '../tracks/track-geometry.util';
 import { CreateTrailDto } from './dto/create-trail.dto';
 import { UpdateTrailDto } from './dto/update-trail.dto';
 
@@ -14,12 +15,19 @@ export interface TrailRow {
   name: string | null;
   geometry: unknown;
   distanceMeters: number | null;
+  source: string;
   verificationStatus: string;
   isActive: boolean;
   createdById: string;
   lastEditedById: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface TrailListRow extends TrailRow {
+  elevationSamples: unknown;
+  ascentMeters: number | null;
+  descentMeters: number | null;
 }
 
 export interface TrailRevisionSummary {
@@ -45,20 +53,29 @@ export class TrailsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async listForPage(pageId: string): Promise<TrailRow[]> {
-    return this.prisma.$queryRaw<TrailRow[]>`
-      SELECT id, "adventurePageId", name, ST_AsGeoJSON(geometry)::json AS geometry,
-             "distanceMeters", "verificationStatus", "isActive",
-             "createdById", "lastEditedById", "createdAt", "updatedAt"
-      FROM trails
-      WHERE "adventurePageId" = ${pageId} AND "isActive" = true
+  // LEFT JOINs the elevation profile - unlike get(id)'s explicit extra
+  // select, this list backs the adventure page view, which needs every
+  // trail's chart/ascent-descent figures up front (see TRAIL_ELEVATION.md's
+  // public UI section), so a per-trail follow-up fetch would be worse.
+  async listForPage(pageId: string): Promise<TrailListRow[]> {
+    return this.prisma.$queryRaw<TrailListRow[]>`
+      SELECT t.id, t."adventurePageId", t.name, ST_AsGeoJSON(t.geometry)::json AS geometry,
+             t."distanceMeters", t.source, t."verificationStatus", t."isActive",
+             t."createdById", t."lastEditedById", t."createdAt", t."updatedAt",
+             p.samples AS "elevationSamples", p."ascentMeters", p."descentMeters"
+      FROM trails t
+      LEFT JOIN trail_elevation_profiles p ON p."trailId" = t.id
+      WHERE t."adventurePageId" = ${pageId} AND t."isActive" = true
     `;
   }
 
-  async get(id: string): Promise<TrailRow> {
+  // Response gains elevationProfile (aggregates + samples) when present, per
+  // TRAIL_ELEVATION.md - an explicit extra select, not selected on the list/
+  // bbox paths above, matching the doc's "not selected unless asked for" rule.
+  async get(id: string): Promise<TrailRow & { elevationProfile: TrailElevationProfile | null }> {
     const rows = await this.prisma.$queryRaw<TrailRow[]>`
       SELECT id, "adventurePageId", name, ST_AsGeoJSON(geometry)::json AS geometry,
-             "distanceMeters", "verificationStatus", "isActive",
+             "distanceMeters", source, "verificationStatus", "isActive",
              "createdById", "lastEditedById", "createdAt", "updatedAt"
       FROM trails
       WHERE id = ${id}
@@ -66,12 +83,15 @@ export class TrailsService {
     if (rows.length === 0) {
       throw new NotFoundException(`Trail ${id} not found`);
     }
-    return rows[0];
+    const elevationProfile = await this.prisma.trailElevationProfile.findUnique({ where: { trailId: id } });
+    return { ...rows[0], elevationProfile };
   }
 
   // Insert creates a version:1 TrailRevision in the same transaction,
   // mirroring AdventurePagesService.create()'s page+revision transaction.
-  async create(pageId: string, userId: string, dto: CreateTrailDto): Promise<TrailRow> {
+  // source defaults to DRAWN (hand-clicked in DrawMap); TracksService's
+  // promote-to-trail flow passes RECORDED_ACTIVITY instead.
+  async create(pageId: string, userId: string, dto: CreateTrailDto, source: 'DRAWN' | 'RECORDED_ACTIVITY' = 'DRAWN'): Promise<TrailRow> {
     const id = randomUUID();
     const revisionId = randomUUID();
     const now = new Date();
@@ -80,7 +100,7 @@ export class TrailsService {
     await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`
         INSERT INTO trails (
-          id, "adventurePageId", name, geometry, "distanceMeters",
+          id, "adventurePageId", name, geometry, "distanceMeters", source,
           "verificationStatus", "isActive", "createdById", "lastEditedById",
           "createdAt", "updatedAt"
         )
@@ -88,6 +108,7 @@ export class TrailsService {
           ${id}, ${pageId}, ${dto.name ?? null},
           ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
           COALESCE(${dto.distanceMeters ?? null}, ST_Length(ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326)::geography)::int),
+          ${source}::"TrailSource",
           'UNVERIFIED', true, ${userId}, ${userId}, ${now}, ${now}
         )
       `;
@@ -156,6 +177,14 @@ export class TrailsService {
                ${dto.editSummary ?? null}, ${dto.isSafetyCriticalEdit ?? false}, ${userId}, ${now}
         FROM trails WHERE id = ${id}
       `;
+
+      // TRAIL_ELEVATION.md's invalidation rule: a profile is only meaningful
+      // for the exact path it was derived from, so it's deleted in the same
+      // transaction as the geometry change - but geometry-conditional, not
+      // unconditional, or a name-only edit would wipe a perfectly good profile.
+      if (dto.geometry) {
+        await tx.trailElevationProfile.deleteMany({ where: { trailId: id } });
+      }
     });
 
     return this.get(id);
@@ -298,21 +327,30 @@ export class TrailsService {
     });
   }
 
+  // Was unbounded and unsimplified - every intersecting row at full vertex
+  // resolution, no LIMIT. A zoom-derived ST_SimplifyPreserveTopology
+  // tolerance plus a hard LIMIT fix that; see ACTIVITY_TRACKS.md's
+  // prerequisite fixes (a track recorder is exactly the workload that turns
+  // this into an outage).
   async inBoundingBox(
     minLng: number,
     minLat: number,
     maxLng: number,
     maxLat: number,
+    zoom = 10,
   ): Promise<(TrailRow & { pageSlug: string; pageTitle: string })[]> {
+    const toleranceDegrees = 0.5 / Math.pow(2, zoom);
+    const limit = 500;
     return this.prisma.$queryRaw<(TrailRow & { pageSlug: string; pageTitle: string })[]>`
       SELECT t.id, t."adventurePageId", ap.slug AS "pageSlug", ap.title AS "pageTitle", t.name,
-             ST_AsGeoJSON(t.geometry)::json AS geometry,
-             t."distanceMeters", t."verificationStatus", t."isActive",
+             ST_AsGeoJSON(ST_SimplifyPreserveTopology(t.geometry, ${toleranceDegrees}))::json AS geometry,
+             t."distanceMeters", t.source, t."verificationStatus", t."isActive",
              t."createdById", t."lastEditedById", t."createdAt", t."updatedAt"
       FROM trails t
       JOIN adventure_pages ap ON ap.id = t."adventurePageId"
       WHERE t."isActive" = true
         AND ST_Intersects(t.geometry, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))
+      LIMIT ${limit}
     `;
   }
 
@@ -322,7 +360,7 @@ export class TrailsService {
     const [data, totalRows] = await Promise.all([
       this.prisma.$queryRaw<(TrailRow & { adventurePageTitle: string })[]>`
         SELECT t.id, t."adventurePageId", ap.title AS "adventurePageTitle", t.name,
-               ST_AsGeoJSON(t.geometry)::json AS geometry, t."distanceMeters",
+               ST_AsGeoJSON(t.geometry)::json AS geometry, t."distanceMeters", t.source,
                t."verificationStatus", t."isActive",
                t."createdById", t."lastEditedById", t."createdAt", t."updatedAt"
         FROM trails t
@@ -342,6 +380,80 @@ export class TrailsService {
     await this.get(id);
     await this.prisma.$executeRaw`UPDATE trails SET "verificationStatus" = ${status}::"GeoVerificationStatus" WHERE id = ${id}`;
     return this.get(id);
+  }
+
+  // One transaction creates the Trail (source: GPX_IMPORT), its v1
+  // TrailRevision, and a TrailElevationProfile when the file supplied
+  // elevation. Only the first parsed track is used - a Trail is a single
+  // LineString, and multi-<trk> files are ACTIVITY_TRACKS.md's territory.
+  async importGpx(
+    pageId: string,
+    userId: string,
+    points: { lng: number; lat: number; ele?: number }[],
+    name: string | undefined,
+  ): Promise<TrailRow & { elevationProfile: TrailElevationProfile | null }> {
+    assertWithinNepal(points);
+    const simplified = simplifyPoints(points, 5);
+    const geometry = { type: 'LineString' as const, coordinates: simplified.map((p) => [p.lng, p.lat]) };
+    const geojson = JSON.stringify(geometry);
+    const aggregates = computeAggregates(points);
+    const hasElevation = aggregates.minElevationMeters !== null;
+
+    const id = randomUUID();
+    const revisionId = randomUUID();
+    const profileId = randomUUID();
+    const now = new Date();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`
+        INSERT INTO trails (
+          id, "adventurePageId", name, geometry, "distanceMeters", source,
+          "verificationStatus", "isActive", "createdById", "lastEditedById",
+          "createdAt", "updatedAt"
+        )
+        VALUES (
+          ${id}, ${pageId}, ${name ?? null},
+          ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+          ${aggregates.distanceMeters}, 'GPX_IMPORT',
+          'UNVERIFIED', true, ${userId}, ${userId}, ${now}, ${now}
+        )
+      `;
+
+      await tx.$executeRaw`
+        INSERT INTO trail_revisions (
+          id, "trailId", version, geometry, name, "distanceMeters",
+          "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
+        )
+        SELECT ${revisionId}, id, 1, geometry, name, "distanceMeters",
+               'Imported from GPX', false, ${userId}, ${now}
+        FROM trails WHERE id = ${id}
+      `;
+
+      if (hasElevation) {
+        const samples = buildSamples(points);
+        await tx.trailElevationProfile.create({
+          data: {
+            id: profileId,
+            trailId: id,
+            samples,
+            sampleCount: samples.length,
+            ascentMeters: aggregates.ascentMeters,
+            descentMeters: aggregates.descentMeters,
+            minElevationMeters: aggregates.minElevationMeters!,
+            maxElevationMeters: aggregates.maxElevationMeters!,
+          },
+        });
+      }
+    });
+
+    return this.get(id);
+  }
+
+  // admin-only escape hatch for a bad import - deletes the profile without
+  // touching the trail.
+  async deleteElevationProfile(trailId: string): Promise<void> {
+    await this.get(trailId);
+    await this.prisma.trailElevationProfile.deleteMany({ where: { trailId } });
   }
 
   private async currentRevisionId(trailId: string): Promise<string> {

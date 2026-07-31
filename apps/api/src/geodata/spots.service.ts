@@ -309,12 +309,15 @@ export class SpotsService {
     });
   }
 
+  // Was unbounded, no LIMIT - see TrailsService.inBoundingBox's comment.
+  // Points can't be simplified, so only the LIMIT applies here.
   async inBoundingBox(
     minLng: number,
     minLat: number,
     maxLng: number,
     maxLat: number,
   ): Promise<(SpotRow & { pageSlug: string; pageTitle: string })[]> {
+    const limit = 500;
     return this.prisma.$queryRaw<(SpotRow & { pageSlug: string; pageTitle: string })[]>`
       SELECT s.id, s."adventurePageId", ap.slug AS "pageSlug", ap.title AS "pageTitle",
              s."spotTypeId", st.name AS "spotTypeName", s.name, s.description,
@@ -326,6 +329,7 @@ export class SpotsService {
       JOIN adventure_pages ap ON ap.id = s."adventurePageId"
       WHERE s."isActive" = true
         AND ST_Intersects(s.geometry, ST_MakeEnvelope(${minLng}, ${minLat}, ${maxLng}, ${maxLat}, 4326))
+      LIMIT ${limit}
     `;
   }
 

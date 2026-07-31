@@ -1,12 +1,19 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UploadedFile, UseInterceptors, ValidationPipe } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { parseTrackFile } from '../tracks/parsers/parse-track-file';
+import { BboxQueryDto } from './dto/bbox-query.dto';
 import { CreateTrailDto } from './dto/create-trail.dto';
 import { UpdateTrailDto } from './dto/update-trail.dto';
 import { UpdateGeoVerificationStatusDto } from './dto/update-verification-status.dto';
 import { TrailsService } from './trails.service';
+
+// Multer needs its limit at decorator-evaluation time - same pattern
+// uploads.controller.ts already establishes for MAX_UPLOAD_SIZE_MB.
+const maxTrackUploadSizeMb = Number(process.env.MAX_TRACK_UPLOAD_SIZE_MB ?? 25);
 
 @Controller('adventure-pages/:pageId/trails')
 export class AdventurePageTrailsController {
@@ -26,6 +33,29 @@ export class AdventurePageTrailsController {
   ) {
     return this.trailsService.create(pageId, user.userId, dto);
   }
+
+  // Parse server-side, never client-side - the client uploads raw bytes,
+  // the server produces geometry/samples/aggregates. <time> is discarded
+  // (destination-scoped privacy rule, see TRAIL_ELEVATION.md) by simply not
+  // forwarding parsed timestamps past this controller.
+  @Post('import-gpx')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: maxTrackUploadSizeMb * 1024 * 1024 } }))
+  importGpx(
+    @Param('pageId') pageId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('name') name: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const parsed = parseTrackFile(file.originalname, file.mimetype, file.buffer);
+    const track = parsed.tracks[0];
+    if (!track || track.points.length === 0) {
+      throw new BadRequestException('File contains no track points');
+    }
+    return this.trailsService.importGpx(pageId, user.userId, track.points, name ?? track.name);
+  }
 }
 
 @Controller('trails')
@@ -38,16 +68,13 @@ export class TrailsController {
     return this.trailsService.listAll(Number(page) || 1, Number(pageSize) || 20);
   }
 
-  // must come before ':id' - otherwise Nest would match "bbox" as an :id
+  // must come before ':id' - otherwise Nest would match "bbox" as an :id.
+  // Parameter-scoped ValidationPipe({transform:true}) rather than flipping
+  // the app-wide pipe - see BboxQueryDto.
   @Public()
   @Get('bbox')
-  bbox(
-    @Query('minLng') minLng: string,
-    @Query('minLat') minLat: string,
-    @Query('maxLng') maxLng: string,
-    @Query('maxLat') maxLat: string,
-  ) {
-    return this.trailsService.inBoundingBox(Number(minLng), Number(minLat), Number(maxLng), Number(maxLat));
+  bbox(@Query(new ValidationPipe({ transform: true })) query: BboxQueryDto) {
+    return this.trailsService.inBoundingBox(query.minLng, query.minLat, query.maxLng, query.maxLat, query.zoom);
   }
 
   @Public()
@@ -103,5 +130,12 @@ export class TrailsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.trailsService.revert(id, user.userId, version);
+  }
+
+  // admin-only escape hatch for a bad import
+  @Roles(Role.ADMIN)
+  @Delete(':id/elevation-profile')
+  deleteElevationProfile(@Param('id') id: string) {
+    return this.trailsService.deleteElevationProfile(id);
   }
 }

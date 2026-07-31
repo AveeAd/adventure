@@ -13,6 +13,7 @@ import { Textarea, Input, Field, Select } from '../../../components/FormField';
 import { MarkdownContent } from '../../../components/MarkdownContent';
 import { LazyAdventureMap } from '../../../components/LazyAdventureMap';
 import type { MapSpot, MapTrail } from '../../../components/AdventureMap';
+import { ElevationProfile } from '../../../components/ElevationProfile';
 
 interface MediaItem {
   id: string;
@@ -531,31 +532,43 @@ function TrailsAndSpotsSection({
           <ul className="mt-4 flex flex-col gap-2">
             {trails.map((trail) => (
               <li key={trail.id}>
-                <Card className="flex items-center justify-between p-4">
-                  <div>
-                    <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? 'Trail'}</div>
-                    <StatusBadge status={trail.verificationStatus} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/adventures/$slug/trails/$trailId/history"
-                      params={{ slug, trailId: trail.id }}
-                      className="text-sm text-stone-500 hover:underline dark:text-stone-400"
-                    >
-                      History
-                    </Link>
-                    {contributeMode && (
-                      <Button
-                        variant={confirmed.has(trail.id) ? 'ghost' : 'secondary'}
-                        size="sm"
-                        disabled={confirmed.has(trail.id)}
-                        onClick={() => confirmTrail(trail.id)}
+                <Card className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? 'Trail'}</div>
+                      <StatusBadge status={trail.verificationStatus} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to="/adventures/$slug/trails/$trailId/history"
+                        params={{ slug, trailId: trail.id }}
+                        className="text-sm text-stone-500 hover:underline dark:text-stone-400"
                       >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {confirmed.has(trail.id) ? 'Confirmed' : 'Confirm accurate'}
-                      </Button>
-                    )}
+                        History
+                      </Link>
+                      {contributeMode && (
+                        <Button
+                          variant={confirmed.has(trail.id) ? 'ghost' : 'secondary'}
+                          size="sm"
+                          disabled={confirmed.has(trail.id)}
+                          onClick={() => confirmTrail(trail.id)}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          {confirmed.has(trail.id) ? 'Confirmed' : 'Confirm accurate'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
+                  {trail.elevationSamples && trail.elevationSamples.length > 1 && (
+                    <div className="mt-3 border-t border-stone-100 pt-3 dark:border-stone-800">
+                      <ElevationProfile
+                        samples={trail.elevationSamples}
+                        ascentMeters={trail.ascentMeters ?? undefined}
+                        descentMeters={trail.descentMeters ?? undefined}
+                        height={140}
+                      />
+                    </div>
+                  )}
                 </Card>
               </li>
             ))}
