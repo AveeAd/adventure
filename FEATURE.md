@@ -2,7 +2,7 @@
 
 Merged from the 10 per-phase design docs that previously lived at the repo root (ADVENTURE_PAGES.md, DATABASE.md, DEPLOYMENT.md, GUIDES.md, MAP_GEODATA.md, PUBLIC_PAGES.md, ROADMAP.md, SEARCH_AND_NOTIFICATIONS.md, TRIP_GROUPS.md, TRIP_REPORTS.md), now that all of Phases 1–14 are built (see CLAUDE.md). Sections below are ordered to match build order; each keeps its schema, entity-relationship diagram, and non-obvious service-layer rationale, but drops the "not built yet" scaffolding (status lines, per-doc dependency preambles, "required additions to existing models" tables) that only mattered while each phase was still pending — those additions are all long since applied to the live `apps/api/prisma/schema.prisma`, which remains the actual source of truth for the schema.
 
-For product vision and the trust model, see [IDEA.md](IDEA.md). For the Phase 1–5 architecture (repo layout, NestJS module map, RBAC, generic CRUD, admin app), see [ARCHITECTURE.md](ARCHITECTURE.md). The four items that were fully undesigned as of the last roadmap pass are now designed, not yet built: UI i18n ([I18N.md](I18N.md)), trail elevation profiles + GPX import ([TRAIL_ELEVATION.md](TRAIL_ELEVATION.md)), spatially-derived district tagging (§4, below), and geodata changeset history ([GEODATA_HISTORY.md](GEODATA_HISTORY.md)). [REMAINING_WORK_PLAN.md](REMAINING_WORK_PLAN.md) is the design-process record for how those four were scoped.
+For product vision and the trust model, see [IDEA.md](IDEA.md). For the Phase 1–5 architecture (repo layout, NestJS module map, RBAC, generic CRUD, admin app), see [ARCHITECTURE.md](ARCHITECTURE.md). The four items that were fully undesigned as of an earlier roadmap pass are designed, not yet built: UI i18n ([I18N.md](I18N.md)), trail elevation profiles + GPX import ([TRAIL_ELEVATION.md](TRAIL_ELEVATION.md)), spatially-derived district tagging (§4, below), and geodata changeset history ([GEODATA_HISTORY.md](GEODATA_HISTORY.md)). [REMAINING_WORK_PLAN.md](REMAINING_WORK_PLAN.md) is the design-process record for how those four were scoped. Two more followed the same rhythm: personal activity tracks + file import ([ACTIVITY_TRACKS.md](ACTIVITY_TRACKS.md)) and mobile client readiness ([MOBILE_CLIENT.md](MOBILE_CLIENT.md)), scoped in [TRACKS_AND_MOBILE_PLAN.md](TRACKS_AND_MOBILE_PLAN.md).
 
 ## Contents
 
@@ -24,6 +24,10 @@ For product vision and the trust model, see [IDEA.md](IDEA.md). For the Phase 1�
 
 Companion to IDEA.md — solo side project, phases sized to be shippable in evenings/weekends. Stack locked at Phase 1: **NestJS** (backend), **PostgreSQL + PostGIS** (PostGIS enabled from day one so the later map phase needs no extension migration), **Prisma** (ORM; PostGIS geometry columns use `Unsupported("geometry")` + raw SQL since Prisma can't natively type them), **React + Refine + Ant Design** (admin), and later **TanStack Start** (public site, §7). Full container dev via docker-compose — nothing needs installing on the host except Docker.
 
+Grouped into milestones: **Milestone 1** is everything that's actually running in production today. **Milestone 2** is the next batch of designed-not-built work, phased for build order. Mobile (MOBILE_CLIENT.md) is designed but deliberately **not** slotted into Milestone 2 — see the note below the table.
+
+### Milestone 1 — done
+
 | Phase | Name | Status |
 |---|---|---|
 | 1 | Repo & architecture skeleton | done |
@@ -43,12 +47,21 @@ Companion to IDEA.md — solo side project, phases sized to be shippable in even
 | 13 | Content enhancement grab-bag (tags, "see also", threaded replies, multi-currency costs, `rateUnit` enum) | done |
 | 14 | Full-text search + notifications — §9 | done |
 | — | Hosting/deployment — §10 | done |
-| — | UI-language i18n | **designed** (English-only, catalogue-ready) — see I18N.md |
-| — | Elevation-along-path profiles + GPX import | **designed** — see TRAIL_ELEVATION.md |
-| — | Spatially-derived district tagging | **designed** — see §4, above |
-| — | Full OSM-style changeset history for geodata | **designed** — see GEODATA_HISTORY.md |
 
 The one long-deferred product question — which content pillar goes live first — was resolved in Phase 10: **Discover → Contribute → Share → Connect** (reasoning in §7).
+
+### Milestone 2 — next, phased
+
+All four items below were independently "designed, not built" with no hard technical blocker between them (each doc says so explicitly: "depends on nothing else being built first"). The phase order here is a build-order recommendation, not a dependency requirement, based on two things: (1) GEODATA_HISTORY.md changes the trail/spot edit-reset trust mechanism that TRAIL_ELEVATION.md's profile-invalidation rule and ACTIVITY_TRACKS.md's propose-trail-update both hook into — building it first means those two are implemented against the final revision-scoped mechanism instead of today's interim `deleteMany`-on-edit rule and then needing rework when history lands later; and (2) TRAIL_ELEVATION.md and ACTIVITY_TRACKS.md share a GPX/KML parser module, the `samples`-sidecar pattern, and the `TrailSource` enum — they're one build, not two, or the parser gets written twice.
+
+| Phase | Name | Depends on (this milestone) |
+|---|---|---|
+| 15 | Geodata changeset history — GEODATA_HISTORY.md (`TrailRevision`/`SpotRevision`, revision-scoped confirmations, supersedes FEATURE.md §4's `deleteMany`-on-edit rule) | none |
+| 16 | Trail elevation profiles + activity tracks — TRAIL_ELEVATION.md (GPX import, `TrailElevationProfile`) and ACTIVITY_TRACKS.md (`ActivityTrack`, KML/KMZ/GeoJSON import, promote-to-trail) built together, one parser module | Phase 15 (so promotion/invalidation target the revision model directly) |
+| 17 | Spatially-derived district tagging — FEATURE.md §4 (`District.boundary` import, `ST_Intersects`/`ST_Contains` derivation, `AdventurePageDistrict.source`) | none, but sequenced after Phase 16 to keep its own trails/spots-adjacent migration clean of the other two — see the known spurious-`DROP INDEX` gotcha in §4's Migration notes |
+| 18 | UI i18n — I18N.md (wire the library, extract every string to a catalogue, ship `en` only) | none — fully orthogonal to the geodata work above, sequenced last because it's independent and lower urgency, and benefits from a stable `Notification.message` string set once Phases 15–17 stop touching notification-triggering copy |
+
+**Mobile is explicitly out of Milestone 2.** MOBILE_CLIENT.md stays "designed, not built" with no phase number and no scheduled milestone — not being built soon. Its auth hardening items (the missing `secure` cookie flag, no rate limiting) are real bugs independent of mobile and worth picking up opportunistically, but the doc as a whole waits until a mobile app is actually being started.
 
 ---
 
@@ -766,6 +779,7 @@ erDiagram
 - ~~**No revision history, unlike `PageRevision`.** Editing updates the row in place; history is "created by" + "last edited by" only — a deliberate simplification. This creates a real gap: `PageConfirmation` ties to a revision precisely so an edit can't ride on stale trust, and geodata has no revision to tie to. The mitigation is a **service-layer rule, not a schema constraint**: any edit to geometry or key fields resets `verificationStatus` and deletes existing confirmations in the same transaction.~~ **Superseded by GEODATA_HISTORY.md** (designed, not yet built) — `TrailRevision`/`SpotRevision` close this gap and retarget confirmations to the revision, at which point the `deleteMany`-on-edit rule described here and in Service-layer notes below is retired. Kept above as the rule this codebase actually ships today.
 - **`createdById`/`lastEditedById`** are separate required fields, both `onDelete: Restrict` — the minimal accountability trail this simplified model offers.
 - **`geometry` columns are `Unsupported(...)`** — the GiST index must be hand-added to generated migration SQL, and any spatial query (bbox, "within N meters") goes through `$queryRaw`/`$executeRaw` with real PostGIS functions.
+- **`GET /trails/bbox` and `/spots/bbox` have no `LIMIT` and no simplification** — they return every intersecting row at full vertex resolution, and the bbox params are raw `@Query` strings coerced with `Number(...)` with no DTO, so `NaN` flows straight into the SQL. Not a problem yet at current data volume, but ACTIVITY_TRACKS.md names this a required prerequisite fix (`ST_Simplify` with a `zoom`-derived tolerance, a `LIMIT`, a bbox-area cap, and a validated DTO) before a track recorder's map traffic makes it one. `LineStringGeometryDto` similarly validates only the outer array — no element type check, no lat/lng range check, no max size.
 - **`SpotType` is flat, not nested** — unlike `ActivityType`, spot categories don't have an obvious hierarchy.
 - **`distanceMeters`/`elevationMeters` are cached scalars, not derived on every read** — computed once and stored. This convention extends to elevation aggregates (`ascentMeters`, `descentMeters`, etc.) in TRAIL_ELEVATION.md's `TrailElevationProfile`, and to `vertexCount`/`distanceMeters` on each snapshot in GEODATA_HISTORY.md's `TrailRevision`/`SpotRevision`.
 
@@ -953,7 +967,7 @@ erDiagram
 
 ### Per-table notes
 
-- **`TripReport`**: `Cascade` from `adventurePageId`, `Restrict` on `authorId`. `dateCompleted` (when the trip happened) is deliberately separate from `createdAt` (when the report was posted).
+- **`TripReport`**: `Cascade` from `adventurePageId`, `Restrict` on `authorId`. `dateCompleted` (when the trip happened) is deliberately separate from `createdAt` (when the report was posted). `TripReport` has no geometry of its own even today — ACTIVITY_TRACKS.md (designed, not yet built) gives it an optional `activityTracks ActivityTrack[]` relation (many tracks per report, e.g. one per day of a multi-day trek) rather than adding geometry directly to this table, for the ownership/trust/mutability reasons detailed there.
 - **`currency` (Phase 13)** — a fixed short list validated in the DTO rather than a Prisma enum, since it's purely a display label with no downstream exchange-rate math anywhere in the platform. Defaults to `NPR` for backward compatibility.
 - **`TripReportMedia`** is its own table rather than sharing `Media` — Prisma has no clean polymorphic-association pattern, and this project consistently prefers a duplicated-but-simple table. No `uploadedById` — a trip report has exactly one author, already attributed on the parent.
 - **`TripReportKudos`**: `@@unique([tripReportId, userId])` stops a user inflating their own report's count.
@@ -1491,4 +1505,13 @@ Consolidated from every section above. Where a companion doc already resolves an
 **Deployment**
 15. No zero-downtime rollout — acceptable at current traffic, revisit if that changes.
 
-All four items previously listed here as fully undesigned are now designed, not yet built: UI-language i18n (I18N.md); elevation-along-path trail profiles + the GPX import that feeds them (TRAIL_ELEVATION.md); spatially-derived district tagging + district boundary import (§4, above); full OSM-style geodata changeset history (GEODATA_HISTORY.md).
+**Activity tracks & mobile** (ACTIVITY_TRACKS.md, MOBILE_CLIENT.md)
+16. Whether GPX/KML waypoints (maps.me bookmarks) auto-become candidate `Spot`s or require a manual action.
+17. Whether `ActivityTrack` gets its own kudos/comments or stays scoped to its parent `TripReport`'s.
+18. Whether promoting a track to a trail requires moderator approval or is a normal peer-confirmable edit.
+19. Whether a `FOLLOWERS` visibility tier is worth adding once/if a follow graph exists.
+20. Mobile client framework choice (React Native vs. native) — irrelevant to the server contract, deferred to whenever the app is actually started.
+21. Whether the full-country `nepal.pmtiles` offline basemap is ever built, or per-page offline packs stay sufficient permanently.
+22. Push notification transport (FCM/APNs) — the current `Notification` model is DB-rows-polled-every-60s, unusable for a backgrounded phone; no device-token table designed yet.
+
+All six items previously listed here as fully undesigned are now designed, not yet built: UI-language i18n (I18N.md); elevation-along-path trail profiles + the GPX import that feeds them (TRAIL_ELEVATION.md); spatially-derived district tagging + district boundary import (§4, above); full OSM-style geodata changeset history (GEODATA_HISTORY.md); personal activity tracks + file import (ACTIVITY_TRACKS.md); mobile client readiness (MOBILE_CLIENT.md).

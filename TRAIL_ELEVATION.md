@@ -1,6 +1,6 @@
 # Trail elevation — GPX import + elevation profiles
 
-Elevation-along-path profiles for trails, sourced from uploaded GPX tracks. Companion to FEATURE.md §4 (`Trail`/`Spot`, the tables this extends) and GEODATA_HISTORY.md (the profile-invalidation rule here is a second instance of that doc's/FEATURE.md §4's load-bearing edit-resets-trust rule). Depends on nothing else being built first.
+Elevation-along-path profiles for trails, sourced from uploaded GPX tracks. Companion to FEATURE.md §4 (`Trail`/`Spot`, the tables this extends), GEODATA_HISTORY.md (the profile-invalidation rule here is a second instance of that doc's/FEATURE.md §4's load-bearing edit-resets-trust rule), and ACTIVITY_TRACKS.md (shares this doc's GPX parser module and sample-sidecar pattern; extends `TrailSource` with `RECORDED_ACTIVITY`; resolves the multi-`<trkseg>` open question below). Depends on nothing else being built first.
 
 **Status**: designed, not built.
 
@@ -25,8 +25,9 @@ A sidecar table keeps the `Trail` row lean (every geodata read is an explicit-co
 
 ```prisma
 enum TrailSource {
-  DRAWN       // clicked vertex-by-vertex in DrawMap
-  GPX_IMPORT  // parsed from an uploaded .gpx track
+  DRAWN              // clicked vertex-by-vertex in DrawMap
+  GPX_IMPORT         // parsed from an uploaded .gpx track
+  RECORDED_ACTIVITY  // promoted from a user's own ActivityTrack — see ACTIVITY_TRACKS.md
 }
 
 model TrailElevationProfile {
@@ -88,7 +89,7 @@ erDiagram
 
 - **Endpoint**: `POST /adventure-pages/:pageId/trails/import-gpx`, multipart. Mirrors the existing page-scoped `AdventurePageTrailsController` pattern.
 - **Parse server-side, never client-side.** The same "don't trust the client to keep derived state honest" instinct CLAUDE.md records for `searchVector` and `verificationStatus`: the client uploads raw bytes, the server produces geometry, samples, and aggregates.
-- **Parser**: `fast-xml-parser` plus a small hand-written mapper, not `@tmcw/togeojson` (which wants a DOM and would need a shim in the API container). Dependency-light, matching the repo's minimal-dependency character (hand-rolled SVG elsewhere, no chart library, raw SQL for spatial queries).
+- **Parser**: `fast-xml-parser` plus a small hand-written mapper, not `@tmcw/togeojson` (which wants a DOM and would need a shim in the API container). Dependency-light, matching the repo's minimal-dependency character (hand-rolled SVG elsewhere, no chart library, raw SQL for spatial queries). This parser module is shared with ACTIVITY_TRACKS.md's importer (`apps/api/src/tracks/parsers/gpx.parser.ts`) — one parser, two destinations, not two parsers.
 - **One transaction** creates the `Trail` (geometry via the existing `ST_SetSRID(ST_GeomFromGeoJSON(...), 4326)` + `ST_Length(...::geography)::int` distance computation already used for hand-drawn trails) and its `TrailElevationProfile`, with `source: GPX_IMPORT`.
 - **Guardrails**:
   - Max upload file size (reuse the existing `MAX_UPLOAD_SIZE_MB` convention from the images upload endpoint, or a GPX-specific limit).
@@ -96,7 +97,7 @@ erDiagram
   - Reject files with no `<trkpt>` elements.
   - Reject tracks whose bounding box falls entirely outside Nepal.
   - Missing `<ele>` on some/all points: import the geometry, skip creating a profile rather than failing the whole import.
-- **Privacy**: discard `<time>` elements during parsing. A raw GPX track reveals exactly when a person was at each coordinate, and this is a public, anonymously-readable site — much cheaper to decide against storing that now than to retrofit a redaction pass later.
+- **Privacy**: discard `<time>` elements during parsing for *this* endpoint. A raw GPX track reveals exactly when a person was at each coordinate, and this is a public, anonymously-readable site — much cheaper to decide against storing that now than to retrofit a redaction pass later. This is a property of the destination, not the parser: ACTIVITY_TRACKS.md's `POST /activity-tracks/import` uses the same shared parser but keeps `<time>`, because a user-owned, private-by-default `ActivityTrack` has legitimate use for timestamps (pace, moving time) that a public wiki `Trail` never does. Read both endpoints' handling as one rule applied at two destinations, not a contradiction.
 
 ## Required additions to existing models
 
@@ -128,5 +129,5 @@ Not added retroactively now, same reasoning as every other "required additions" 
 
 1. **Whether GPX import may update an existing trail's geometry, or only create new trails.** Left open — the simplest version only creates.
 2. **Whether `Spot.elevationMeters` should be auto-filled from a nearby trail profile** instead of staying hand-entered. Not designed.
-3. **Whether multi-`<trkseg>` GPX files become one trail or several.** Left open.
+3. ~~Whether multi-`<trkseg>` GPX files become one trail or several.~~ **Resolved in ACTIVITY_TRACKS.md**: segments join into one track/trail (a segment break is GPS signal loss, not a new activity); separate `<trk>` elements become separate tracks/trails. Applies to this endpoint too, since the parser is shared.
 4. **Whether `TrailElevationProfile` is versioned alongside `TrailRevision`** (GEODATA_HISTORY.md) or stays current-state-only — cross-referenced there too.
