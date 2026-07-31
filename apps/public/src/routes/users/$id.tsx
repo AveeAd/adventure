@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { CheckCircle2, FileEdit, MapPinned } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
 import { Avatar } from '../../components/Avatar';
 import { Card } from '../../components/Card';
@@ -44,6 +45,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
 
 function ContributorProfilePage() {
   const { profile } = Route.useLoaderData();
+  const { t } = useTranslation('account');
 
   return (
     <Container>
@@ -57,11 +59,11 @@ function ContributorProfilePage() {
       </div>
 
       <div className="mt-6 grid grid-cols-3 gap-4">
-        <StatCard icon={<FileEdit className="h-5 w-5" />} label="Pages edited" value={profile.pagesEditedCount} />
-        <StatCard icon={<MapPinned className="h-5 w-5" />} label="Stories" value={profile.tripReportCount} />
+        <StatCard icon={<FileEdit className="h-5 w-5" />} label={t('profile.pagesEdited')} value={profile.pagesEditedCount} />
+        <StatCard icon={<MapPinned className="h-5 w-5" />} label={t('profile.stories')} value={profile.tripReportCount} />
         <StatCard
           icon={<CheckCircle2 className="h-5 w-5" />}
-          label="Confirmations given"
+          label={t('profile.confirmationsGiven')}
           value={profile.confirmationsGivenCount}
         />
       </div>

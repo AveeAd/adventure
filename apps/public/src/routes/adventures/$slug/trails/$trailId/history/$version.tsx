@@ -1,6 +1,8 @@
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../../../lib/auth/api';
+import i18n from '../../../../../../lib/i18n';
 import { authPost } from '../../../../../../lib/auth/auth-fetch';
 import { checkAuth } from '../../../../../../lib/auth/session';
 import { Button } from '../../../../../../components/Button';
@@ -58,13 +60,23 @@ export const Route = createFileRoute('/adventures/$slug/trails/$trailId/history/
   },
   component: TrailRevisionPage,
   head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: `v${loaderData.version} — ${loaderData.trail.name ?? 'Trail'}` }] : [],
+    meta: loaderData
+      ? [
+          {
+            title: i18n.t('adventurePage:history.diffTitle', {
+              name: loaderData.trail.name ?? i18n.t('adventurePage:history.trailFallback'),
+              version: loaderData.version,
+            }),
+          },
+        ]
+      : [],
   }),
 });
 
 function TrailRevisionPage() {
   const { slug, trail, version, mode, revision, diff } = Route.useLoaderData();
   const navigate = useNavigate();
+  const { t } = useTranslation('adventurePage');
   const [signedIn, setSignedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reverting, setReverting] = useState(false);
@@ -80,7 +92,7 @@ function TrailRevisionPage() {
       await authPost(`/trails/${trail.id}/revisions/${version}/revert`);
       navigate({ to: '/adventures/$slug', params: { slug } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to revert');
+      setError(err instanceof Error ? err.message : t('errors.failedToRevert'));
       setReverting(false);
     }
   }
@@ -91,7 +103,7 @@ function TrailRevisionPage() {
   return (
     <Container>
       <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-        {trail.name ?? 'Trail'} — v{version}
+        {t('history.diffTitle', { name: trail.name ?? t('history.trailFallback'), version })}
       </h1>
 
       <Card className="mt-6 p-5">
@@ -111,8 +123,12 @@ function TrailRevisionPage() {
         {mode === 'diff' && (
           <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
             {diff!.geometry.geometryChanged
-              ? `Geometry changed — max deviation ≈ ${Math.round(diff!.geometry.maxDeviationMeters)} m, length Δ ${diff!.geometry.lengthDeltaMeters} m, vertices Δ ${diff!.geometry.vertexDelta}`
-              : 'Geometry unchanged in this revision.'}
+              ? t('history.geometryChanged', {
+                  deviation: Math.round(diff!.geometry.maxDeviationMeters),
+                  length: diff!.geometry.lengthDeltaMeters,
+                  vertices: diff!.geometry.vertexDelta,
+                })
+              : t('history.geometryUnchanged')}
           </p>
         )}
 
@@ -122,7 +138,7 @@ function TrailRevisionPage() {
       {signedIn && (
         <div className="mt-4">
           <Button variant="secondary" onClick={handleRevert} disabled={reverting}>
-            {reverting ? 'Reverting...' : `Revert to v${version}`}
+            {reverting ? t('history.reverting') : t('history.revert', { version })}
           </Button>
           {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>

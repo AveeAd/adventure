@@ -1,23 +1,25 @@
 import { Edit, useForm } from '@refinedev/antd';
 import { Form, Select, Switch, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 export const UserEdit = () => {
   const { formProps, saveButtonProps, query } = useForm({ resource: 'users', action: 'edit' });
   const record = query?.data?.data;
+  const { t } = useTranslation('resources');
 
   return (
-    <Edit resource="users" saveButtonProps={saveButtonProps} title="Edit user">
+    <Edit resource="users" saveButtonProps={saveButtonProps} title={t('users.editTitle')}>
       <Typography.Paragraph type="secondary">{record?.email}</Typography.Paragraph>
       <Form {...formProps} layout="vertical">
-        <Form.Item label="Role" name="role">
+        <Form.Item label={t('users.fields.role')} name="role">
           <Select
             options={[
-              { value: 'USER', label: 'User' },
-              { value: 'ADMIN', label: 'Admin' },
+              { value: 'USER', label: t('users.roles.USER') },
+              { value: 'ADMIN', label: t('users.roles.ADMIN') },
             ]}
           />
         </Form.Item>
-        <Form.Item label="Active" name="isActive" valuePropName="checked">
+        <Form.Item label={t('users.fields.isActive')} name="isActive" valuePropName="checked">
           <Switch />
         </Form.Item>
       </Form>

@@ -1,6 +1,7 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useCustomMutation, useInvalidate, useShow } from '@refinedev/core';
 import { Button, Descriptions, Tag, Typography, message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { GeometryMap } from '../../components/GeometryMap';
 import { GeodataHistory } from '../common/GeodataHistory';
 import { VerificationStatusControl } from '../common/VerificationStatusControl';
@@ -30,6 +31,7 @@ export const TrailShow = () => {
   const { query, result: record } = useShow<TrailDetail>({ resource: 'trails' });
   const invalidate = useInvalidate();
   const { mutate: deleteProfile, mutation: deleteProfileMutation } = useCustomMutation();
+  const { t } = useTranslation('resources');
 
   const removeProfile = () => {
     if (!record) return;
@@ -37,7 +39,7 @@ export const TrailShow = () => {
       { url: `/trails/${record.id}/elevation-profile`, method: 'delete', values: {} },
       {
         onSuccess: () => {
-          message.success('Elevation profile deleted');
+          message.success(t('trails.elevationProfileDeleted'));
           invalidate({ resource: 'trails', invalidates: ['detail'], id: record.id });
         },
       },
@@ -52,11 +54,11 @@ export const TrailShow = () => {
       {record && (
         <>
           <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label="Name">{record.name ?? 'Trail'}</Descriptions.Item>
-            <Descriptions.Item label="Distance">
+            <Descriptions.Item label={t('trails.fields.name')}>{record.name ?? t('trails.defaultName')}</Descriptions.Item>
+            <Descriptions.Item label={t('trails.fields.distance')}>
               {record.distanceMeters ? `${(record.distanceMeters / 1000).toFixed(1)} km` : '—'}
             </Descriptions.Item>
-            <Descriptions.Item label="Source">
+            <Descriptions.Item label={t('trails.fields.source')}>
               <Tag>{record.source.replaceAll('_', ' ')}</Tag>
             </Descriptions.Item>
           </Descriptions>
@@ -67,15 +69,15 @@ export const TrailShow = () => {
 
           {record.elevationProfile && (
             <div style={{ marginTop: 24 }}>
-              <Typography.Title level={5}>Elevation profile</Typography.Title>
+              <Typography.Title level={5}>{t('trails.fields.elevationProfile')}</Typography.Title>
               <Descriptions bordered size="small" column={2}>
-                <Descriptions.Item label="Ascent">{record.elevationProfile.ascentMeters} m</Descriptions.Item>
-                <Descriptions.Item label="Descent">{record.elevationProfile.descentMeters} m</Descriptions.Item>
-                <Descriptions.Item label="Min elevation">{record.elevationProfile.minElevationMeters} m</Descriptions.Item>
-                <Descriptions.Item label="Max elevation">{record.elevationProfile.maxElevationMeters} m</Descriptions.Item>
+                <Descriptions.Item label={t('trails.fields.ascent')}>{record.elevationProfile.ascentMeters} m</Descriptions.Item>
+                <Descriptions.Item label={t('trails.fields.descent')}>{record.elevationProfile.descentMeters} m</Descriptions.Item>
+                <Descriptions.Item label={t('trails.fields.minElevation')}>{record.elevationProfile.minElevationMeters} m</Descriptions.Item>
+                <Descriptions.Item label={t('trails.fields.maxElevation')}>{record.elevationProfile.maxElevationMeters} m</Descriptions.Item>
               </Descriptions>
               <Button danger style={{ marginTop: 12 }} onClick={removeProfile} loading={deleteProfileMutation.isPending}>
-                Delete profile (bad import escape hatch)
+                {t('trails.deleteProfileButton')}
               </Button>
             </div>
           )}
@@ -90,7 +92,7 @@ export const TrailShow = () => {
           </div>
 
           <div style={{ marginTop: 24 }}>
-            <Typography.Title level={5}>History</Typography.Title>
+            <Typography.Title level={5}>{t('trails.fields.history')}</Typography.Title>
             <GeodataHistory resource="trails" id={record.id} />
           </div>
         </>

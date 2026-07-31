@@ -1,5 +1,6 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { Plus, Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
 import { formatDate } from '../../../../lib/format';
 import { Button } from '../../../../components/Button';
@@ -40,24 +41,23 @@ export const Route = createFileRoute('/adventures/$slug/groups/')({
 
 function TripGroupsListPage() {
   const { slug, page, groups } = Route.useLoaderData();
+  const { t } = useTranslation('groups');
 
   return (
     <Container>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">Trip groups — {page.title}</h1>
+        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{t('listTitle', { title: page.title })}</h1>
         <Link to="/adventures/$slug/groups/new" params={{ slug }}>
           <Button size="sm">
-            <Plus className="h-3.5 w-3.5" /> Start a group
+            <Plus className="h-3.5 w-3.5" /> {t('startGroup')}
           </Button>
         </Link>
       </div>
-      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-        Find companions doing this route in the same window.
-      </p>
+      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('subheading')}</p>
 
       {groups.length === 0 ? (
         <div className="mt-6">
-          <EmptyState icon={<Users className="h-8 w-8" />}>No trip groups yet — be the first to start one.</EmptyState>
+          <EmptyState icon={<Users className="h-8 w-8" />}>{t('noneYet')}</EmptyState>
         </div>
       ) : (
         <ul className="mt-6 flex flex-col gap-3">

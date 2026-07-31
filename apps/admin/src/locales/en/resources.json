@@ -12,13 +12,182 @@
   "districts": { "label": "Districts" },
   "municipalities": { "label": "Municipalities" },
   "content": { "label": "Content" },
-  "adventure-pages": { "label": "Adventure Pages" },
-  "trip-reports": { "label": "Trip Reports" },
-  "trip-groups": { "label": "Trip Groups" },
+  "adventure-pages": {
+    "label": "Adventure Pages",
+    "fields": {
+      "title": "Title",
+      "activity": "Activity",
+      "difficulty": "Difficulty",
+      "districts": "Districts",
+      "seasons": "Seasons",
+      "contributors": "Contributors",
+      "likes": "Likes",
+      "currentStatus": "Current status",
+      "verificationStatus": "Verification status",
+      "currentRevisionContent": "Current revision content",
+      "photos": "Photos",
+      "created": "Created"
+    },
+    "noContent": "No content",
+    "noPhotos": "No photos.",
+    "photoDeleted": "Photo deleted"
+  },
+  "trip-reports": {
+    "label": "Trip Reports",
+    "defaultTitle": "Trip report",
+    "fields": {
+      "title": "Title",
+      "adventurePage": "Adventure page",
+      "author": "Author",
+      "authorId": "Author ID",
+      "dateCompleted": "Date completed",
+      "duration": "Duration",
+      "cost": "Cost",
+      "kudosComments": "Kudos / Comments",
+      "description": "Description"
+    },
+    "durationDays": "{{count}} days",
+    "noDescription": "No description"
+  },
+  "trip-groups": {
+    "label": "Trip Groups",
+    "fields": {
+      "title": "Title",
+      "adventurePage": "Adventure page",
+      "dates": "Dates",
+      "members": "Members",
+      "description": "Description",
+      "email": "Email",
+      "role": "Role"
+    },
+    "membersHeading": "Members ({{count}})",
+    "noDescription": "No description"
+  },
   "geodata": { "label": "Trails & Spots" },
-  "trails": { "label": "Trails" },
-  "spots": { "label": "Spots" },
-  "activity-tracks": { "label": "Activity Tracks" },
-  "guide-profiles": { "label": "Guide Profiles" },
-  "users": { "label": "Users" }
+  "trails": {
+    "label": "Trails",
+    "defaultName": "Trail",
+    "fields": {
+      "name": "Name",
+      "adventurePage": "Adventure page",
+      "distance": "Distance",
+      "verification": "Verification",
+      "source": "Source",
+      "elevationProfile": "Elevation profile",
+      "ascent": "Ascent",
+      "descent": "Descent",
+      "minElevation": "Min elevation",
+      "maxElevation": "Max elevation",
+      "history": "History"
+    },
+    "deleteProfileButton": "Delete profile (bad import escape hatch)",
+    "elevationProfileDeleted": "Elevation profile deleted"
+  },
+  "spots": {
+    "label": "Spots",
+    "fields": {
+      "name": "Name",
+      "type": "Type",
+      "adventurePage": "Adventure page",
+      "verification": "Verification",
+      "elevation": "Elevation",
+      "description": "Description",
+      "history": "History"
+    },
+    "noDescription": "No description"
+  },
+  "activity-tracks": {
+    "label": "Activity Tracks",
+    "defaultName": "Untitled track",
+    "fields": {
+      "name": "Name",
+      "owner": "Owner",
+      "ownerUserId": "Owner (user id)",
+      "distance": "Distance",
+      "source": "Source",
+      "visibility": "Visibility",
+      "started": "Started",
+      "elapsed": "Elapsed",
+      "ascent": "Ascent",
+      "descent": "Descent",
+      "notes": "Notes"
+    }
+  },
+  "guide-profiles": {
+    "label": "Guide Profiles",
+    "fields": {
+      "specialties": "Specialties",
+      "regions": "Regions",
+      "verification": "Verification",
+      "userId": "User ID",
+      "licenseNumber": "License number",
+      "languages": "Languages",
+      "rate": "Rate",
+      "bio": "Bio",
+      "verificationStatus": "Verification status"
+    },
+    "noBio": "No bio",
+    "restrictedAlert": {
+      "message": "Covers a restricted-agency district",
+      "description": "Per GUIDES.md, this profile can only reach VERIFIED after passing through PENDING_LICENSE_REVIEW."
+    }
+  },
+  "users": {
+    "label": "Users",
+    "editTitle": "Edit user",
+    "fields": {
+      "email": "Email",
+      "name": "Name",
+      "role": "Role",
+      "isActive": "Active",
+      "joined": "Joined"
+    },
+    "roles": {
+      "USER": "User",
+      "ADMIN": "Admin"
+    },
+    "yes": "Yes",
+    "no": "No"
+  },
+  "location": {
+    "countryFilter": "Country (filter)",
+    "provinceFilter": "Province (filter)",
+    "countryFilterPlaceholder": "Narrow the province list by country",
+    "provinceFilterPlaceholder": "Narrow the district list by province",
+    "municipalityTypes": {
+      "METROPOLITAN_CITY": "Metropolitan City",
+      "SUB_METROPOLITAN_CITY": "Sub-Metropolitan City",
+      "MUNICIPALITY": "Municipality",
+      "RURAL_MUNICIPALITY": "Rural Municipality"
+    }
+  },
+  "geodataHistory": {
+    "safetyCritical": "safety-critical",
+    "firstRevision": "First recorded revision - nothing to diff against.",
+    "loadingDiff": "Loading diff...",
+    "geometryChanged": "Geometry changed",
+    "geometryUnchanged": "Geometry unchanged",
+    "maxDeviation": "max deviation ≈ {{value}} m",
+    "lengthDelta": ", length Δ {{value}} m",
+    "vertexDelta": ", vertices Δ {{value}}",
+    "revertTo": "Revert to v{{version}}",
+    "reverted": "Reverted to version {{version}}"
+  },
+  "verification": {
+    "updated": "Verification status updated"
+  },
+  "fields": {
+    "name": "Name",
+    "slug": "Slug",
+    "isoCode": "ISO code",
+    "description": "Description",
+    "sortOrder": "Sort order",
+    "isActive": "Active",
+    "parentId": "Parent activity type",
+    "actions": "Actions",
+    "country": "Country",
+    "province": "Province",
+    "district": "District",
+    "type": "Type"
+  }
 }

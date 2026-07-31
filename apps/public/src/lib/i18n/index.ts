@@ -5,9 +5,13 @@
 // today, extended when a second locale actually lands (see locale.ts).
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import account from '../../locales/en/account.json';
+import adventurePage from '../../locales/en/adventurePage.json';
 import common from '../../locales/en/common.json';
 import discover from '../../locales/en/discover.json';
+import groups from '../../locales/en/groups.json';
 import guides from '../../locales/en/guides.json';
+import tripReports from '../../locales/en/tripReports.json';
 
 export const defaultNS = 'common';
 
@@ -20,9 +24,9 @@ if (!i18next.isInitialized) {
     lng: 'en',
     fallbackLng: 'en',
     defaultNS,
-    ns: ['common', 'discover', 'guides'],
+    ns: ['common', 'discover', 'guides', 'adventurePage', 'groups', 'tripReports', 'account'],
     resources: {
-      en: { common, discover, guides },
+      en: { common, discover, guides, adventurePage, groups, tripReports, account },
     },
     interpolation: { escapeValue: false }, // React already escapes
     react: { useSuspense: false },

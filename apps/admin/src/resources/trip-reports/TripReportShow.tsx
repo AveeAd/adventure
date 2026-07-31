@@ -1,6 +1,7 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
 import { Descriptions, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../lib/format';
 
 interface TripReportDetail {
@@ -18,6 +19,7 @@ interface TripReportDetail {
 
 export const TripReportShow = () => {
   const { query, result: record } = useShow<TripReportDetail>({ resource: 'trip-reports' });
+  const { t } = useTranslation('resources');
 
   return (
     <Show
@@ -27,27 +29,29 @@ export const TripReportShow = () => {
       {record && (
         <>
           <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label="Title">{record.title ?? 'Trip report'}</Descriptions.Item>
-            <Descriptions.Item label="Author ID">{record.authorId}</Descriptions.Item>
-            <Descriptions.Item label="Date completed">
+            <Descriptions.Item label={t('trip-reports.fields.title')}>
+              {record.title ?? t('trip-reports.defaultTitle')}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('trip-reports.fields.authorId')}>{record.authorId}</Descriptions.Item>
+            <Descriptions.Item label={t('trip-reports.fields.dateCompleted')}>
               {formatDate(record.dateCompleted)}
             </Descriptions.Item>
-            <Descriptions.Item label="Duration">
-              {record.durationDays ? `${record.durationDays} days` : '—'}
+            <Descriptions.Item label={t('trip-reports.fields.duration')}>
+              {record.durationDays ? t('trip-reports.durationDays', { count: record.durationDays }) : '—'}
             </Descriptions.Item>
-            <Descriptions.Item label="Cost">
+            <Descriptions.Item label={t('trip-reports.fields.cost')}>
               {record.actualCostAmount ? `${record.currency} ${record.actualCostAmount}` : '—'}
             </Descriptions.Item>
-            <Descriptions.Item label="Kudos / Comments">
+            <Descriptions.Item label={t('trip-reports.fields.kudosComments')}>
               {record.kudosCount} / {record.commentCount}
             </Descriptions.Item>
           </Descriptions>
 
           <Typography.Title level={5} style={{ marginTop: 24 }}>
-            Description
+            {t('trip-reports.fields.description')}
           </Typography.Title>
           <Typography.Paragraph style={{ whiteSpace: 'pre-wrap' }} type="secondary">
-            {record.description ?? 'No description'}
+            {record.description ?? t('trip-reports.noDescription')}
           </Typography.Paragraph>
         </>
       )}

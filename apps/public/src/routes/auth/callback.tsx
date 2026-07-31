@@ -1,16 +1,19 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Mountain } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../lib/i18n';
 import { consumePostLoginRedirect } from '../../lib/auth/require-auth';
 import { tokenStore } from '../../lib/auth/token-store';
 
 export const Route = createFileRoute('/auth/callback')({
   component: AuthCallbackPage,
-  head: () => ({ meta: [{ title: 'Signing in...' }] }),
+  head: () => ({ meta: [{ title: i18n.t('account:authCallback.pageTitle') }] }),
 });
 
 function AuthCallbackPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation('account');
   const [done, setDone] = useState(false);
 
   useEffect(() => {
@@ -36,7 +39,7 @@ function AuthCallbackPage() {
   return (
     <main className="flex min-h-[70vh] flex-col items-center justify-center gap-3 text-stone-500 dark:text-stone-400">
       <Mountain className="h-8 w-8 animate-pulse text-primary-600 dark:text-primary-400" strokeWidth={2.5} />
-      <p>Signing in...</p>
+      <p>{t('authCallback.signingIn')}</p>
     </main>
   );
 }

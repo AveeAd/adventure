@@ -1,6 +1,8 @@
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../../../lib/auth/api';
+import i18n from '../../../../../../lib/i18n';
 import { authPost } from '../../../../../../lib/auth/auth-fetch';
 import { checkAuth } from '../../../../../../lib/auth/session';
 import { Button } from '../../../../../../components/Button';
@@ -55,13 +57,16 @@ export const Route = createFileRoute('/adventures/$slug/spots/$spotId/history/$v
   },
   component: SpotRevisionPage,
   head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: `v${loaderData.version} — ${loaderData.spot.name}` }] : [],
+    meta: loaderData
+      ? [{ title: i18n.t('adventurePage:history.diffTitle', { name: loaderData.spot.name, version: loaderData.version }) }]
+      : [],
   }),
 });
 
 function SpotRevisionPage() {
   const { slug, spot, version, mode, revision, diff } = Route.useLoaderData();
   const navigate = useNavigate();
+  const { t } = useTranslation('adventurePage');
   const [signedIn, setSignedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reverting, setReverting] = useState(false);
@@ -77,7 +82,7 @@ function SpotRevisionPage() {
       await authPost(`/spots/${spot.id}/revisions/${version}/revert`);
       navigate({ to: '/adventures/$slug', params: { slug } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to revert');
+      setError(err instanceof Error ? err.message : t('errors.failedToRevert'));
       setReverting(false);
     }
   }
@@ -88,7 +93,7 @@ function SpotRevisionPage() {
   return (
     <Container>
       <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-        {spot.name} — v{version}
+        {t('history.diffTitle', { name: spot.name, version })}
       </h1>
 
       <Card className="mt-6 p-5">
@@ -108,8 +113,8 @@ function SpotRevisionPage() {
         {mode === 'diff' && (
           <p className="mb-4 text-sm text-stone-500 dark:text-stone-400">
             {diff!.geometry.geometryChanged
-              ? `Location changed — moved ≈ ${Math.round(diff!.geometry.maxDeviationMeters)} m`
-              : 'Location unchanged in this revision.'}
+              ? t('history.locationChanged', { deviation: Math.round(diff!.geometry.maxDeviationMeters) })
+              : t('history.locationUnchanged')}
           </p>
         )}
 
@@ -119,7 +124,7 @@ function SpotRevisionPage() {
       {signedIn && (
         <div className="mt-4">
           <Button variant="secondary" onClick={handleRevert} disabled={reverting}>
-            {reverting ? 'Reverting...' : `Revert to v${version}`}
+            {reverting ? t('history.reverting') : t('history.revert', { version })}
           </Button>
           {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>

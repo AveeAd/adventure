@@ -1,6 +1,8 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
+import i18n from '../../../../lib/i18n';
 import { formatDateTime } from '../../../../lib/format';
 import { Container } from '../../../../components/Container';
 
@@ -31,16 +33,19 @@ export const Route = createFileRoute('/adventures/$slug/history/')({
   },
   component: HistoryPage,
   head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: `History — ${loaderData.page.title}` }] : [],
+    meta: loaderData ? [{ title: i18n.t('adventurePage:history.title', { name: loaderData.page.title }) }] : [],
   }),
 });
 
 function HistoryPage() {
   const { slug, page, revisions } = Route.useLoaderData();
+  const { t } = useTranslation('adventurePage');
 
   return (
     <Container>
-      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">History — {page.title}</h1>
+      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+        {t('history.title', { name: page.title })}
+      </h1>
 
       <ol className="mt-6 flex flex-col">
         {revisions.map((revision, index) => (
@@ -62,7 +67,7 @@ function HistoryPage() {
               </span>
               {revision.isSafetyCriticalEdit && (
                 <span className="ml-2 inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400">
-                  <AlertTriangle className="h-3.5 w-3.5" /> safety-critical
+                  <AlertTriangle className="h-3.5 w-3.5" /> {t('history.safetyCritical')}
                 </span>
               )}
               {revision.editSummary && (

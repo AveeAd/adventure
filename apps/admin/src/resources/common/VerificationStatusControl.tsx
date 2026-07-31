@@ -1,6 +1,7 @@
 import { useCustomMutation, useInvalidate } from '@refinedev/core';
 import { Button, Select, Space, message } from 'antd';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const VerificationStatusControl = ({
   resource,
@@ -16,6 +17,7 @@ export const VerificationStatusControl = ({
   const [value, setValue] = useState(status);
   const { mutate, mutation } = useCustomMutation();
   const invalidate = useInvalidate();
+  const { t } = useTranslation(['resources', 'common']);
 
   useEffect(() => setValue(status), [status]);
 
@@ -28,7 +30,7 @@ export const VerificationStatusControl = ({
       },
       {
         onSuccess: () => {
-          message.success('Verification status updated');
+          message.success(t('verification.updated'));
           invalidate({ resource, invalidates: ['detail', 'list'], id });
         },
       },
@@ -44,7 +46,7 @@ export const VerificationStatusControl = ({
         options={options.map((option) => ({ value: option, label: option.replaceAll('_', ' ') }))}
       />
       <Button type="primary" onClick={save} disabled={value === status} loading={mutation.isPending}>
-        Save
+        {t('common:actions.save')}
       </Button>
     </Space>
   );

@@ -1,6 +1,7 @@
 import { Link, createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
 import { Calendar, UserMinus, UserPlus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
 import { authDelete, authPost } from '../../../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../../../lib/auth/session';
@@ -48,6 +49,7 @@ export const Route = createFileRoute('/adventures/$slug/groups/$groupId')({
 function TripGroupDetailPage() {
   const { slug, group: initialGroup } = Route.useLoaderData();
   const navigate = useNavigate();
+  const { t } = useTranslation('groups');
   const [group, setGroup] = useState(initialGroup);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -72,7 +74,7 @@ function TripGroupDetailPage() {
       await authPost(`/trip-groups/${group.id}/members`);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to join');
+      setError(err instanceof Error ? err.message : t('errors.failedToJoin'));
     } finally {
       setBusy(false);
     }
@@ -85,7 +87,7 @@ function TripGroupDetailPage() {
       await authDelete(`/trip-groups/${group.id}/members`);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to leave');
+      setError(err instanceof Error ? err.message : t('errors.failedToLeave'));
     } finally {
       setBusy(false);
     }
@@ -98,7 +100,7 @@ function TripGroupDetailPage() {
       await authDelete(`/trip-groups/${group.id}`);
       navigate({ to: '/adventures/$slug/groups', params: { slug } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel group');
+      setError(err instanceof Error ? err.message : t('errors.failedToCancel'));
       setBusy(false);
     }
   }
@@ -110,7 +112,7 @@ function TripGroupDetailPage() {
         params={{ slug }}
         className="text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"
       >
-        ← Back to trip groups
+        {t('backToGroups')}
       </Link>
 
       <h1 className="mt-3 text-2xl font-semibold text-stone-900 dark:text-stone-50">{group.title}</h1>
@@ -125,16 +127,16 @@ function TripGroupDetailPage() {
         {currentUserId &&
           (membership ? (
             <Button variant="secondary" size="sm" onClick={leave} disabled={busy}>
-              <UserMinus className="h-3.5 w-3.5" /> Leave group
+              <UserMinus className="h-3.5 w-3.5" /> {t('leaveGroup')}
             </Button>
           ) : (
             <Button size="sm" onClick={join} disabled={busy}>
-              <UserPlus className="h-3.5 w-3.5" /> Join group
+              <UserPlus className="h-3.5 w-3.5" /> {t('joinGroup')}
             </Button>
           ))}
         {isOrganizer && (
           <Button variant="danger" size="sm" onClick={cancelGroup} disabled={busy}>
-            Cancel group
+            {t('cancelGroup')}
           </Button>
         )}
       </div>
@@ -142,7 +144,7 @@ function TripGroupDetailPage() {
 
       <Card className="mt-8 p-5">
         <h2 className="flex items-center gap-2 font-semibold text-stone-900 dark:text-stone-50">
-          <Users className="h-4 w-4" /> Members ({group.members.length})
+          <Users className="h-4 w-4" /> {t('members', { count: group.members.length })}
         </h2>
         <ul className="mt-3 flex flex-col gap-2">
           {group.members.map((member) => (
@@ -150,7 +152,7 @@ function TripGroupDetailPage() {
               <Avatar label={member.user.email} size="sm" />
               <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.email}</span>
               {member.role === 'ORGANIZER' && (
-                <span className="text-xs text-stone-500 dark:text-stone-400">Organizer</span>
+                <span className="text-xs text-stone-500 dark:text-stone-400">{t('organizer')}</span>
               )}
             </li>
           ))}

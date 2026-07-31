@@ -1,6 +1,7 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
 import { Descriptions, Table, Tag, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../lib/format';
 
 interface TripGroupMember {
@@ -21,6 +22,7 @@ interface TripGroupDetail {
 
 export const TripGroupShow = () => {
   const { query, result: record } = useShow<TripGroupDetail>({ resource: 'trip-groups' });
+  const { t } = useTranslation('resources');
 
   return (
     <Show
@@ -30,25 +32,25 @@ export const TripGroupShow = () => {
       {record && (
         <>
           <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label="Title">{record.title}</Descriptions.Item>
-            <Descriptions.Item label="Dates">
+            <Descriptions.Item label={t('trip-groups.fields.title')}>{record.title}</Descriptions.Item>
+            <Descriptions.Item label={t('trip-groups.fields.dates')}>
               {formatDate(record.dateStart)} – {formatDate(record.dateEnd)}
             </Descriptions.Item>
           </Descriptions>
 
           <Typography.Title level={5} style={{ marginTop: 24 }}>
-            Description
+            {t('trip-groups.fields.description')}
           </Typography.Title>
-          <Typography.Paragraph type="secondary">{record.description ?? 'No description'}</Typography.Paragraph>
+          <Typography.Paragraph type="secondary">{record.description ?? t('trip-groups.noDescription')}</Typography.Paragraph>
 
           <Typography.Title level={5} style={{ marginTop: 24 }}>
-            Members ({record.members.length})
+            {t('trip-groups.membersHeading', { count: record.members.length })}
           </Typography.Title>
           <Table dataSource={record.members} rowKey="id" pagination={false} size="small">
-            <Table.Column dataIndex={['user', 'email']} title="Email" />
+            <Table.Column dataIndex={['user', 'email']} title={t('trip-groups.fields.email')} />
             <Table.Column
               dataIndex="role"
-              title="Role"
+              title={t('trip-groups.fields.role')}
               render={(role: string) => <Tag color={role === 'ORGANIZER' ? 'green' : 'default'}>{role}</Tag>}
             />
           </Table>

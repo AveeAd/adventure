@@ -1,6 +1,8 @@
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
+import i18n from '../../../../lib/i18n';
 import { authPost } from '../../../../lib/auth/auth-fetch';
 import { checkAuth } from '../../../../lib/auth/session';
 import { Button } from '../../../../components/Button';
@@ -43,13 +45,16 @@ export const Route = createFileRoute('/adventures/$slug/history/$version')({
   },
   component: RevisionDiffPage,
   head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: `v${loaderData.version} — ${loaderData.page.title}` }] : [],
+    meta: loaderData
+      ? [{ title: i18n.t('adventurePage:history.diffTitle', { name: loaderData.page.title, version: loaderData.version }) }]
+      : [],
   }),
 });
 
 function RevisionDiffPage() {
   const { slug, page, version, mode, content, changes } = Route.useLoaderData();
   const navigate = useNavigate();
+  const { t } = useTranslation('adventurePage');
   const [signedIn, setSignedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reverting, setReverting] = useState(false);
@@ -65,7 +70,7 @@ function RevisionDiffPage() {
       await authPost(`/adventure-pages/${page.id}/revisions/${version}/revert`);
       navigate({ to: '/adventures/$slug', params: { slug } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to revert');
+      setError(err instanceof Error ? err.message : t('errors.failedToRevert'));
       setReverting(false);
     }
   }
@@ -73,7 +78,7 @@ function RevisionDiffPage() {
   return (
     <Container>
       <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-        {page.title} — v{version}
+        {t('history.diffTitle', { name: page.title, version })}
       </h1>
 
       <Card className="mt-6 overflow-x-auto p-5">
@@ -104,7 +109,7 @@ function RevisionDiffPage() {
       {signedIn && (
         <div className="mt-4">
           <Button variant="secondary" onClick={handleRevert} disabled={reverting}>
-            {reverting ? 'Reverting...' : `Revert to v${version}`}
+            {reverting ? t('history.reverting') : t('history.revert', { version })}
           </Button>
           {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>

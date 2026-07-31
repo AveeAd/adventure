@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
+import i18n from '../../lib/i18n';
 import { authPost } from '../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../lib/auth/require-auth';
 import { Button } from '../../components/Button';
@@ -41,20 +43,21 @@ export const Route = createFileRoute('/adventures/new')({
     return { activityTypes, difficultyLevels, seasons, districts, tags };
   },
   component: NewAdventurePage,
-  head: () => ({ meta: [{ title: 'Create an adventure page' }] }),
+  head: () => ({ meta: [{ title: i18n.t('adventurePage:createTitle') }] }),
 });
 
 function NewAdventurePage() {
   const { activityTypes, difficultyLevels, seasons, districts, tags } = Route.useLoaderData();
   const authStatus = useRequireAuth('/adventures/new');
   const navigate = useNavigate();
+  const { t } = useTranslation(['adventurePage', 'common']);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   if (authStatus === 'checking') {
     return (
       <Container>
-        <p className="text-stone-500 dark:text-stone-400">Checking sign-in...</p>
+        <p className="text-stone-500 dark:text-stone-400">{t('common:actions.checkingSignIn')}</p>
       </Container>
     );
   }
@@ -85,34 +88,32 @@ function NewAdventurePage() {
       });
       navigate({ to: '/adventures/$slug', params: { slug: page.slug } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create page');
+      setError(err instanceof Error ? err.message : t('errors.failedToCreatePage'));
       setSubmitting(false);
     }
   }
 
   return (
     <Container>
-      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">Create an adventure page</h1>
-      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-        Publishing creates the page and its first revision together.
-      </p>
+      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{t('createTitle')}</h1>
+      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('createSubheading')}</p>
 
       <Card className="mt-6 p-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <Field label="Title">
+          <Field label={t('fields.title')}>
             <Input name="title" required />
           </Field>
-          <Field label="Slug" hint="Used in the page URL, e.g. annapurna-base-camp">
+          <Field label={t('fields.slug')} hint={t('fields.slugHint')}>
             <Input name="slug" required pattern="[a-z0-9-]+" />
           </Field>
-          <Field label="Summary">
+          <Field label={t('fields.summary')}>
             <Textarea name="summary" rows={2} />
           </Field>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Activity type">
+            <Field label={t('fields.activityType')}>
               <Select name="activityTypeId" required defaultValue="">
                 <option value="" disabled>
-                  Select...
+                  {t('fields.select')}
                 </option>
                 {activityTypes.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -121,9 +122,9 @@ function NewAdventurePage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Difficulty level">
+            <Field label={t('fields.difficultyLevel')}>
               <Select name="difficultyLevelId" defaultValue="">
-                <option value="">Unspecified</option>
+                <option value="">{t('fields.unspecified')}</option>
                 {difficultyLevels.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.name}
@@ -133,31 +134,31 @@ function NewAdventurePage() {
             </Field>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            <Field label="Min days">
+            <Field label={t('fields.minDays')}>
               <Input name="durationMinDays" type="number" min={0} />
             </Field>
-            <Field label="Max days">
+            <Field label={t('fields.maxDays')}>
               <Input name="durationMaxDays" type="number" min={0} />
             </Field>
-            <Field label="Max altitude (m)">
+            <Field label={t('fields.maxAltitude')}>
               <Input name="maxAltitudeMeters" type="number" min={0} />
             </Field>
           </div>
-          <Field label="Districts">
+          <Field label={t('fields.districts')}>
             <MultiSelectChips name="districtIds" options={districts} />
           </Field>
-          <Field label="Best seasons">
+          <Field label={t('fields.bestSeasons')}>
             <MultiSelectChips name="seasonIds" options={seasons} />
           </Field>
-          <Field label="Tags">
+          <Field label={t('fields.tags')}>
             <MultiSelectChips name="tagIds" options={tags} />
           </Field>
-          <Field label="Content (Markdown)">
+          <Field label={t('fields.content')}>
             <Textarea name="content" required rows={12} className="font-mono text-sm" />
           </Field>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" disabled={submitting} className="self-start">
-            {submitting ? 'Creating...' : 'Create page'}
+            {submitting ? t('actions.creating') : t('actions.createPage')}
           </Button>
         </form>
       </Card>

@@ -1,5 +1,6 @@
 import { useCustom, useCustomMutation, useInvalidate } from '@refinedev/core';
 import { Button, Collapse, Descriptions, Space, Tag, message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '../../lib/format';
 import { GeometryMap } from '../../components/GeometryMap';
 
@@ -39,6 +40,7 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
   });
   const invalidate = useInvalidate();
   const { mutate: revertMutate, mutation: revertMutation } = useCustomMutation();
+  const { t } = useTranslation('resources');
 
   const revisions = [...(result?.data ?? [])].sort((a, b) => b.version - a.version);
 
@@ -47,7 +49,7 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
       { url: `/${resource}/${id}/revisions/${version}/revert`, method: 'post', values: {} },
       {
         onSuccess: () => {
-          message.success(`Reverted to version ${version}`);
+          message.success(t('geodataHistory.reverted', { version }));
           invalidate({ resource, invalidates: ['detail', 'list'], id });
           query.refetch();
         },
@@ -63,7 +65,7 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
           <Space>
             <strong>v{revision.version}</strong>
             <span>{formatDateTime(revision.createdAt)}</span>
-            {revision.isSafetyCriticalEdit && <Tag color="orange">safety-critical</Tag>}
+            {revision.isSafetyCriticalEdit && <Tag color="orange">{t('geodataHistory.safetyCritical')}</Tag>}
             {revision.editSummary && <span style={{ color: '#888' }}>{revision.editSummary}</span>}
           </Space>
         ),
@@ -103,17 +105,18 @@ function RevisionDiffPanel({
     config: { query: { from: Math.max(1, version - 1), to: version } },
     queryOptions: { enabled: version > 1 },
   });
+  const { t } = useTranslation('resources');
 
   if (version === 1) {
     return (
       <p style={{ color: '#888' }}>
-        First recorded revision - nothing to diff against.
+        {t('geodataHistory.firstRevision')}
       </p>
     );
   }
 
   if (query.isLoading || !result?.data) {
-    return <p>Loading diff...</p>;
+    return <p>{t('geodataHistory.loadingDiff')}</p>;
   }
 
   const diff = result.data;
@@ -132,13 +135,15 @@ function RevisionDiffPanel({
 
       <Space style={{ marginBottom: 12 }}>
         <Tag color={diff.geometry.geometryChanged ? 'blue' : 'default'}>
-          {diff.geometry.geometryChanged ? 'Geometry changed' : 'Geometry unchanged'}
+          {diff.geometry.geometryChanged ? t('geodataHistory.geometryChanged') : t('geodataHistory.geometryUnchanged')}
         </Tag>
         {diff.geometry.geometryChanged && (
           <span style={{ color: '#888' }}>
-            max deviation ≈ {Math.round(diff.geometry.maxDeviationMeters)} m
-            {diff.geometry.lengthDeltaMeters !== undefined && `, length Δ ${diff.geometry.lengthDeltaMeters} m`}
-            {diff.geometry.vertexDelta !== undefined && `, vertices Δ ${diff.geometry.vertexDelta}`}
+            {t('geodataHistory.maxDeviation', { value: Math.round(diff.geometry.maxDeviationMeters) })}
+            {diff.geometry.lengthDeltaMeters !== undefined &&
+              t('geodataHistory.lengthDelta', { value: diff.geometry.lengthDeltaMeters })}
+            {diff.geometry.vertexDelta !== undefined &&
+              t('geodataHistory.vertexDelta', { value: diff.geometry.vertexDelta })}
           </span>
         )}
       </Space>
@@ -147,7 +152,7 @@ function RevisionDiffPanel({
 
       {canRevert && (
         <Button style={{ marginTop: 12 }} danger onClick={onRevert} loading={reverting}>
-          Revert to v{version}
+          {t('geodataHistory.revertTo', { version })}
         </Button>
       )}
     </>

@@ -73,7 +73,7 @@ function App() {
           authProvider={authProvider}
           dataProvider={dataProvider}
           i18nProvider={{
-            translate: (key, options) => i18n.t(key, options),
+            translate: (key, options) => i18n.t(key, options) as string,
             changeLocale: (lang) => i18n.changeLanguage(lang),
             getLocale: () => i18n.language,
           }}

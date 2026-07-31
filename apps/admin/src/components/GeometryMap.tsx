@@ -6,6 +6,7 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { Button } from 'antd';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { GeoJSON, MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -69,6 +70,7 @@ export function GeometryMap({
   height?: number;
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { t } = useTranslation('common');
 
   useEffect(() => {
     if (!isFullscreen) return;
@@ -91,7 +93,7 @@ export function GeometryMap({
         type="default"
         size="small"
         onClick={() => setIsFullscreen((v) => !v)}
-        aria-label={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
+        aria-label={isFullscreen ? t('geometryMap.exitFullscreen') : t('geometryMap.viewFullscreen')}
         icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
         style={{ position: 'absolute', right: 8, top: 8, zIndex: 1000 }}
       />

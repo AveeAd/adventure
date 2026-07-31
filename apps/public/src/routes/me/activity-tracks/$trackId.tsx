@@ -1,9 +1,11 @@
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authFetch, authPatch, authPost } from '../../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../../lib/auth/require-auth';
 import { formatDateTime } from '../../../lib/format';
+import i18n from '../../../lib/i18n';
 import { Badge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -30,13 +32,14 @@ interface ActivityTrackDetail {
 
 export const Route = createFileRoute('/me/activity-tracks/$trackId')({
   component: ActivityTrackDetailPage,
-  head: () => ({ meta: [{ title: 'Activity track' }] }),
+  head: () => ({ meta: [{ title: i18n.t('account:activityTracks.detailTitle') }] }),
 });
 
 function ActivityTrackDetailPage() {
   const { trackId } = Route.useParams();
   const authStatus = useRequireAuth(`/me/activity-tracks/${trackId}`);
   const navigate = useNavigate();
+  const { t } = useTranslation(['account', 'common']);
 
   const [track, setTrack] = useState<ActivityTrackDetail | null | 'loading'>('loading');
   const [name, setName] = useState('');
@@ -68,7 +71,7 @@ function ActivityTrackDetailPage() {
   if (authStatus === 'checking' || track === 'loading') {
     return (
       <Container>
-        <p className="text-stone-500 dark:text-stone-400">Loading...</p>
+        <p className="text-stone-500 dark:text-stone-400">{t('common:actions.loading')}</p>
       </Container>
     );
   }
@@ -84,7 +87,7 @@ function ActivityTrackDetailPage() {
       await authPatch(`/activity-tracks/${trackId}`, { name: name || undefined, notes: notes || undefined, visibility });
       setSaving(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
+      setError(err instanceof Error ? err.message : t('activityTracks.errors.failedToSave'));
       setSaving(false);
     }
   }
@@ -107,7 +110,7 @@ function ActivityTrackDetailPage() {
       await authPost(`/activity-tracks/${trackId}/promote-to-trail`, { adventurePageId: page.id, name: name || undefined });
       setPromoted(true);
     } catch (err) {
-      setPromoteError(err instanceof Error ? err.message : 'Failed to contribute this track as a trail');
+      setPromoteError(err instanceof Error ? err.message : t('activityTracks.errors.failedToContribute'));
     } finally {
       setPromoting(false);
     }
@@ -118,9 +121,9 @@ function ActivityTrackDetailPage() {
   return (
     <Container>
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{track.name ?? 'Untitled track'}</h1>
+        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{track.name ?? t('activityTracks.untitledTrack')}</h1>
         <Badge tone={track.visibility === 'PUBLIC' ? 'success' : 'neutral'}>
-          {track.visibility === 'PUBLIC' ? 'Public' : 'Private'}
+          {track.visibility === 'PUBLIC' ? t('activityTracks.public') : t('activityTracks.private')}
         </Badge>
       </div>
 
@@ -128,7 +131,7 @@ function ActivityTrackDetailPage() {
         <span>{formatDateTime(track.startedAt)}</span>
         <span>{(track.distanceMeters / 1000).toFixed(1)} km</span>
         <span>{Math.round(track.elapsedSeconds / 60)} min</span>
-        <span>{track.source === 'IMPORTED' ? 'Imported' : 'Recorded'}</span>
+        <span>{track.source === 'IMPORTED' ? t('activityTracks.imported') : t('activityTracks.recorded')}</span>
       </div>
 
       <div className="mt-6">
@@ -149,49 +152,45 @@ function ActivityTrackDetailPage() {
       )}
 
       <Card className="mt-6 p-6">
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Edit</h2>
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">{t('activityTracks.editHeading')}</h2>
         <form onSubmit={handleSave} className="mt-4 flex flex-col gap-4">
-          <Field label="Name">
+          <Field label={t('activityTracks.fields.name')}>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Notes">
+          <Field label={t('activityTracks.fields.notes')}>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
           </Field>
-          <Field label="Visibility">
+          <Field label={t('activityTracks.fields.visibility')}>
             <Select value={visibility} onChange={(e) => setVisibility(e.target.value as 'PRIVATE' | 'PUBLIC')}>
-              <option value="PRIVATE">Private (only you)</option>
-              <option value="PUBLIC">Public</option>
+              <option value="PRIVATE">{t('activityTracks.fields.privateOnlyYou')}</option>
+              <option value="PUBLIC">{t('activityTracks.fields.publicOption')}</option>
             </Select>
           </Field>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex gap-2">
             <Button type="submit" disabled={saving}>
-              {saving ? 'Saving...' : 'Save changes'}
+              {saving ? t('activityTracks.saving') : t('activityTracks.saveChanges')}
             </Button>
             <Button type="button" variant="secondary" onClick={handleDelete}>
-              Delete track
+              {t('activityTracks.deleteTrack')}
             </Button>
           </div>
         </form>
       </Card>
 
       <Card className="mt-6 p-6">
-        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Contribute to the map</h2>
-        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Create a new trail on an adventure page from this track's path (simplified and time-stripped).
-        </p>
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">{t('activityTracks.contributeHeading')}</h2>
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('activityTracks.contributeSubheading')}</p>
         {promoted ? (
-          <p className="mt-4 text-sm text-primary-700 dark:text-primary-400">
-            Contributed - the new trail is now on that adventure page, pending peer confirmation.
-          </p>
+          <p className="mt-4 text-sm text-primary-700 dark:text-primary-400">{t('activityTracks.contributed')}</p>
         ) : (
           <form onSubmit={handlePromote} className="mt-4 flex flex-col gap-4">
-            <Field label="Adventure page URL slug" hint="e.g. annapurna-base-camp">
+            <Field label={t('activityTracks.adventurePageSlug')} hint={t('activityTracks.adventurePageSlugHint')}>
               <Input value={pageSlug} onChange={(e) => setPageSlug(e.target.value)} required />
             </Field>
             {promoteError && <p className="text-sm text-red-600 dark:text-red-400">{promoteError}</p>}
             <Button type="submit" disabled={promoting} className="self-start">
-              {promoting ? 'Contributing...' : 'Contribute as a new trail'}
+              {promoting ? t('activityTracks.contributing') : t('activityTracks.contributeAsTrail')}
             </Button>
           </form>
         )}

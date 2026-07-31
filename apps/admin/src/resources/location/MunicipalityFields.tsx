@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Form, Input, Select } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useAllRows } from '../../hooks/useAllRows';
 
 interface CountryRow {
@@ -19,16 +20,12 @@ interface DistrictRow {
   provinceId: string;
 }
 
-const MUNICIPALITY_TYPES = [
-  { label: 'Metropolitan City', value: 'METROPOLITAN_CITY' },
-  { label: 'Sub-Metropolitan City', value: 'SUB_METROPOLITAN_CITY' },
-  { label: 'Municipality', value: 'MUNICIPALITY' },
-  { label: 'Rural Municipality', value: 'RURAL_MUNICIPALITY' },
-];
+const MUNICIPALITY_TYPE_VALUES = ['METROPOLITAN_CITY', 'SUB_METROPOLITAN_CITY', 'MUNICIPALITY', 'RURAL_MUNICIPALITY'];
 
 export const MunicipalityFields = () => {
   const [countryFilter, setCountryFilter] = useState<string>();
   const [provinceFilter, setProvinceFilter] = useState<string>();
+  const { t } = useTranslation('resources');
 
   const countries = useAllRows<CountryRow>('countries');
   const provinces = useAllRows<ProvinceRow>('provinces');
@@ -42,35 +39,40 @@ export const MunicipalityFields = () => {
     ? districts.filter((district) => district.provinceId === provinceFilter)
     : districts;
 
+  const municipalityTypes = MUNICIPALITY_TYPE_VALUES.map((value) => ({
+    value,
+    label: t(`location.municipalityTypes.${value}`),
+  }));
+
   return (
     <>
-      <Form.Item label="Country (filter)">
+      <Form.Item label={t('location.countryFilter')}>
         <Select
           allowClear
-          placeholder="Narrow the province list by country"
+          placeholder={t('location.countryFilterPlaceholder')}
           options={countries.map((country) => ({ label: country.name, value: country.id }))}
           onChange={setCountryFilter}
         />
       </Form.Item>
-      <Form.Item label="Province (filter)">
+      <Form.Item label={t('location.provinceFilter')}>
         <Select
           allowClear
-          placeholder="Narrow the district list by province"
+          placeholder={t('location.provinceFilterPlaceholder')}
           options={filteredProvinces.map((province) => ({ label: province.name, value: province.id }))}
           onChange={setProvinceFilter}
         />
       </Form.Item>
-      <Form.Item label="District" name="districtId" rules={[{ required: true }]}>
+      <Form.Item label={t('fields.district')} name="districtId" rules={[{ required: true }]}>
         <Select options={filteredDistricts.map((district) => ({ label: district.name, value: district.id }))} />
       </Form.Item>
-      <Form.Item label="Name" name="name" rules={[{ required: true }]}>
+      <Form.Item label={t('fields.name')} name="name" rules={[{ required: true }]}>
         <Input />
       </Form.Item>
-      <Form.Item label="Slug" name="slug" rules={[{ required: true }]}>
+      <Form.Item label={t('fields.slug')} name="slug" rules={[{ required: true }]}>
         <Input />
       </Form.Item>
-      <Form.Item label="Type" name="type" rules={[{ required: true }]}>
-        <Select options={MUNICIPALITY_TYPES} />
+      <Form.Item label={t('fields.type')} name="type" rules={[{ required: true }]}>
+        <Select options={municipalityTypes} />
       </Form.Item>
     </>
   );

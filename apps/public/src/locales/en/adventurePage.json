@@ -1,0 +1,149 @@
+{
+  "createTitle": "Create an adventure page",
+  "createSubheading": "Publishing creates the page and its first revision together.",
+  "editTitle": "Edit {{title}}",
+  "addTrailTitle": "Add a trail to {{title}}",
+  "addSpotTitle": "Add a spot to {{title}}",
+  "fields": {
+    "title": "Title",
+    "slug": "Slug",
+    "slugHint": "Used in the page URL, e.g. annapurna-base-camp",
+    "summary": "Summary",
+    "activityType": "Activity type",
+    "difficultyLevel": "Difficulty level",
+    "unspecified": "Unspecified",
+    "select": "Select...",
+    "minDays": "Min days",
+    "maxDays": "Max days",
+    "maxAltitude": "Max altitude (m)",
+    "districts": "Districts",
+    "bestSeasons": "Best seasons",
+    "tags": "Tags",
+    "content": "Content (Markdown)",
+    "name": "Name",
+    "optional": "Optional",
+    "editSummary": "Edit summary",
+    "editSummaryHint": "A short note describing what changed",
+    "safetyCriticalCheckbox": "This edit changes safety-critical information (resets verification to \"needs review\")",
+    "gpxFile": "GPX file",
+    "type": "Type",
+    "description": "Description",
+    "elevation": "Elevation (m)",
+    "pageSlugHint": "e.g. annapurna-base-camp"
+  },
+  "actions": {
+    "creating": "Creating...",
+    "createPage": "Create page",
+    "insertImage": "Insert image",
+    "uploading": "Uploading...",
+    "submitting": "Submitting...",
+    "submitRevision": "Submit revision",
+    "adding": "Adding...",
+    "addTrail": "Add trail",
+    "addSpot": "Add spot",
+    "drawOnMap": "Draw on map",
+    "uploadGpx": "Upload GPX",
+    "undoLastPoint": "Undo last point",
+    "clear": "Clear",
+    "add": "Add",
+    "upload": "Upload"
+  },
+  "errors": {
+    "failedToCreatePage": "Failed to create page",
+    "failedToUploadImage": "Failed to upload image",
+    "failedToSubmitRevision": "Failed to submit revision",
+    "failedToAddTrail": "Failed to add trail",
+    "failedToImportGpx": "Failed to import GPX file",
+    "failedToAddSpot": "Failed to add spot",
+    "failedToRevert": "Failed to revert",
+    "needTwoPoints": "Click at least two points on the map to draw the trail.",
+    "needGpxFile": "Choose a .gpx file to upload.",
+    "needSpotPoint": "Click the map to place the spot first.",
+    "noPageForSlug": "No adventure page found with that slug",
+    "failedToAddRelatedPage": "Failed to add related page",
+    "failedToUploadPhoto": "Failed to upload photo",
+    "choosePhoto": "Choose a photo to upload",
+    "failedToShareStory": "Failed to share story"
+  },
+  "draw": {
+    "instructions": "Click the map to add points along the route, in order.",
+    "pointsPlaced": "{{count}} point(s) placed",
+    "spotInstructions": "Click the map to place the spot, then fill in the details."
+  },
+  "gpx": {
+    "instructions": "Upload a .gpx track and we'll parse the path (and elevation profile, if the file has it) automatically."
+  },
+  "history": {
+    "title": "History — {{name}}",
+    "diffTitle": "{{name}} — v{{version}}",
+    "safetyCritical": "safety-critical",
+    "trailFallback": "Trail",
+    "revert": "Revert to v{{version}}",
+    "reverting": "Reverting...",
+    "geometryChanged": "Geometry changed — max deviation ≈ {{deviation}} m, length Δ {{length}} m, vertices Δ {{vertices}}",
+    "geometryUnchanged": "Geometry unchanged in this revision.",
+    "locationChanged": "Location changed — moved ≈ {{deviation}} m",
+    "locationUnchanged": "Location unchanged in this revision."
+  },
+  "info": {
+    "duration": "Duration",
+    "durationValue": "{{min}}-{{max}} days",
+    "maxAltitude": "Max altitude",
+    "altitudeValue": "{{altitude}}m",
+    "districts": "Districts",
+    "bestSeasons": "Best seasons",
+    "contributors": "Contributors"
+  },
+  "stories": {
+    "heading": "Stories",
+    "findTripGroup": "Find a trip group →",
+    "noneShared": "No stories shared yet.",
+    "fallbackTitle": "Story",
+    "durationSuffix": " · {{days}} days",
+    "tellYourStory": "Tell your story",
+    "shared": "Story shared. Thanks for telling it!",
+    "sharing": "Sharing...",
+    "shareStory": "Share story",
+    "titlePlaceholder": "Give your story a title",
+    "dateCompleted": "Date completed",
+    "durationDays": "Duration (days)",
+    "actualCost": "Actual cost",
+    "currency": "Currency",
+    "summaryHint": "A short one-liner shown wherever this story is listed",
+    "summaryPlaceholder": "e.g. Perfect weather, no crowds, best trip yet",
+    "yourStory": "Your story",
+    "yourStoryHint": "The full story - markdown supported",
+    "yourStoryPlaceholder": "Tell it however long it needs to be..."
+  },
+  "contribute": {
+    "done": "Done",
+    "contribute": "Contribute",
+    "edit": "Edit"
+  },
+  "like": {
+    "liked": "Liked",
+    "like": "Like",
+    "countSuffix": "({{count}})",
+    "likesCount": "{{count}} likes"
+  },
+  "gallery": {
+    "heading": "Photos",
+    "addPhoto": "Add photo",
+    "noPhotosYet": "No photos yet.",
+    "photo": "Photo",
+    "caption": "Caption (optional)",
+    "altText": "Alt text (optional)",
+    "deletePhoto": "Delete photo"
+  },
+  "trailsAndSpots": {
+    "heading": "Trails & spots",
+    "noneYet": "No trails or spots mapped yet.",
+    "trailFallback": "Trail"
+  },
+  "seeAlso": {
+    "heading": "See also",
+    "addRelatedPage": "Add related page",
+    "noneYet": "No related pages yet.",
+    "pageSlug": "Page slug"
+  }
+}

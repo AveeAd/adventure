@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router';
 import { Compass } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
+import i18n from '../../lib/i18n';
 import { formatNumber, formatRateUnit } from '../../lib/format';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Card } from '../../components/Card';
@@ -63,7 +64,7 @@ export const Route = createFileRoute('/guides/')({
     return { guides: guidesBody.data, activityTypes, districts, languages };
   },
   component: GuideDirectoryPage,
-  head: () => ({ meta: [{ title: 'Guide directory' }] }),
+  head: () => ({ meta: [{ title: i18n.t('guides:directoryTitle') }] }),
 });
 
 function GuideDirectoryPage() {

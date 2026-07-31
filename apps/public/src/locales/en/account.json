@@ -1,0 +1,88 @@
+{
+  "guideProfile": {
+    "pageTitle": "Your guide profile",
+    "editHeading": "Edit your guide profile",
+    "createHeading": "Create your guide profile",
+    "restrictedNotice": "Guides covering restricted districts (Annapurna/Manaslu/Upper Mustang) require manual license review before verification.",
+    "fields": {
+      "licenseNumber": "License number",
+      "bio": "Bio",
+      "rateMin": "Rate min",
+      "rateMax": "Rate max",
+      "currency": "Currency",
+      "rateUnit": "Rate unit",
+      "unspecified": "Unspecified",
+      "perDay": "Per day",
+      "perTrip": "Per trip",
+      "perHour": "Per hour",
+      "specialties": "Specialties",
+      "regionsCovered": "Regions covered",
+      "languages": "Languages"
+    },
+    "saved": "Saved.",
+    "saving": "Saving...",
+    "saveChanges": "Save changes",
+    "createProfile": "Create profile",
+    "errors": {
+      "failedToSave": "Failed to save guide profile"
+    }
+  },
+  "activityTracks": {
+    "listTitle": "Your activity tracks",
+    "uploadTrack": "Upload a track",
+    "noneYet": "No tracks yet. Upload a GPX, KML, KMZ, or GeoJSON file from your phone or GPS watch.",
+    "untitledTrack": "Untitled track",
+    "public": "Public",
+    "private": "Private",
+    "detailTitle": "Activity track",
+    "imported": "Imported",
+    "recorded": "Recorded",
+    "editHeading": "Edit",
+    "fields": {
+      "name": "Name",
+      "notes": "Notes",
+      "visibility": "Visibility",
+      "privateOnlyYou": "Private (only you)",
+      "publicOption": "Public"
+    },
+    "saving": "Saving...",
+    "saveChanges": "Save changes",
+    "deleteTrack": "Delete track",
+    "contributeHeading": "Contribute to the map",
+    "contributeSubheading": "Create a new trail on an adventure page from this track's path (simplified and time-stripped).",
+    "contributed": "Contributed - the new trail is now on that adventure page, pending peer confirmation.",
+    "adventurePageSlug": "Adventure page URL slug",
+    "adventurePageSlugHint": "e.g. annapurna-base-camp",
+    "contributing": "Contributing...",
+    "contributeAsTrail": "Contribute as a new trail",
+    "uploadTitle": "Upload an activity track",
+    "uploadSubheading": "GPX, KML, KMZ, or GeoJSON - exported from maps.me, Strava, Garmin, or similar. Parsed on our server; private by default.",
+    "trackFile": "Track file",
+    "activityType": "Activity type",
+    "optional": "Optional",
+    "uploading": "Uploading...",
+    "upload": "Upload",
+    "errors": {
+      "failedToSave": "Failed to save",
+      "needFile": "Choose a GPX, KML, KMZ, or GeoJSON file to upload.",
+      "failedToImport": "Failed to import track",
+      "noPageForSlug": "No adventure page found with that URL slug",
+      "failedToContribute": "Failed to contribute this track as a trail"
+    }
+  },
+  "profile": {
+    "pagesEdited": "Pages edited",
+    "stories": "Stories",
+    "confirmationsGiven": "Confirmations given"
+  },
+  "login": {
+    "pageTitle": "Sign in",
+    "heading": "Sign in to Adventure Nepal",
+    "subheading": "Contribute pages, log trips, and connect with guides.",
+    "signInWithGoogle": "Sign in with Google"
+  },
+  "authCallback": {
+    "pageTitle": "Signing in...",
+    "signingIn": "Signing in..."
+  }
+}

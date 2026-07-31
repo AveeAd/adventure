@@ -1,6 +1,7 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
 import { Descriptions, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { GeometryMap } from '../../components/GeometryMap';
 import { GeodataHistory } from '../common/GeodataHistory';
 import { VerificationStatusControl } from '../common/VerificationStatusControl';
@@ -20,6 +21,7 @@ const STATUS_OPTIONS = ['UNVERIFIED', 'NEEDS_REVIEW', 'VERIFIED'];
 
 export const SpotShow = () => {
   const { query, result: record } = useShow<SpotDetail>({ resource: 'spots' });
+  const { t } = useTranslation('resources');
 
   return (
     <Show
@@ -29,17 +31,17 @@ export const SpotShow = () => {
       {record && (
         <>
           <Descriptions bordered column={2} size="small">
-            <Descriptions.Item label="Name">{record.name}</Descriptions.Item>
-            <Descriptions.Item label="Type">{record.spotTypeName}</Descriptions.Item>
-            <Descriptions.Item label="Elevation">
+            <Descriptions.Item label={t('spots.fields.name')}>{record.name}</Descriptions.Item>
+            <Descriptions.Item label={t('spots.fields.type')}>{record.spotTypeName}</Descriptions.Item>
+            <Descriptions.Item label={t('spots.fields.elevation')}>
               {record.elevationMeters ? `${record.elevationMeters}m` : '—'}
             </Descriptions.Item>
           </Descriptions>
 
           <Typography.Title level={5} style={{ marginTop: 24 }}>
-            Description
+            {t('spots.fields.description')}
           </Typography.Title>
-          <Typography.Paragraph type="secondary">{record.description ?? 'No description'}</Typography.Paragraph>
+          <Typography.Paragraph type="secondary">{record.description ?? t('spots.noDescription')}</Typography.Paragraph>
 
           <GeometryMap geometry={record.geometry} />
 
@@ -53,7 +55,7 @@ export const SpotShow = () => {
           </div>
 
           <div style={{ marginTop: 24 }}>
-            <Typography.Title level={5}>History</Typography.Title>
+            <Typography.Title level={5}>{t('spots.fields.history')}</Typography.Title>
             <GeodataHistory resource="spots" id={record.id} />
           </div>
         </>

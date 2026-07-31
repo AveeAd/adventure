@@ -1,0 +1,32 @@
+{
+  "listTitle": "Trip groups — {{title}}",
+  "startGroup": "Start a group",
+  "subheading": "Find companions doing this route in the same window.",
+  "noneYet": "No trip groups yet — be the first to start one.",
+  "backToGroups": "← Back to trip groups",
+  "members": "Members ({{count}})",
+  "organizer": "Organizer",
+  "joinGroup": "Join group",
+  "leaveGroup": "Leave group",
+  "cancelGroup": "Cancel group",
+  "newTitle": "Start a trip group for {{title}}",
+  "newSubheading": "You'll be the organizer. Anyone can join once it's posted.",
+  "fields": {
+    "title": "Title",
+    "titlePlaceholder": "e.g. Autumn ABC group",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "description": "Description",
+    "optional": "Optional"
+  },
+  "actions": {
+    "creating": "Creating...",
+    "startGroupButton": "Start group"
+  },
+  "errors": {
+    "failedToJoin": "Failed to join",
+    "failedToLeave": "Failed to leave",
+    "failedToCancel": "Failed to cancel group",
+    "failedToCreate": "Failed to create trip group"
+  }
+}

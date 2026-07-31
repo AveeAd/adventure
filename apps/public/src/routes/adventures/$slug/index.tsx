@@ -1,6 +1,7 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { Calendar, CheckCircle2, Clock, Hammer, Heart, ImagePlus, MapPin, MountainSnow, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authPost, authUpload } from '../../../lib/auth/auth-fetch';
 import { checkAuth, fetchCurrentUser, type CurrentUser } from '../../../lib/auth/session';
@@ -100,6 +101,7 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string
 
 function AdventurePageView() {
   const { page, tripReports, trails, spots } = Route.useLoaderData();
+  const { t } = useTranslation('adventurePage');
 
   // Fired from the component, not the loader - the loader also runs on
   // TanStack Router's hover/touch "intent" preload (see router.tsx), which
@@ -150,32 +152,32 @@ function AdventurePageView() {
           {(page.durationMinDays || page.durationMaxDays) && (
             <InfoItem
               icon={<Clock className="h-4 w-4" />}
-              label="Duration"
-              value={`${page.durationMinDays}-${page.durationMaxDays} days`}
+              label={t('info.duration')}
+              value={t('info.durationValue', { min: page.durationMinDays, max: page.durationMaxDays })}
             />
           )}
           {page.maxAltitudeMeters && (
             <InfoItem
               icon={<MountainSnow className="h-4 w-4" />}
-              label="Max altitude"
-              value={`${page.maxAltitudeMeters}m`}
+              label={t('info.maxAltitude')}
+              value={t('info.altitudeValue', { altitude: page.maxAltitudeMeters })}
             />
           )}
           {page.districts.length > 0 && (
             <InfoItem
               icon={<MapPin className="h-4 w-4" />}
-              label="Districts"
+              label={t('info.districts')}
               value={page.districts.map((d) => d.district.name).join(', ')}
             />
           )}
           {page.seasons.length > 0 && (
             <InfoItem
               icon={<Calendar className="h-4 w-4" />}
-              label="Best seasons"
+              label={t('info.bestSeasons')}
               value={page.seasons.map((s) => s.season.name).join(', ')}
             />
           )}
-          <InfoItem icon={<Users className="h-4 w-4" />} label="Contributors" value={page.contributorIds.length} />
+          <InfoItem icon={<Users className="h-4 w-4" />} label={t('info.contributors')} value={page.contributorIds.length} />
         </Card>
 
         <GallerySection pageId={page.id} initialMedia={page.media} contributeMode={contributeMode} />
@@ -192,18 +194,18 @@ function AdventurePageView() {
 
         <section className="mt-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Stories</h2>
+            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('stories.heading')}</h2>
             <Link
               to="/adventures/$slug/groups"
               params={{ slug }}
               className="text-sm text-primary-700 hover:underline dark:text-primary-400"
             >
-              Find a trip group →
+              {t('stories.findTripGroup')}
             </Link>
           </div>
           {tripReports.length === 0 ? (
             <div className="mt-3">
-              <EmptyState>No stories shared yet.</EmptyState>
+              <EmptyState>{t('stories.noneShared')}</EmptyState>
             </div>
           ) : (
             <ul className="mt-3 flex flex-col gap-2">
@@ -215,11 +217,11 @@ function AdventurePageView() {
                       params={{ slug, tripReportId: report.id }}
                       className="font-medium text-primary-700 hover:underline dark:text-primary-400"
                     >
-                      {report.title ?? 'Story'}
+                      {report.title ?? t('stories.fallbackTitle')}
                     </Link>
                     <span className="text-sm text-stone-500 dark:text-stone-400">
                       {formatDate(report.dateCompleted)}
-                      {report.durationDays ? ` · ${report.durationDays} days` : null}
+                      {report.durationDays ? t('stories.durationSuffix', { days: report.durationDays }) : null}
                     </span>
                   </Card>
                 </li>
@@ -233,11 +235,11 @@ function AdventurePageView() {
             <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
             {signedIn && !storyFormOpen && !storyShared && (
               <Button variant="accent" size="sm" onClick={() => setStoryFormOpen(true)}>
-                Tell your story
+                {t('stories.tellYourStory')}
               </Button>
             )}
             {storyShared && (
-              <p className="text-sm text-primary-700 dark:text-primary-400">Story shared. Thanks for telling it!</p>
+              <p className="text-sm text-primary-700 dark:text-primary-400">{t('stories.shared')}</p>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -248,19 +250,19 @@ function AdventurePageView() {
                 onClick={() => setContributeMode((v) => !v)}
               >
                 {contributeMode ? <X className="h-3.5 w-3.5" /> : <Hammer className="h-3.5 w-3.5" />}
-                {contributeMode ? 'Done' : 'Contribute'}
+                {contributeMode ? t('contribute.done') : t('contribute.contribute')}
               </Button>
             )}
             {contributeMode && (
               <Link to="/adventures/$slug/edit" params={{ slug }}>
                 <Button variant="secondary" size="sm">
-                  <Pencil className="h-3.5 w-3.5" /> Edit
+                  <Pencil className="h-3.5 w-3.5" /> {t('contribute.edit')}
                 </Button>
               </Link>
             )}
             <Link to="/adventures/$slug/history" params={{ slug }}>
               <Button variant="ghost" size="sm">
-                History
+                {t('common:actions.history')}
               </Button>
             </Link>
           </div>
@@ -290,6 +292,7 @@ function LikeButton({
   initialLikeCount: number;
   initialLiked: boolean;
 }) {
+  const { t } = useTranslation('adventurePage');
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [signedIn, setSignedIn] = useState(false);
   const [liked, setLiked] = useState(initialLiked);
@@ -319,11 +322,11 @@ function LikeButton({
   return signedIn ? (
     <Button variant={liked ? 'accent' : 'secondary'} size="sm" onClick={toggleLike} disabled={busy}>
       <Heart className="h-4 w-4" fill={liked ? 'currentColor' : 'none'} />
-      {liked ? 'Liked' : 'Like'} ({likeCount})
+      {liked ? t('like.liked') : t('like.like')} {t('like.countSuffix', { count: likeCount })}
     </Button>
   ) : (
     <span className="flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
-      <Heart className="h-4 w-4" /> {likeCount} likes
+      <Heart className="h-4 w-4" /> {t('like.likesCount', { count: likeCount })}
     </span>
   );
 }
@@ -337,6 +340,7 @@ function GallerySection({
   initialMedia: MediaItem[];
   contributeMode: boolean;
 }) {
+  const { t } = useTranslation(['adventurePage', 'common']);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [media, setMedia] = useState(initialMedia);
   const [open, setOpen] = useState(false);
@@ -366,7 +370,7 @@ function GallerySection({
     setError(null);
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
-      setError('Choose a photo to upload');
+      setError(t('errors.choosePhoto'));
       return;
     }
     setSubmitting(true);
@@ -385,7 +389,7 @@ function GallerySection({
       if (fileInputRef.current) fileInputRef.current.value = '';
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload photo');
+      setError(err instanceof Error ? err.message : t('errors.failedToUploadPhoto'));
     } finally {
       setSubmitting(false);
     }
@@ -403,17 +407,17 @@ function GallerySection({
   return (
     <section className="mt-10">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Photos</h2>
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('gallery.heading')}</h2>
         {contributeMode && !open && (
           <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
-            <ImagePlus className="h-3.5 w-3.5" /> Add photo
+            <ImagePlus className="h-3.5 w-3.5" /> {t('gallery.addPhoto')}
           </Button>
         )}
       </div>
 
       {media.length === 0 ? (
         <div className="mt-3">
-          <EmptyState>No photos yet.</EmptyState>
+          <EmptyState>{t('gallery.noPhotosYet')}</EmptyState>
         </div>
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
@@ -434,7 +438,7 @@ function GallerySection({
                   type="button"
                   onClick={() => handleDelete(item.id)}
                   className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  aria-label="Delete photo"
+                  aria-label={t('gallery.deletePhoto')}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -447,7 +451,7 @@ function GallerySection({
       {open && (
         <Card className="mt-4 max-w-md p-5">
           <form onSubmit={handleAdd} className="flex flex-col gap-4">
-            <Field label="Photo">
+            <Field label={t('gallery.photo')}>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -456,19 +460,19 @@ function GallerySection({
                 className="block w-full text-sm text-stone-600 dark:text-stone-300"
               />
             </Field>
-            <Field label="Caption (optional)">
+            <Field label={t('gallery.caption')}>
               <Input value={caption} onChange={(e) => setCaption(e.target.value)} />
             </Field>
-            <Field label="Alt text (optional)">
+            <Field label={t('gallery.altText')}>
               <Input value={altText} onChange={(e) => setAltText(e.target.value)} />
             </Field>
             {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <div className="flex gap-2">
               <Button type="submit" disabled={submitting}>
-                {submitting ? 'Uploading...' : 'Upload'}
+                {submitting ? t('actions.uploading') : t('actions.upload')}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
             </div>
           </form>
@@ -489,6 +493,7 @@ function TrailsAndSpotsSection({
   spots: MapSpot[];
   contributeMode: boolean;
 }) {
+  const { t } = useTranslation(['adventurePage', 'common']);
   const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
 
   async function confirmTrail(id: string) {
@@ -504,17 +509,17 @@ function TrailsAndSpotsSection({
   return (
     <section className="mt-10">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Trails &amp; spots</h2>
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('trailsAndSpots.heading')}</h2>
         {contributeMode && (
           <div className="flex gap-2">
             <Link to="/adventures/$slug/trails/new" params={{ slug }}>
               <Button variant="secondary" size="sm">
-                <Plus className="h-3.5 w-3.5" /> Add trail
+                <Plus className="h-3.5 w-3.5" /> {t('actions.addTrail')}
               </Button>
             </Link>
             <Link to="/adventures/$slug/spots/new" params={{ slug }}>
               <Button variant="secondary" size="sm">
-                <Plus className="h-3.5 w-3.5" /> Add spot
+                <Plus className="h-3.5 w-3.5" /> {t('actions.addSpot')}
               </Button>
             </Link>
           </div>
@@ -523,7 +528,7 @@ function TrailsAndSpotsSection({
 
       {trails.length === 0 && spots.length === 0 ? (
         <div className="mt-3">
-          <EmptyState icon={<MapPin className="h-8 w-8" />}>No trails or spots mapped yet.</EmptyState>
+          <EmptyState icon={<MapPin className="h-8 w-8" />}>{t('trailsAndSpots.noneYet')}</EmptyState>
         </div>
       ) : (
         <>
@@ -536,7 +541,7 @@ function TrailsAndSpotsSection({
                 <Card className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? 'Trail'}</div>
+                      <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? t('trailsAndSpots.trailFallback')}</div>
                       <StatusBadge status={trail.verificationStatus} />
                     </div>
                     <div className="flex items-center gap-2">
@@ -545,7 +550,7 @@ function TrailsAndSpotsSection({
                         params={{ slug, trailId: trail.id }}
                         className="text-sm text-stone-500 hover:underline dark:text-stone-400"
                       >
-                        History
+                        {t('common:actions.history')}
                       </Link>
                       {contributeMode && (
                         <Button
@@ -555,7 +560,7 @@ function TrailsAndSpotsSection({
                           onClick={() => confirmTrail(trail.id)}
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" />
-                          {confirmed.has(trail.id) ? 'Confirmed' : 'Confirm accurate'}
+                          {confirmed.has(trail.id) ? t('common:actions.confirmed') : t('common:actions.confirmAccurate')}
                         </Button>
                       )}
                     </div>
@@ -589,7 +594,7 @@ function TrailsAndSpotsSection({
                       params={{ slug, spotId: spot.id }}
                       className="text-sm text-stone-500 hover:underline dark:text-stone-400"
                     >
-                      History
+                      {t('common:actions.history')}
                     </Link>
                     {contributeMode && (
                       <Button
@@ -599,7 +604,7 @@ function TrailsAndSpotsSection({
                         onClick={() => confirmSpot(spot.id)}
                       >
                         <CheckCircle2 className="h-3.5 w-3.5" />
-                        {confirmed.has(spot.id) ? 'Confirmed' : 'Confirm accurate'}
+                        {confirmed.has(spot.id) ? t('common:actions.confirmed') : t('common:actions.confirmAccurate')}
                       </Button>
                     )}
                   </div>
@@ -622,6 +627,7 @@ function SeeAlsoSection({
   relatedPages: { id: string; title: string; slug: string; summary: string | null }[];
   contributeMode: boolean;
 }) {
+  const { t } = useTranslation(['adventurePage', 'common']);
   const [open, setOpen] = useState(false);
   const [slugInput, setSlugInput] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -635,7 +641,7 @@ function SeeAlsoSection({
     try {
       const lookupRes = await fetch(apiUrl(`/adventure-pages/slug/${slugInput.trim()}`));
       if (!lookupRes.ok) {
-        throw new Error('No adventure page found with that slug');
+        throw new Error(t('errors.noPageForSlug'));
       }
       const related: { id: string; title: string; slug: string; summary: string | null } = await lookupRes.json();
       await authPost(`/adventure-pages/${pageId}/related-pages`, { relatedPageId: related.id });
@@ -643,7 +649,7 @@ function SeeAlsoSection({
       setSlugInput('');
       setOpen(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add related page');
+      setError(err instanceof Error ? err.message : t('errors.failedToAddRelatedPage'));
     } finally {
       setSubmitting(false);
     }
@@ -656,17 +662,17 @@ function SeeAlsoSection({
   return (
     <section className="mt-10">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">See also</h2>
+        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('seeAlso.heading')}</h2>
         {contributeMode && !open && (
           <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
-            <Plus className="h-3.5 w-3.5" /> Add related page
+            <Plus className="h-3.5 w-3.5" /> {t('seeAlso.addRelatedPage')}
           </Button>
         )}
       </div>
 
       {pages.length === 0 ? (
         <div className="mt-3">
-          <EmptyState>No related pages yet.</EmptyState>
+          <EmptyState>{t('seeAlso.noneYet')}</EmptyState>
         </div>
       ) : (
         <ul className="mt-3 flex flex-col gap-2">
@@ -690,7 +696,7 @@ function SeeAlsoSection({
       {open && (
         <Card className="mt-4 max-w-md p-5">
           <form onSubmit={handleAdd} className="flex flex-col gap-4">
-            <Field label="Page slug" hint="e.g. annapurna-base-camp">
+            <Field label={t('seeAlso.pageSlug')} hint={t('fields.pageSlugHint')}>
               <Input
                 name="relatedSlug"
                 required
@@ -701,10 +707,10 @@ function SeeAlsoSection({
             {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <div className="flex gap-2">
               <Button type="submit" disabled={submitting}>
-                {submitting ? 'Adding...' : 'Add'}
+                {submitting ? t('actions.adding') : t('actions.add')}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common:actions.cancel')}
               </Button>
             </div>
           </form>
@@ -723,6 +729,7 @@ function StoryForm({
   onDone: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation(['adventurePage', 'common']);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -743,7 +750,7 @@ function StoryForm({
       });
       onDone();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to share story');
+      setError(err instanceof Error ? err.message : t('errors.failedToShareStory'));
     } finally {
       setSubmitting(false);
     }
@@ -751,22 +758,22 @@ function StoryForm({
 
   return (
     <Card className="mt-6 w-full p-6">
-      <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">Tell your story</h2>
+      <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">{t('stories.tellYourStory')}</h2>
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-5">
-        <Field label="Title">
-          <Input name="title" placeholder="Give your story a title" />
+        <Field label={t('fields.title')}>
+          <Input name="title" placeholder={t('stories.titlePlaceholder')} />
         </Field>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Field label="Date completed">
+          <Field label={t('stories.dateCompleted')}>
             <Input name="dateCompleted" type="date" required />
           </Field>
-          <Field label="Duration (days)">
+          <Field label={t('stories.durationDays')}>
             <Input name="durationDays" type="number" min={0} />
           </Field>
-          <Field label="Actual cost">
+          <Field label={t('stories.actualCost')}>
             <Input name="actualCostAmount" type="number" min={0} />
           </Field>
-          <Field label="Currency">
+          <Field label={t('stories.currency')}>
             <Select name="currency" defaultValue="NPR">
               <option value="NPR">NPR</option>
               <option value="USD">USD</option>
@@ -775,19 +782,19 @@ function StoryForm({
             </Select>
           </Field>
         </div>
-        <Field label="Summary" hint="A short one-liner shown wherever this story is listed">
-          <Textarea name="description" rows={2} placeholder="e.g. Perfect weather, no crowds, best trip yet" />
+        <Field label={t('fields.summary')} hint={t('stories.summaryHint')}>
+          <Textarea name="description" rows={2} placeholder={t('stories.summaryPlaceholder')} />
         </Field>
-        <Field label="Your story" hint="The full story - markdown supported">
-          <Textarea name="content" rows={14} className="font-mono text-sm" placeholder="Tell it however long it needs to be..." />
+        <Field label={t('stories.yourStory')} hint={t('stories.yourStoryHint')}>
+          <Textarea name="content" rows={14} className="font-mono text-sm" placeholder={t('stories.yourStoryPlaceholder')} />
         </Field>
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex gap-2">
           <Button type="submit" variant="accent" disabled={submitting}>
-            {submitting ? 'Sharing...' : 'Share story'}
+            {submitting ? t('stories.sharing') : t('stories.shareStory')}
           </Button>
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
         </div>
       </form>

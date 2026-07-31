@@ -1,11 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { Mountain } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { API_URL } from '../lib/auth/api';
+import i18n from '../lib/i18n';
 import { Card } from '../components/Card';
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
-  head: () => ({ meta: [{ title: 'Sign in' }] }),
+  head: () => ({ meta: [{ title: i18n.t('account:login.pageTitle') }] }),
 });
 
 function GoogleIcon() {
@@ -32,6 +34,7 @@ function GoogleIcon() {
 }
 
 function LoginPage() {
+  const { t } = useTranslation('account');
   const signIn = () => {
     const redirectUrl = window.location.origin;
     window.location.href = `${API_URL}/api/v1/auth/google?redirectUrl=${encodeURIComponent(redirectUrl)}`;
@@ -41,17 +44,15 @@ function LoginPage() {
     <main className="flex min-h-[70vh] items-center justify-center bg-gradient-to-br from-primary-50 via-stone-50 to-accent-50 px-4 dark:from-primary-950/40 dark:via-stone-950 dark:to-accent-950/40">
       <Card className="w-full max-w-sm p-8 text-center">
         <Mountain className="mx-auto h-10 w-10 text-primary-600 dark:text-primary-400" strokeWidth={2.5} />
-        <h1 className="mt-3 text-xl font-semibold text-stone-900 dark:text-stone-50">Sign in to Adventure Nepal</h1>
-        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-          Contribute pages, log trips, and connect with guides.
-        </p>
+        <h1 className="mt-3 text-xl font-semibold text-stone-900 dark:text-stone-50">{t('login.heading')}</h1>
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('login.subheading')}</p>
         <button
           type="button"
           onClick={signIn}
           className="mt-6 flex w-full items-center justify-center gap-3 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 shadow-sm hover:bg-stone-50 dark:border-stone-700 dark:bg-stone-800 dark:text-stone-200 dark:hover:bg-stone-700"
         >
           <GoogleIcon />
-          Sign in with Google
+          {t('login.signInWithGoogle')}
         </button>
       </Card>
     </main>

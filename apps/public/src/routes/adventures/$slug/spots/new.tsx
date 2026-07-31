@@ -1,6 +1,8 @@
 import { createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
+import i18n from '../../../../lib/i18n';
 import { authPost } from '../../../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../../../lib/auth/require-auth';
 import { Button } from '../../../../components/Button';
@@ -33,7 +35,7 @@ export const Route = createFileRoute('/adventures/$slug/spots/new')({
   },
   component: NewSpotPage,
   head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: `Add a spot to ${loaderData.page.title}` }] : [],
+    meta: loaderData ? [{ title: i18n.t('adventurePage:addSpotTitle', { title: loaderData.page.title }) }] : [],
   }),
 });
 
@@ -42,6 +44,7 @@ function NewSpotPage() {
   const { slug } = Route.useParams();
   const authStatus = useRequireAuth(`/adventures/${slug}/spots/new`);
   const navigate = useNavigate();
+  const { t } = useTranslation(['adventurePage', 'common']);
   const [points, setPoints] = useState<LngLat[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -49,7 +52,7 @@ function NewSpotPage() {
   if (authStatus === 'checking') {
     return (
       <Container>
-        <p className="text-stone-500 dark:text-stone-400">Checking sign-in...</p>
+        <p className="text-stone-500 dark:text-stone-400">{t('common:actions.checkingSignIn')}</p>
       </Container>
     );
   }
@@ -57,7 +60,7 @@ function NewSpotPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (points.length === 0) {
-      setError('Click the map to place the spot first.');
+      setError(t('errors.needSpotPoint'));
       return;
     }
     setError(null);
@@ -74,17 +77,17 @@ function NewSpotPage() {
       });
       navigate({ to: '/adventures/$slug', params: { slug } });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add spot');
+      setError(err instanceof Error ? err.message : t('errors.failedToAddSpot'));
       setSubmitting(false);
     }
   }
 
   return (
     <Container>
-      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">Add a spot to {page.title}</h1>
-      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-        Click the map to place the spot, then fill in the details.
-      </p>
+      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+        {t('addSpotTitle', { title: page.title })}
+      </h1>
+      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('draw.spotInstructions')}</p>
 
       <div className="mt-6">
         <LazyDrawMap mode="point" points={points} onPointsChange={setPoints} />
@@ -92,13 +95,13 @@ function NewSpotPage() {
 
       <Card className="mt-6 p-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <Field label="Name">
+          <Field label={t('fields.name')}>
             <Input name="name" required />
           </Field>
-          <Field label="Type">
+          <Field label={t('fields.type')}>
             <Select name="spotTypeId" required defaultValue="">
               <option value="" disabled>
-                Select...
+                {t('fields.select')}
               </option>
               {spotTypes.map((option) => (
                 <option key={option.id} value={option.id}>
@@ -107,15 +110,15 @@ function NewSpotPage() {
               ))}
             </Select>
           </Field>
-          <Field label="Description">
+          <Field label={t('fields.description')}>
             <Textarea name="description" rows={3} />
           </Field>
-          <Field label="Elevation (m)">
+          <Field label={t('fields.elevation')}>
             <Input name="elevationMeters" type="number" min={0} />
           </Field>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" disabled={submitting} className="self-start">
-            {submitting ? 'Adding...' : 'Add spot'}
+            {submitting ? t('actions.adding') : t('actions.addSpot')}
           </Button>
         </form>
       </Card>

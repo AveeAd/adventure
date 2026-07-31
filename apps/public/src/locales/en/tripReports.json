@@ -1,0 +1,21 @@
+{
+  "fallbackTitle": "Story",
+  "backToPage": "Back to adventure page",
+  "contributor": "Contributor",
+  "durationSuffix": "· {{days}} days",
+  "kudosGiven": "Kudos given",
+  "giveKudos": "Give kudos",
+  "kudosCount": "{{count}} kudos",
+  "comments": "Comments ({{count}})",
+  "commentPlaceholder": "Add a comment...",
+  "posting": "Posting...",
+  "postComment": "Post comment",
+  "reply": "Reply",
+  "replyPlaceholder": "Write a reply...",
+  "postReply": "Post reply",
+  "cancel": "Cancel",
+  "errors": {
+    "failedToUpdateKudos": "Failed to update kudos",
+    "failedToPostComment": "Failed to post comment"
+  }
+}

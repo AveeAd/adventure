@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Form, Input, Select } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useAllRows } from '../../hooks/useAllRows';
 
 interface CountryRow {
@@ -17,6 +18,7 @@ export const DistrictFields = () => {
   const [countryFilter, setCountryFilter] = useState<string>();
   const countries = useAllRows<CountryRow>('countries');
   const provinces = useAllRows<ProvinceRow>('provinces');
+  const { t } = useTranslation('resources');
 
   const filteredProvinces = countryFilter
     ? provinces.filter((province) => province.countryId === countryFilter)
@@ -24,21 +26,21 @@ export const DistrictFields = () => {
 
   return (
     <>
-      <Form.Item label="Country (filter)">
+      <Form.Item label={t('location.countryFilter')}>
         <Select
           allowClear
-          placeholder="Narrow the province list by country"
+          placeholder={t('location.countryFilterPlaceholder')}
           options={countries.map((country) => ({ label: country.name, value: country.id }))}
           onChange={setCountryFilter}
         />
       </Form.Item>
-      <Form.Item label="Province" name="provinceId" rules={[{ required: true }]}>
+      <Form.Item label={t('fields.province')} name="provinceId" rules={[{ required: true }]}>
         <Select options={filteredProvinces.map((province) => ({ label: province.name, value: province.id }))} />
       </Form.Item>
-      <Form.Item label="Name" name="name" rules={[{ required: true }]}>
+      <Form.Item label={t('fields.name')} name="name" rules={[{ required: true }]}>
         <Input />
       </Form.Item>
-      <Form.Item label="Slug" name="slug" rules={[{ required: true }]}>
+      <Form.Item label={t('fields.slug')} name="slug" rules={[{ required: true }]}>
         <Input />
       </Form.Item>
     </>

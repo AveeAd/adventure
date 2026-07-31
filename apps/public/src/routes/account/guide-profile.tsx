@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
+import i18n from '../../lib/i18n';
 import { authFetch, authPatch, authPost } from '../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../lib/auth/require-auth';
 import { Button } from '../../components/Button';
@@ -44,12 +46,13 @@ export const Route = createFileRoute('/account/guide-profile')({
     return { activityTypes, districts, languages };
   },
   component: GuideProfileAccountPage,
-  head: () => ({ meta: [{ title: 'Your guide profile' }] }),
+  head: () => ({ meta: [{ title: i18n.t('account:guideProfile.pageTitle') }] }),
 });
 
 function GuideProfileAccountPage() {
   const { activityTypes, districts, languages } = Route.useLoaderData();
   const authStatus = useRequireAuth('/account/guide-profile');
+  const { t } = useTranslation(['account', 'common']);
   const [existing, setExisting] = useState<OwnGuideProfile | null | 'loading'>('loading');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +68,7 @@ function GuideProfileAccountPage() {
   if (authStatus === 'checking' || existing === 'loading') {
     return (
       <Container>
-        <p className="text-stone-500 dark:text-stone-400">Loading...</p>
+        <p className="text-stone-500 dark:text-stone-400">{t('common:actions.loading')}</p>
       </Container>
     );
   }
@@ -97,7 +100,7 @@ function GuideProfileAccountPage() {
       }
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save guide profile');
+      setError(err instanceof Error ? err.message : t('guideProfile.errors.failedToSave'));
     } finally {
       setSubmitting(false);
     }
@@ -106,29 +109,26 @@ function GuideProfileAccountPage() {
   return (
     <Container>
       <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-        {existing ? 'Edit your guide profile' : 'Create your guide profile'}
+        {existing ? t('guideProfile.editHeading') : t('guideProfile.createHeading')}
       </h1>
-      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-        Guides covering restricted districts (Annapurna/Manaslu/Upper Mustang) require manual license review before
-        verification.
-      </p>
+      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('guideProfile.restrictedNotice')}</p>
 
       <Card className="mt-6 p-6">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <Field label="License number">
+          <Field label={t('guideProfile.fields.licenseNumber')}>
             <Input name="licenseNumber" defaultValue={existing?.licenseNumber ?? ''} />
           </Field>
-          <Field label="Bio">
+          <Field label={t('guideProfile.fields.bio')}>
             <Textarea name="bio" rows={4} defaultValue={existing?.bio ?? ''} />
           </Field>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Field label="Rate min">
+            <Field label={t('guideProfile.fields.rateMin')}>
               <Input name="rateMin" type="number" min={0} defaultValue={existing?.rateMin ?? ''} />
             </Field>
-            <Field label="Rate max">
+            <Field label={t('guideProfile.fields.rateMax')}>
               <Input name="rateMax" type="number" min={0} defaultValue={existing?.rateMax ?? ''} />
             </Field>
-            <Field label="Currency">
+            <Field label={t('guideProfile.fields.currency')}>
               <Select name="currency" defaultValue={existing?.currency ?? 'NPR'}>
                 <option value="NPR">NPR</option>
                 <option value="USD">USD</option>
@@ -136,30 +136,30 @@ function GuideProfileAccountPage() {
                 <option value="INR">INR</option>
               </Select>
             </Field>
-            <Field label="Rate unit">
+            <Field label={t('guideProfile.fields.rateUnit')}>
               <Select name="rateUnit" defaultValue={existing?.rateUnit ?? ''}>
-                <option value="">Unspecified</option>
-                <option value="PER_DAY">Per day</option>
-                <option value="PER_TRIP">Per trip</option>
-                <option value="PER_HOUR">Per hour</option>
+                <option value="">{t('guideProfile.fields.unspecified')}</option>
+                <option value="PER_DAY">{t('guideProfile.fields.perDay')}</option>
+                <option value="PER_TRIP">{t('guideProfile.fields.perTrip')}</option>
+                <option value="PER_HOUR">{t('guideProfile.fields.perHour')}</option>
               </Select>
             </Field>
           </div>
-          <Field label="Specialties">
+          <Field label={t('guideProfile.fields.specialties')}>
             <MultiSelectChips
               name="specialtyActivityTypeIds"
               options={activityTypes}
               defaultValue={existing?.specialties.map((s) => s.activityType.id) ?? []}
             />
           </Field>
-          <Field label="Regions covered">
+          <Field label={t('guideProfile.fields.regionsCovered')}>
             <MultiSelectChips
               name="regionDistrictIds"
               options={districts}
               defaultValue={existing?.regions.map((r) => r.district.id) ?? []}
             />
           </Field>
-          <Field label="Languages">
+          <Field label={t('guideProfile.fields.languages')}>
             <MultiSelectChips
               name="languageIds"
               options={languages}
@@ -167,9 +167,9 @@ function GuideProfileAccountPage() {
             />
           </Field>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          {saved && <p className="text-sm text-primary-700 dark:text-primary-400">Saved.</p>}
+          {saved && <p className="text-sm text-primary-700 dark:text-primary-400">{t('guideProfile.saved')}</p>}
           <Button type="submit" disabled={submitting} className="self-start">
-            {submitting ? 'Saving...' : existing ? 'Save changes' : 'Create profile'}
+            {submitting ? t('guideProfile.saving') : existing ? t('guideProfile.saveChanges') : t('guideProfile.createProfile')}
           </Button>
         </form>
       </Card>

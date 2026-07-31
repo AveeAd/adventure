@@ -1,6 +1,7 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
 import { ArrowLeft, Heart } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
 import { authDelete, authPost } from '../../../../lib/auth/auth-fetch';
 import { checkAuth } from '../../../../lib/auth/session';
@@ -64,6 +65,7 @@ export const Route = createFileRoute('/adventures/$slug/trips/$tripReportId')({
 
 function TripReportPage() {
   const { slug, report, comments: initialComments } = Route.useLoaderData();
+  const { t } = useTranslation('tripReports');
   const [comments, setComments] = useState(initialComments);
   const [kudosCount, setKudosCount] = useState(report.kudosCount);
   const [kudosGiven, setKudosGiven] = useState(report.kudosByMe);
@@ -112,7 +114,7 @@ function TripReportPage() {
       }
       setKudosGiven((given) => !given);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update kudos');
+      setError(err instanceof Error ? err.message : t('errors.failedToUpdateKudos'));
     }
   }
 
@@ -124,7 +126,7 @@ function TripReportPage() {
       await postComment(commentText);
       setCommentText('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to post comment');
+      setError(err instanceof Error ? err.message : t('errors.failedToPostComment'));
     } finally {
       setSubmitting(false);
     }
@@ -137,20 +139,20 @@ function TripReportPage() {
         params={{ slug }}
         className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to adventure page
+        <ArrowLeft className="h-4 w-4" /> {t('backToPage')}
       </Link>
 
       <h1 className="mt-3 text-2xl font-semibold text-stone-900 dark:text-stone-50">
-        {report.title ?? 'Story'}
+        {report.title ?? t('fallbackTitle')}
       </h1>
       <div className="mt-2 flex items-center gap-2 text-sm text-stone-500 dark:text-stone-400">
         <Avatar label={report.authorId} size="sm" />
         <Link to="/users/$id" params={{ id: report.authorId }} className="hover:text-primary-700 dark:hover:text-primary-400">
-          Contributor
+          {t('contributor')}
         </Link>
         <span>·</span>
         <span>{formatDate(report.dateCompleted)}</span>
-        {report.durationDays ? <span>· {report.durationDays} days</span> : null}
+        {report.durationDays ? <span>{t('durationSuffix', { days: report.durationDays })}</span> : null}
         {report.actualCostAmount ? (
           <span>
             · {formatCurrency(report.actualCostAmount, report.currency)}
@@ -172,18 +174,18 @@ function TripReportPage() {
         {signedIn ? (
           <Button variant={kudosGiven ? 'accent' : 'secondary'} size="sm" onClick={toggleKudos}>
             <Heart className="h-4 w-4" fill={kudosGiven ? 'currentColor' : 'none'} />
-            {kudosGiven ? 'Kudos given' : 'Give kudos'} ({kudosCount})
+            {kudosGiven ? t('kudosGiven') : t('giveKudos')} ({kudosCount})
           </Button>
         ) : (
           <span className="flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
-            <Heart className="h-4 w-4" /> {kudosCount} kudos
+            <Heart className="h-4 w-4" /> {t('kudosCount', { count: kudosCount })}
           </span>
         )}
       </div>
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">
-          Comments ({countComments(comments)})
+          {t('comments', { count: countComments(comments) })}
         </h2>
         <ul className="mt-3 flex flex-col gap-3">
           {comments.map((comment) => (
@@ -205,11 +207,11 @@ function TripReportPage() {
               onChange={(e) => setCommentText(e.target.value)}
               required
               rows={3}
-              placeholder="Add a comment..."
+              placeholder={t('commentPlaceholder')}
             />
             {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
             <Button type="submit" disabled={submitting || !commentText.trim()} className="self-start">
-              {submitting ? 'Posting...' : 'Post comment'}
+              {submitting ? t('posting') : t('postComment')}
             </Button>
           </form>
         )}
@@ -233,6 +235,7 @@ function CommentThread({
   onReply: (content: string, parentCommentId?: string) => Promise<void>;
   depth?: number;
 }) {
+  const { t } = useTranslation('tripReports');
   const [replyText, setReplyText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const isReplying = replyingToId === comment.id;
@@ -266,7 +269,7 @@ function CommentThread({
             className="mt-2"
             onClick={() => setReplyingToId(isReplying ? null : comment.id)}
           >
-            Reply
+            {t('reply')}
           </Button>
         )}
         {isReplying && (
@@ -276,14 +279,14 @@ function CommentThread({
               onChange={(e) => setReplyText(e.target.value)}
               required
               rows={2}
-              placeholder="Write a reply..."
+              placeholder={t('replyPlaceholder')}
             />
             <div className="flex gap-2">
               <Button type="submit" size="sm" disabled={submitting || !replyText.trim()}>
-                {submitting ? 'Posting...' : 'Post reply'}
+                {submitting ? t('posting') : t('postReply')}
               </Button>
               <Button type="button" variant="ghost" size="sm" onClick={() => setReplyingToId(null)}>
-                Cancel
+                {t('cancel')}
               </Button>
             </div>
           </form>
