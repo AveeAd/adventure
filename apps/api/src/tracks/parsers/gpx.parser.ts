@@ -27,7 +27,7 @@ function toPoint(raw: RawPoint) {
 // fast-xml-parser dependency-light choice per TRAIL_ELEVATION.md, over
 // @tmcw/togeojson (wants a DOM, would need a shim in the API container).
 export function parseGpx(xml: string): ParsedTrackFile {
-  let doc: { gpx?: { wpt?: RawPoint | RawPoint[]; trk?: unknown } };
+  let doc: { gpx?: { wpt?: RawPoint | RawPoint[]; trk?: unknown; rte?: unknown } };
   try {
     doc = parser.parse(xml);
   } catch {
@@ -54,6 +54,16 @@ export function parseGpx(xml: string): ParsedTrackFile {
     const points = segments.flatMap((seg) => toArray(seg.trkpt).map(toPoint));
     return { name: trk.name, points };
   });
+
+  // Some tools (route planners, Movescount's route export) emit <rte>/<rtept>
+  // instead of <trk>/<trkseg>/<trkpt> - no timestamps, no segments, but the
+  // same ordered lat/lng(/ele) shape. Fall back to routes only when the file
+  // has no tracks at all, rather than merging both into one ambiguous list.
+  if (tracks.length === 0) {
+    const rawRtes = toArray(gpx.rte as { name?: string; rtept?: RawPoint | RawPoint[] } | undefined);
+    const routes = rawRtes.map((rte) => ({ name: rte.name, points: toArray(rte.rtept).map(toPoint) }));
+    return { tracks: routes, waypoints };
+  }
 
   return { tracks, waypoints };
 }
