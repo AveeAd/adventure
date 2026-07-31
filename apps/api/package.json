@@ -9,9 +9,10 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "seed:locations": "tsx prisma/scripts/import-locations.ts",
+    "seed:district-boundaries": "tsx prisma/scripts/import-district-boundaries.ts",
     "seed:master-data": "tsx prisma/scripts/seed-master-data.ts",
     "seed:dev-data": "tsx prisma/scripts/seed-dev-data.ts",
-    "seed:all": "npm run seed:locations && npm run seed:master-data && npm run seed:dev-data"
+    "seed:all": "npm run seed:locations && npm run seed:district-boundaries && npm run seed:master-data && npm run seed:dev-data"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",

@@ -227,10 +227,19 @@ export class AdventurePagesService {
 
     return this.prisma.$transaction(async (tx) => {
       if (dto.districtIds) {
-        await tx.adventurePageDistrict.deleteMany({ where: { adventurePageId: id } });
-        if (dto.districtIds.length) {
-          await tx.adventurePageDistrict.createMany({
-            data: dto.districtIds.map((districtId) => ({ adventurePageId: id, districtId })),
+        // Narrowed to source: MANUAL - a wholesale delete here would
+        // silently wipe FEATURE.md §4's spatially-derived DERIVED tags on
+        // every metadata edit. Required fix, not optional, per that design.
+        await tx.adventurePageDistrict.deleteMany({ where: { adventurePageId: id, source: 'MANUAL' } });
+        // Upsert, not createMany: a district a contributor now hand-picks
+        // may already have a DERIVED row from geometry - "MANUAL always
+        // wins" means that collision upgrades the row to MANUAL rather
+        // than erroring on the unique constraint or staying DERIVED forever.
+        for (const districtId of dto.districtIds) {
+          await tx.adventurePageDistrict.upsert({
+            where: { adventurePageId_districtId: { adventurePageId: id, districtId } },
+            create: { adventurePageId: id, districtId, source: 'MANUAL' },
+            update: { source: 'MANUAL' },
           });
         }
       }

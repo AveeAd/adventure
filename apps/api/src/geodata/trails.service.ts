@@ -5,6 +5,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { assertWithinNepal, buildSamples, computeAggregates, simplifyPoints } from '../tracks/track-geometry.util';
 import { CreateTrailDto } from './dto/create-trail.dto';
+import { deriveDistrictTags } from './district-derivation.util';
 import { UpdateTrailDto } from './dto/update-trail.dto';
 
 const CONFIRMATION_THRESHOLD = 2;
@@ -122,6 +123,8 @@ export class TrailsService {
                NULL, false, ${userId}, ${now}
         FROM trails WHERE id = ${id}
       `;
+
+      await deriveDistrictTags(tx, 'trails', id, pageId);
     });
 
     return this.get(id);
@@ -134,7 +137,7 @@ export class TrailsService {
   // used to run here is gone: confirmations are revision-scoped now, so they
   // go stale for free by pointing at a superseded revision.
   async update(id: string, userId: string, dto: UpdateTrailDto): Promise<TrailRow> {
-    await this.get(id);
+    const existing = await this.get(id);
     const nextStatus = dto.isSafetyCriticalEdit ? 'NEEDS_REVIEW' : 'UNVERIFIED';
     const now = new Date();
     const revisionId = randomUUID();
@@ -184,6 +187,7 @@ export class TrailsService {
       // unconditional, or a name-only edit would wipe a perfectly good profile.
       if (dto.geometry) {
         await tx.trailElevationProfile.deleteMany({ where: { trailId: id } });
+        await deriveDistrictTags(tx, 'trails', id, existing.adventurePageId);
       }
     });
 
@@ -444,6 +448,8 @@ export class TrailsService {
           },
         });
       }
+
+      await deriveDistrictTags(tx, 'trails', id, pageId);
     });
 
     return this.get(id);

@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSpotDto } from './dto/create-spot.dto';
+import { deriveDistrictTags } from './district-derivation.util';
 import { UpdateSpotDto } from './dto/update-spot.dto';
 
 const CONFIRMATION_THRESHOLD = 2;
@@ -110,6 +111,8 @@ export class SpotsService {
                "elevationMeters", NULL, false, ${userId}, ${now}
         FROM spots WHERE id = ${id}
       `;
+
+      await deriveDistrictTags(tx, 'spots', id, pageId);
     });
 
     return this.get(id);
@@ -119,7 +122,7 @@ export class SpotsService {
   // see TrailsService.update()'s comment for the full reasoning. The
   // spotConfirmation.deleteMany call that used to run here is gone.
   async update(id: string, userId: string, dto: UpdateSpotDto): Promise<SpotRow> {
-    await this.get(id);
+    const existing = await this.get(id);
     const nextStatus = dto.isSafetyCriticalEdit ? 'NEEDS_REVIEW' : 'UNVERIFIED';
     const now = new Date();
     const revisionId = randomUUID();
@@ -167,6 +170,10 @@ export class SpotsService {
                "elevationMeters", ${dto.editSummary ?? null}, ${dto.isSafetyCriticalEdit ?? false}, ${userId}, ${now}
         FROM spots WHERE id = ${id}
       `;
+
+      if (dto.geometry) {
+        await deriveDistrictTags(tx, 'spots', id, existing.adventurePageId);
+      }
     });
 
     return this.get(id);

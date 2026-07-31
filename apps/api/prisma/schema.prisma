@@ -142,6 +142,10 @@ model District {
   name                     String
   slug                     String
   requiresRegisteredAgency Boolean  @default(false)
+  // Nullable: import may be partial, and the ~838 pre-existing location rows
+  // predate boundaries. Same Unsupported/GiST/raw-SQL consequences as
+  // Trail.geometry - see FEATURE.md §4's district-tagging design.
+  boundary                 Unsupported("geometry(MultiPolygon, 4326)")?
   isActive                 Boolean  @default(true)
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
@@ -290,12 +294,22 @@ model PageConfirmation {
   @@map("page_confirmations")
 }
 
+enum DistrictTagSource {
+  MANUAL // picked by a contributor in the page form
+  DERIVED // computed from trail/spot geometry via ST_Intersects/ST_Contains
+}
+
 model AdventurePageDistrict {
   id              String   @id @default(uuid())
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   districtId      String
   district        District      @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  // Was missing createdAt/updatedAt entirely - a standing violation of §2's
+  // "every table" convention, fixed in the same migration that adds `source`.
+  source          DistrictTagSource @default(MANUAL)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@unique([adventurePageId, districtId])
   @@map("adventure_page_districts")
