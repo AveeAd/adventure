@@ -137,17 +137,6 @@ function App() {
               meta: { label: t('municipalities.label'), parent: 'locations' },
             },
 
-            {
-              name: 'review-queue',
-              list: '/review-queue',
-              meta: { label: t('review-queue.label') },
-            },
-            {
-              name: 'reports',
-              list: '/reports',
-              meta: { label: t('reports.label') },
-            },
-
             { name: 'content', meta: { label: t('content.label') } },
             {
               name: 'adventure-pages',
@@ -188,29 +177,43 @@ function App() {
               meta: { label: t('activity-tracks.label'), parent: 'geodata' },
             },
 
+            { name: 'community', meta: { label: t('community.label') } },
             {
               name: 'guide-profiles',
               list: '/guide-profiles',
               show: '/guide-profiles/show/:id',
-              meta: { label: t('guide-profiles.label') },
+              meta: { label: t('guide-profiles.label'), parent: 'community' },
             },
             {
               name: 'users',
               list: '/users',
               edit: '/users/edit/:id',
-              meta: { label: t('users.label') },
+              meta: { label: t('users.label'), parent: 'community' },
+            },
+
+            { name: 'moderation', meta: { label: t('moderation.label') } },
+            {
+              name: 'review-queue',
+              list: '/review-queue',
+              meta: { label: t('review-queue.label'), parent: 'moderation' },
+            },
+            {
+              name: 'reports',
+              list: '/reports',
+              meta: { label: t('reports.label'), parent: 'moderation' },
             },
             ...(isAdmin
               ? [
                   {
                     name: 'moderator-applications',
                     list: '/moderator-applications',
-                    meta: { label: t('moderator-applications.label') },
+                    meta: { label: t('moderator-applications.label'), parent: 'moderation' },
                   },
+                  { name: 'settings', meta: { label: t('settings.label') } },
                   {
                     name: 'system-settings',
                     list: '/system-settings',
-                    meta: { label: t('system-settings.label') },
+                    meta: { label: t('system-settings.label'), parent: 'settings' },
                   },
                 ]
               : []),

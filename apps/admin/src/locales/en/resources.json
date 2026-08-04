@@ -7,6 +7,9 @@
   "spot-types": { "label": "Spot Types" },
   "tags": { "label": "Tags" },
   "master-data": { "label": "Master Data" },
+  "community": { "label": "Community" },
+  "moderation": { "label": "Moderation" },
+  "settings": { "label": "Settings" },
   "review-queue": { "label": "Review Queue" },
   "reports": {
     "label": "Reports",
