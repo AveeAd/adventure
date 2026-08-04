@@ -255,6 +255,12 @@
       "key": "Key",
       "description": "Description",
       "value": "Value"
+    },
+    "sections": {
+      "moderation": "Approval & Moderation",
+      "points": "Contribution Points",
+      "app": "App Branding",
+      "other": "Other"
     }
   },
   "approval": {

@@ -1,5 +1,5 @@
 import { useCustom, useCustomMutation } from '@refinedev/core';
-import { Button, Card, Input, Space, Table, message } from 'antd';
+import { Button, Card, Input, Space, Table, Typography, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -7,6 +7,22 @@ interface SystemSettingRow {
   key: string;
   value: string;
   description: string;
+}
+
+// Key prefix -> section, so the settings table reads as labeled groups
+// instead of one flat list mixing approval/points/branding keys together.
+// Falls back to "other" for any future prefix not listed here.
+const SECTION_FOR_PREFIX: Record<string, string> = {
+  approval: 'moderation',
+  moderator: 'moderation',
+  reports: 'moderation',
+  points: 'points',
+  app: 'app',
+};
+const SECTION_ORDER = ['moderation', 'points', 'app', 'other'];
+
+function sectionOf(key: string): string {
+  return SECTION_FOR_PREFIX[key.split('.')[0]] ?? 'other';
 }
 
 // MILESTONE_3.md §6/§9.2: "System settings" admin resource over
@@ -24,22 +40,35 @@ export function SystemSettingsPage() {
   // other resources use - settings aren't paginated).
   const rows = Array.isArray(result?.data) ? result.data : (result?.data?.data ?? []);
 
+  const columns = [
+    { title: t('system-settings.fields.key'), dataIndex: 'key' },
+    { title: t('system-settings.fields.description'), dataIndex: 'description' },
+    {
+      title: t('system-settings.fields.value'),
+      render: (_: unknown, row: SystemSettingRow) => <SettingValueEditor row={row} onSaved={() => refetch()} />,
+    },
+  ];
+
   return (
     <Card title={t('system-settings.title')}>
-      <Table<SystemSettingRow>
-        rowKey="key"
-        loading={query.isLoading}
-        dataSource={rows}
-        pagination={false}
-        columns={[
-          { title: t('system-settings.fields.key'), dataIndex: 'key' },
-          { title: t('system-settings.fields.description'), dataIndex: 'description' },
-          {
-            title: t('system-settings.fields.value'),
-            render: (_, row) => <SettingValueEditor row={row} onSaved={() => refetch()} />,
-          },
-        ]}
-      />
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        {SECTION_ORDER.map((section) => {
+          const sectionRows = rows.filter((row) => sectionOf(row.key) === section);
+          if (sectionRows.length === 0) return null;
+          return (
+            <div key={section}>
+              <Typography.Title level={5}>{t(`system-settings.sections.${section}`)}</Typography.Title>
+              <Table<SystemSettingRow>
+                rowKey="key"
+                loading={query.isLoading}
+                dataSource={sectionRows}
+                pagination={false}
+                columns={columns}
+              />
+            </div>
+          );
+        })}
+      </Space>
     </Card>
   );
 }
