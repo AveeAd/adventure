@@ -73,7 +73,28 @@
   "profile": {
     "pagesEdited": "Pages edited",
     "stories": "Stories",
-    "confirmationsGiven": "Confirmations given"
+    "confirmationsGiven": "Confirmations given",
+    "guideLevel": "Guide level {{level}}",
+    "pointsToNextLevel": "{{points}} points to level {{level}}",
+    "contributionBreakdown": "Contribution breakdown",
+    "approvalsGiven": "Approvals given",
+    "pointLedger": "Point ledger",
+    "noContributions": "No contributions yet.",
+    "loadMore": "Load more",
+    "points": "points"
+  },
+  "contributionReasons": {
+    "PAGE_CREATE": "Created a page",
+    "PAGE_UPDATE": "Updated a page",
+    "GEO_CREATE": "Added a trail/spot",
+    "GEO_UPDATE": "Updated a trail/spot",
+    "MEDIA_UPLOAD": "Uploaded a photo",
+    "STORY_CREATE": "Published a story",
+    "MEDIA_REPORT_UPHELD": "Photo report upheld against you",
+    "GEO_REPORT_UPHELD": "Trail/spot report upheld against you",
+    "PAGE_REPORT_UPHELD": "Page report upheld against you",
+    "BACKFILL": "Historical contribution",
+    "ADMIN_ADJUSTMENT": "Admin adjustment"
   },
   "login": {
     "pageTitle": "Sign in",

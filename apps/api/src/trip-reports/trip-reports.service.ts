@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationType, Role } from '@prisma/client';
+import { ContributionReason, ContributionTargetType, NotificationType, Role } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { ContributionsService } from '../contributions/contributions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AddTripReportMediaDto } from './dto/add-trip-report-media.dto';
@@ -12,6 +13,7 @@ export class TripReportsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly contributions: ContributionsService,
   ) {}
 
   async listForPage(pageId: string, page = 1, pageSize = 20) {
@@ -70,8 +72,8 @@ export class TripReportsService {
     return { ...rest, kudosCount: _count.kudos, commentCount: _count.comments, kudosByMe };
   }
 
-  create(pageId: string, authorId: string, dto: CreateTripReportDto) {
-    return this.prisma.tripReport.create({
+  async create(pageId: string, authorId: string, dto: CreateTripReportDto) {
+    const report = await this.prisma.tripReport.create({
       data: {
         adventurePageId: pageId,
         authorId,
@@ -84,6 +86,16 @@ export class TripReportsService {
         currency: dto.currency,
       },
     });
+
+    // MILESTONE_3.md §3.2: stories earn points on publish, never gated.
+    await this.contributions.award({
+      userId: authorId,
+      reason: ContributionReason.STORY_CREATE,
+      targetType: ContributionTargetType.TRIP_REPORT,
+      targetId: report.id,
+    });
+
+    return report;
   }
 
   async update(id: string, currentUser: AuthenticatedUser, dto: UpdateTripReportDto) {
@@ -109,7 +121,7 @@ export class TripReportsService {
 
   async addMedia(id: string, currentUser: AuthenticatedUser, dto: AddTripReportMediaDto) {
     await this.ensureOwnerOrAdmin(id, currentUser);
-    return this.prisma.tripReportMedia.create({
+    const media = await this.prisma.tripReportMedia.create({
       data: {
         tripReportId: id,
         url: dto.url,
@@ -118,6 +130,15 @@ export class TripReportsService {
         sortOrder: dto.sortOrder ?? 0,
       },
     });
+
+    await this.contributions.award({
+      userId: currentUser.userId,
+      reason: ContributionReason.MEDIA_UPLOAD,
+      targetType: ContributionTargetType.MEDIA,
+      targetId: media.id,
+    });
+
+    return media;
   }
 
   async removeMedia(id: string, mediaId: string, currentUser: AuthenticatedUser) {

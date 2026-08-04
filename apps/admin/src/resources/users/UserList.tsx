@@ -20,7 +20,21 @@ export const UserList = () => {
         <Table.Column
           dataIndex="role"
           title={t('users.fields.role')}
-          render={(role: string) => <Tag color={role === 'ADMIN' ? 'green' : 'default'}>{role}</Tag>}
+          render={(role: 'ADMIN' | 'MODERATOR' | 'USER') => (
+            <Tag color={role === 'ADMIN' ? 'green' : role === 'MODERATOR' ? 'blue' : 'default'}>
+              {t(`users.roles.${role}`)}
+            </Tag>
+          )}
+        />
+        <Table.Column
+          dataIndex={['guideProfile', 'guideLevel']}
+          title={t('users.fields.guideLevel')}
+          render={(level: number | null) => level ?? '—'}
+        />
+        <Table.Column
+          dataIndex={['guideProfile', 'contributionPoints']}
+          title={t('users.fields.contributionPoints')}
+          render={(points: number | null) => points ?? '—'}
         />
         <Table.Column
           dataIndex="isActive"

@@ -4,6 +4,7 @@ import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { BboxQueryDto } from './dto/bbox-query.dto';
+import { CastVoteDto } from './dto/cast-vote.dto';
 import { CreateSpotDto } from './dto/create-spot.dto';
 import { UpdateSpotDto } from './dto/update-spot.dto';
 import { UpdateGeoVerificationStatusDto } from './dto/update-verification-status.dto';
@@ -33,7 +34,7 @@ export class AdventurePageSpotsController {
 export class SpotsController {
   constructor(private readonly spotsService: SpotsService) {}
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MODERATOR)
   @Get()
   listAll(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     return this.spotsService.listAll(Number(page) || 1, Number(pageSize) || 20);
@@ -57,18 +58,23 @@ export class SpotsController {
     return this.spotsService.update(id, user.userId, dto);
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MODERATOR)
   @Delete(':id')
   delete(@Param('id') id: string) {
     return this.spotsService.delete(id);
   }
 
-  @Post(':id/confirmations')
-  confirm(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.spotsService.confirm(id, user.userId);
+  @Post(':id/revisions/:version/votes')
+  voteOnRevision(
+    @Param('id') id: string,
+    @Param('version', ParseIntPipe) version: number,
+    @Body() dto: CastVoteDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.spotsService.voteOnRevision(id, version, user.userId, user.role, dto);
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MODERATOR)
   @Patch(':id/verification-status')
   updateVerificationStatus(@Param('id') id: string, @Body() dto: UpdateGeoVerificationStatusDto) {
     return this.spotsService.updateVerificationStatus(id, dto.status);
@@ -76,8 +82,8 @@ export class SpotsController {
 
   @Public()
   @Get(':id/revisions')
-  listRevisions(@Param('id') id: string) {
-    return this.spotsService.listRevisions(id);
+  listRevisions(@Param('id') id: string, @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
+    return this.spotsService.listRevisions(id, status);
   }
 
   @Public()

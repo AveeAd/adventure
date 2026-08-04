@@ -67,7 +67,7 @@ export class TracksController {
 
   // admin-only flat listing across all users, for the read + moderate admin
   // area - mirrors TrailsController/SpotsController's listAll.
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MODERATOR)
   @Get()
   listAll(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     return this.tracksService.listAllForAdmin(Number(page) || 1, Number(pageSize) || 20);

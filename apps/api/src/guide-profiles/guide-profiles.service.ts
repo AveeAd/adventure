@@ -5,7 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { GuideVerificationStatus, NotificationType, Role } from '@prisma/client';
+import { GuideVerificationStatus, NotificationType, Prisma, Role } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -25,6 +25,18 @@ export class GuideProfilesService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  // MILESTONE_3.md §2.2: GuideProfile is universal - auto-created (empty,
+  // unlisted, not the opt-in professional-guide flow below) in the same
+  // transaction as Profile on first login. A no-op update on conflict, so
+  // it never clobbers professional fields an existing row already has.
+  ensureForUser(userId: string, tx: Prisma.TransactionClient | PrismaService = this.prisma) {
+    return tx.guideProfile.upsert({
+      where: { userId },
+      create: { userId },
+      update: {},
+    });
+  }
+
   async list(
     page = 1,
     pageSize = 20,
@@ -32,6 +44,9 @@ export class GuideProfilesService {
   ) {
     const where = {
       isActive: true,
+      // MILESTONE_3.md §2.2: GuideProfile is now universal (every user has
+      // one), so the public directory only shows rows that opted into it.
+      isListed: true,
       ...(filters.activityTypeId && { specialties: { some: { activityTypeId: filters.activityTypeId } } }),
       ...(filters.districtId && { regions: { some: { districtId: filters.districtId } } }),
       ...(filters.languageId && { languages: { some: { languageId: filters.languageId } } }),
@@ -70,31 +85,40 @@ export class GuideProfilesService {
     return profile;
   }
 
+  // Since MILESTONE_3.md §2.2, every user already has an (empty, unlisted)
+  // GuideProfile row from login - "creating" one is really this opt-in
+  // flow filling in professional fields and flipping isListed. Only
+  // conflict if they've already opted in, not merely because the
+  // auto-created row exists.
   async create(userId: string, dto: CreateGuideProfileDto) {
     const existing = await this.prisma.guideProfile.findUnique({ where: { userId } });
-    if (existing) {
+    if (existing?.isListed) {
       throw new ConflictException('You already have a guide profile');
     }
 
-    const profile = await this.prisma.guideProfile.create({
-      data: {
-        userId,
-        licenseNumber: dto.licenseNumber,
-        bio: dto.bio,
-        rateMin: dto.rateMin,
-        rateMax: dto.rateMax,
-        rateUnit: dto.rateUnit,
-        currency: dto.currency,
-        specialties: dto.specialtyActivityTypeIds?.length
-          ? { create: dto.specialtyActivityTypeIds.map((activityTypeId) => ({ activityTypeId })) }
-          : undefined,
-        regions: dto.regionDistrictIds?.length
-          ? { create: dto.regionDistrictIds.map((districtId) => ({ districtId })) }
-          : undefined,
-        languages: dto.languageIds?.length
-          ? { create: dto.languageIds.map((languageId) => ({ languageId })) }
-          : undefined,
-      },
+    const professionalFields = {
+      isListed: true,
+      licenseNumber: dto.licenseNumber,
+      bio: dto.bio,
+      rateMin: dto.rateMin,
+      rateMax: dto.rateMax,
+      rateUnit: dto.rateUnit,
+      currency: dto.currency,
+      specialties: dto.specialtyActivityTypeIds?.length
+        ? { create: dto.specialtyActivityTypeIds.map((activityTypeId) => ({ activityTypeId })) }
+        : undefined,
+      regions: dto.regionDistrictIds?.length
+        ? { create: dto.regionDistrictIds.map((districtId) => ({ districtId })) }
+        : undefined,
+      languages: dto.languageIds?.length
+        ? { create: dto.languageIds.map((languageId) => ({ languageId })) }
+        : undefined,
+    };
+
+    const profile = await this.prisma.guideProfile.upsert({
+      where: { userId },
+      create: { userId, ...professionalFields },
+      update: professionalFields,
     });
 
     return this.get(profile.id);

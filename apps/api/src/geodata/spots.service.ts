@@ -1,13 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationType } from '@prisma/client';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ContributionReason, ContributionTargetType, NotificationType, Prisma, Role } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { deriveVerificationStatus, isApprovalEligible, resolveVoteOutcome } from '../approvals/approval-rules.util';
+import { ContributionsService } from '../contributions/contributions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
+import { CastVoteDto } from './dto/cast-vote.dto';
 import { CreateSpotDto } from './dto/create-spot.dto';
 import { deriveDistrictTags } from './district-derivation.util';
 import { UpdateSpotDto } from './dto/update-spot.dto';
-
-const CONFIRMATION_THRESHOLD = 2;
 
 export interface SpotRow {
   id: string;
@@ -32,6 +34,10 @@ export interface SpotRevisionSummary {
   editorId: string;
   editSummary: string | null;
   isSafetyCriticalEdit: boolean;
+  approvalStatus: string;
+  resolvedAt: Date | null;
+  resolvedById: string | null;
+  rejectionReason: string | null;
   createdAt: Date;
 }
 
@@ -49,6 +55,8 @@ export class SpotsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly contributions: ContributionsService,
+    private readonly settings: SettingsService,
   ) {}
 
   async listForPage(pageId: string): Promise<SpotRow[]> {
@@ -115,68 +123,60 @@ export class SpotsService {
       await deriveDistrictTags(tx, 'spots', id, pageId);
     });
 
+    // MILESTONE_3.md §3.2: points are awarded on approval, not on submit -
+    // v1 sits PENDING like any other revision, GEO_CREATE moves to
+    // applyApproval().
     return this.get(id);
   }
 
-  // Creates a new SpotRevision as a transactional side effect of PATCH -
-  // see TrailsService.update()'s comment for the full reasoning. The
-  // spotConfirmation.deleteMany call that used to run here is gone.
-  async update(id: string, userId: string, dto: UpdateSpotDto): Promise<SpotRow> {
+  // MILESTONE_3.md §5.2 - see TrailsService.update()'s comment for the full
+  // reasoning (same shape: writes only a new PENDING SpotRevision, never
+  // touches the live spots row, COALESCEs against the latest existing
+  // revision rather than the live row). deriveDistrictTags stays immediate/
+  // ungated, same "additive-only derived metadata" reasoning as trails.
+  async update(id: string, userId: string, dto: UpdateSpotDto): Promise<SpotRevisionDetail> {
     const existing = await this.get(id);
-    const nextStatus = dto.isSafetyCriticalEdit ? 'NEEDS_REVIEW' : 'UNVERIFIED';
     const now = new Date();
     const revisionId = randomUUID();
 
+    const baseRows = await this.prisma.$queryRaw<
+      { version: number; spotTypeId: string; name: string; description: string | null; elevationMeters: number | null; geometryText: string }[]
+    >`
+      SELECT version, "spotTypeId", name, description, "elevationMeters", ST_AsGeoJSON(geometry) AS "geometryText"
+      FROM spot_revisions WHERE "spotId" = ${id} ORDER BY version DESC LIMIT 1
+    `;
+    const base = baseRows[0];
+    if (!base) {
+      throw new NotFoundException(`Spot ${id} has no revisions to edit`);
+    }
+    const nextVersion = base.version + 1;
+    const geojson = dto.geometry ? JSON.stringify(dto.geometry) : base.geometryText;
+
     await this.prisma.$transaction(async (tx) => {
-      if (dto.geometry) {
-        const geojson = JSON.stringify(dto.geometry);
-        await tx.$executeRaw`
-          UPDATE spots
-          SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
-              name = COALESCE(${dto.name ?? null}, name),
-              description = COALESCE(${dto.description ?? null}, description),
-              "spotTypeId" = COALESCE(${dto.spotTypeId ?? null}, "spotTypeId"),
-              "elevationMeters" = COALESCE(${dto.elevationMeters ?? null}, "elevationMeters"),
-              "verificationStatus" = ${nextStatus}::"GeoVerificationStatus",
-              "lastEditedById" = ${userId},
-              "updatedAt" = ${now}
-          WHERE id = ${id}
-        `;
-      } else {
-        await tx.$executeRaw`
-          UPDATE spots
-          SET name = COALESCE(${dto.name ?? null}, name),
-              description = COALESCE(${dto.description ?? null}, description),
-              "spotTypeId" = COALESCE(${dto.spotTypeId ?? null}, "spotTypeId"),
-              "elevationMeters" = COALESCE(${dto.elevationMeters ?? null}, "elevationMeters"),
-              "verificationStatus" = ${nextStatus}::"GeoVerificationStatus",
-              "lastEditedById" = ${userId},
-              "updatedAt" = ${now}
-          WHERE id = ${id}
-        `;
-      }
-
-      const latest = await tx.$queryRaw<{ version: number }[]>`
-        SELECT version FROM spot_revisions WHERE "spotId" = ${id} ORDER BY version DESC LIMIT 1
-      `;
-      const nextVersion = (latest[0]?.version ?? 0) + 1;
-
       await tx.$executeRaw`
         INSERT INTO spot_revisions (
           id, "spotId", version, geometry, "spotTypeId", name, description,
           "elevationMeters", "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
         )
-        SELECT ${revisionId}, id, ${nextVersion}, geometry, "spotTypeId", name, description,
-               "elevationMeters", ${dto.editSummary ?? null}, ${dto.isSafetyCriticalEdit ?? false}, ${userId}, ${now}
-        FROM spots WHERE id = ${id}
+        VALUES (
+          ${revisionId}, ${id}, ${nextVersion},
+          ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+          COALESCE(${dto.spotTypeId ?? null}, ${base.spotTypeId}),
+          COALESCE(${dto.name ?? null}, ${base.name}),
+          COALESCE(${dto.description ?? null}, ${base.description}),
+          COALESCE(${dto.elevationMeters ?? null}, ${base.elevationMeters}),
+          ${dto.editSummary ?? null}, ${dto.isSafetyCriticalEdit ?? false}, ${userId}, ${now}
+        )
       `;
 
       if (dto.geometry) {
         await deriveDistrictTags(tx, 'spots', id, existing.adventurePageId);
       }
+
+      await this.recomputeStatus(tx, id);
     });
 
-    return this.get(id);
+    return this.getRevision(id, nextVersion);
   }
 
   async delete(id: string): Promise<SpotRow> {
@@ -185,40 +185,172 @@ export class SpotsService {
     return this.get(id);
   }
 
-  async confirm(spotId: string, userId: string) {
-    const spot = await this.get(spotId);
-    const latest = await this.currentRevisionId(spotId);
+  // MILESTONE_3.md §5.3: casts an APPROVE/REJECT vote on a specific pending
+  // revision. Replaces the retired confirm()/CONFIRMATION_THRESHOLD flow.
+  async voteOnRevision(spotId: string, version: number, voterId: string, voterRole: Role, dto: CastVoteDto) {
+    const revision = await this.prisma.spotRevision.findUnique({
+      where: { spotId_version: { spotId, version } },
+    });
+    if (!revision) {
+      throw new NotFoundException(`Revision ${version} not found for this spot`);
+    }
+    if (revision.approvalStatus !== 'PENDING') {
+      throw new BadRequestException('This revision has already been resolved');
+    }
+    if (revision.editorId === voterId) {
+      throw new ForbiddenException('You cannot vote on your own revision');
+    }
 
+    const isAdminOrMod = voterRole === Role.ADMIN || voterRole === Role.MODERATOR;
+    if (!isAdminOrMod) {
+      const profile = await this.prisma.guideProfile.findUnique({
+        where: { userId: voterId },
+        select: { guideLevel: true },
+      });
+      const minGuideLevel = this.settings.getNumber('approval.minGuideLevel');
+      if (!isApprovalEligible(voterRole, profile?.guideLevel ?? 1, minGuideLevel)) {
+        throw new ForbiddenException(`Guide level ${minGuideLevel}+ is required to vote on pending revisions`);
+      }
+    }
+
+    const existingVote = await this.prisma.spotConfirmation.findUnique({
+      where: { revisionId_userId: { revisionId: revision.id, userId: voterId } },
+    });
     await this.prisma.spotConfirmation.upsert({
-      where: { revisionId_userId: { revisionId: latest, userId } },
-      create: { revisionId: latest, userId },
-      update: {},
+      where: { revisionId_userId: { revisionId: revision.id, userId: voterId } },
+      create: { revisionId: revision.id, userId: voterId, decision: dto.decision },
+      update: { decision: dto.decision },
+    });
+    if (!existingVote) {
+      await this.prisma.guideProfile.updateMany({
+        where: { userId: voterId },
+        data: { approvalsGiven: { increment: 1 } },
+      });
+    }
+
+    const [approveCount, rejectCount] = await Promise.all([
+      this.prisma.spotConfirmation.count({ where: { revisionId: revision.id, decision: 'APPROVE' } }),
+      this.prisma.spotConfirmation.count({ where: { revisionId: revision.id, decision: 'REJECT' } }),
+    ]);
+    const threshold = this.settings.getNumber('approval.threshold');
+    const outcome = resolveVoteOutcome(dto.decision, isAdminOrMod, approveCount, rejectCount, threshold);
+
+    if (outcome === 'APPROVED') {
+      await this.applyApproval(spotId, revision, voterId);
+    } else if (outcome === 'REJECTED') {
+      await this.applyRejection(spotId, revision, voterId, dto.rejectionReason);
+    }
+
+    return { revisionId: revision.id, outcome, approveCount, rejectCount, threshold };
+  }
+
+  private async applyApproval(
+    spotId: string,
+    revision: { id: string; version: number; editorId: string },
+    approverId: string,
+  ): Promise<void> {
+    const before = await this.get(spotId);
+    const now = new Date();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.spotRevision.update({
+        where: { id: revision.id },
+        data: { approvalStatus: 'APPROVED', resolvedAt: now, resolvedById: approverId },
+      });
+      await tx.spotRevision.updateMany({
+        where: { spotId, approvalStatus: 'PENDING', version: { lt: revision.version } },
+        data: { approvalStatus: 'REJECTED', resolvedAt: now, resolvedById: approverId, rejectionReason: 'SUPERSEDED' },
+      });
+
+      await tx.$executeRaw`
+        UPDATE spots s
+        SET geometry = r.geometry, "spotTypeId" = r."spotTypeId", name = r.name,
+            description = r.description, "elevationMeters" = r."elevationMeters",
+            "lastEditedById" = r."editorId", "approvedRevisionId" = r.id, "updatedAt" = ${now}
+        FROM spot_revisions r
+        WHERE r.id = ${revision.id} AND s.id = ${spotId}
+      `;
+
+      await this.recomputeStatus(tx, spotId);
     });
 
-    const confirmationCount = await this.prisma.spotConfirmation.count({ where: { revisionId: latest } });
-    if (confirmationCount >= CONFIRMATION_THRESHOLD) {
-      await this.prisma.$executeRaw`UPDATE spots SET "verificationStatus" = 'VERIFIED'::"GeoVerificationStatus" WHERE id = ${spotId}`;
+    // MILESTONE_3.md §3.2: v1 always pays GEO_CREATE; later versions pay
+    // GEO_UPDATE only when the editor differs from the spot's creator.
+    if (revision.version === 1) {
+      await this.contributions.award({
+        userId: revision.editorId,
+        reason: ContributionReason.GEO_CREATE,
+        targetType: ContributionTargetType.SPOT,
+        targetId: spotId,
+      });
+    } else if (before.createdById !== revision.editorId) {
+      await this.contributions.award({
+        userId: revision.editorId,
+        reason: ContributionReason.GEO_UPDATE,
+        targetType: ContributionTargetType.SPOT_REVISION,
+        targetId: revision.id,
+      });
+    }
 
+    const after = await this.get(spotId);
+    if (before.verificationStatus !== 'VERIFIED' && after.verificationStatus === 'VERIFIED') {
       const page = await this.prisma.adventurePage.findUnique({
-        where: { id: spot.adventurePageId },
+        where: { id: before.adventurePageId },
         select: { slug: true },
       });
       await this.notifications.notify(
-        spot.createdById,
-        userId,
+        before.createdById,
+        approverId,
         NotificationType.SPOT_VERIFIED,
-        `"${spot.name}" was confirmed as accurate`,
+        `"${after.name}" was confirmed as accurate`,
         page ? `/adventures/${page.slug}` : undefined,
       );
     }
-
-    return { spotId, confirmationCount, threshold: CONFIRMATION_THRESHOLD };
   }
 
-  async listRevisions(spotId: string): Promise<SpotRevisionSummary[]> {
+  private async applyRejection(
+    spotId: string,
+    revision: { id: string },
+    approverId: string,
+    rejectionReason: string | undefined,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.spotRevision.update({
+        where: { id: revision.id },
+        data: {
+          approvalStatus: 'REJECTED',
+          resolvedAt: new Date(),
+          resolvedById: approverId,
+          rejectionReason: rejectionReason ?? null,
+        },
+      });
+      await this.recomputeStatus(tx, spotId);
+    });
+  }
+
+  // Recomputes pendingRevisionCount + the derived verificationStatus for a
+  // spot - mirrors TrailsService.recomputeStatus.
+  private async recomputeStatus(tx: Prisma.TransactionClient, spotId: string): Promise<void> {
+    const spotRows = await tx.$queryRaw<{ approvedRevisionId: string | null }[]>`
+      SELECT "approvedRevisionId" FROM spots WHERE id = ${spotId}
+    `;
+    const latestRows = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM spot_revisions WHERE "spotId" = ${spotId} ORDER BY version DESC LIMIT 1
+    `;
+    const pending = await tx.$queryRaw<{ isSafetyCriticalEdit: boolean }[]>`
+      SELECT "isSafetyCriticalEdit" FROM spot_revisions WHERE "spotId" = ${spotId} AND "approvalStatus" = 'PENDING'
+    `;
+    const verificationStatus = deriveVerificationStatus(spotRows[0]?.approvedRevisionId ?? null, latestRows[0].id, pending);
+    await tx.$executeRaw`
+      UPDATE spots SET "pendingRevisionCount" = ${pending.length}, "verificationStatus" = ${verificationStatus}::"GeoVerificationStatus"
+      WHERE id = ${spotId}
+    `;
+  }
+
+  async listRevisions(spotId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<SpotRevisionSummary[]> {
     await this.get(spotId);
     return this.prisma.spotRevision.findMany({
-      where: { spotId },
+      where: { spotId, approvalStatus: status },
       orderBy: { version: 'asc' },
       select: {
         id: true,
@@ -226,6 +358,10 @@ export class SpotsService {
         editorId: true,
         editSummary: true,
         isSafetyCriticalEdit: true,
+        approvalStatus: true,
+        resolvedAt: true,
+        resolvedById: true,
+        rejectionReason: true,
         createdAt: true,
       },
     });
@@ -235,6 +371,7 @@ export class SpotsService {
     const rows = await this.prisma.$queryRaw<SpotRevisionDetail[]>`
       SELECT id, "spotId", version, ST_AsGeoJSON(geometry)::json AS geometry, "spotTypeId",
              name, description, "elevationMeters", "editSummary", "isSafetyCriticalEdit",
+             "approvalStatus", "resolvedAt", "resolvedById", "rejectionReason",
              "editorId", "createdAt"
       FROM spot_revisions
       WHERE "spotId" = ${spotId} AND version = ${version}
@@ -304,7 +441,8 @@ export class SpotsService {
     };
   }
 
-  async revert(spotId: string, editorId: string, version: number): Promise<SpotRow> {
+  // Now pending-gated like any other edit, via update().
+  async revert(spotId: string, editorId: string, version: number): Promise<SpotRevisionDetail> {
     const target = await this.getRevision(spotId, version);
     return this.update(spotId, editorId, {
       geometry: target.geometry as UpdateSpotDto['geometry'],
@@ -368,17 +506,5 @@ export class SpotsService {
     await this.get(id);
     await this.prisma.$executeRaw`UPDATE spots SET "verificationStatus" = ${status}::"GeoVerificationStatus" WHERE id = ${id}`;
     return this.get(id);
-  }
-
-  private async currentRevisionId(spotId: string): Promise<string> {
-    const latest = await this.prisma.spotRevision.findFirst({
-      where: { spotId },
-      orderBy: { version: 'desc' },
-      select: { id: true },
-    });
-    if (!latest) {
-      throw new NotFoundException('This spot has no revisions to confirm');
-    }
-    return latest.id;
   }
 }

@@ -1,17 +1,18 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationType, PageVerificationStatus, Role } from '@prisma/client';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ContributionReason, ContributionTargetType, NotificationType, PageRevision, PageVerificationStatus, Prisma, Role } from '@prisma/client';
 import { diffLines } from 'diff';
+import { deriveVerificationStatus, isApprovalEligible, resolveVoteOutcome } from '../approvals/approval-rules.util';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { ContributionsService } from '../contributions/contributions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { UploadsService } from '../uploads/uploads.service';
 import { AddMediaDto } from './dto/add-media.dto';
+import { CastVoteDto } from './dto/cast-vote.dto';
 import { CreateAdventurePageDto } from './dto/create-adventure-page.dto';
 import { SubmitRevisionDto } from './dto/submit-revision.dto';
 import { UpdateAdventurePageMetadataDto } from './dto/update-adventure-page-metadata.dto';
-
-// "a few confirmations," per IDEA.md - a config value, not a schema concept
-const CONFIRMATION_THRESHOLD = 2;
 
 @Injectable()
 export class AdventurePagesService {
@@ -19,6 +20,8 @@ export class AdventurePagesService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly uploads: UploadsService,
+    private readonly contributions: ContributionsService,
+    private readonly settings: SettingsService,
   ) {}
 
   async list(page = 1, pageSize = 20, sort: 'recent' | 'popular' | 'trending' = 'recent') {
@@ -188,7 +191,7 @@ export class AdventurePagesService {
   }
 
   async create(authorId: string, dto: CreateAdventurePageDto) {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       const page = await tx.adventurePage.create({
         data: {
           title: dto.title,
@@ -220,6 +223,11 @@ export class AdventurePagesService {
 
       return { ...page, currentRevision: revision };
     });
+
+    // MILESTONE_3.md §3.2: points are awarded on approval, not on submit -
+    // v1 sits PENDING like any other revision (§5.2), the PAGE_CREATE award
+    // moves to applyApproval().
+    return result;
   }
 
   async updateMetadata(id: string, dto: UpdateAdventurePageMetadataDto) {
@@ -289,10 +297,10 @@ export class AdventurePagesService {
     return this.prisma.adventurePage.update({ where: { id }, data: { verificationStatus: status } });
   }
 
-  async listRevisions(pageId: string) {
+  async listRevisions(pageId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
     await this.ensureExists(pageId);
     return this.prisma.pageRevision.findMany({
-      where: { adventurePageId: pageId },
+      where: { adventurePageId: pageId, approvalStatus: status },
       orderBy: { version: 'asc' },
       select: {
         id: true,
@@ -300,6 +308,10 @@ export class AdventurePagesService {
         editorId: true,
         editSummary: true,
         isSafetyCriticalEdit: true,
+        approvalStatus: true,
+        resolvedAt: true,
+        resolvedById: true,
+        rejectionReason: true,
         createdAt: true,
       },
     });
@@ -327,6 +339,10 @@ export class AdventurePagesService {
     };
   }
 
+  // MILESTONE_3.md §5.2: writes only a new PENDING revision - the live page
+  // row carries no content of its own (it's read via approvedRevision/
+  // currentRevision), so no live-row mutation happens here at all; recomputeStatus
+  // just keeps pendingRevisionCount/verificationStatus in sync.
   async submitRevision(pageId: string, editorId: string, dto: SubmitRevisionDto) {
     await this.ensureExists(pageId);
 
@@ -348,14 +364,7 @@ export class AdventurePagesService {
         },
       });
 
-      // a stale confirmation from before this edit shouldn't vouch for
-      // content that's since changed
-      await tx.adventurePage.update({
-        where: { id: pageId },
-        data: {
-          verificationStatus: dto.isSafetyCriticalEdit ? 'NEEDS_REVIEW' : 'UNVERIFIED',
-        },
-      });
+      await this.recomputeStatus(tx, pageId);
 
       return revision;
     });
@@ -369,32 +378,120 @@ export class AdventurePagesService {
     });
   }
 
-  async confirm(pageId: string, userId: string) {
-    const latest = await this.prisma.pageRevision.findFirst({
-      where: { adventurePageId: pageId },
-      orderBy: { version: 'desc' },
+  // MILESTONE_3.md §5.3: casts an APPROVE/REJECT vote on a specific pending
+  // revision (there may be more than one pending at once, so this targets a
+  // version rather than "the latest" the way the retired confirm() did).
+  async voteOnRevision(pageId: string, version: number, voterId: string, voterRole: Role, dto: CastVoteDto) {
+    const revision = await this.prisma.pageRevision.findUnique({
+      where: { adventurePageId_version: { adventurePageId: pageId, version } },
     });
-    if (!latest) {
-      throw new NotFoundException('This page has no revisions to confirm');
+    if (!revision) {
+      throw new NotFoundException(`Revision ${version} not found for this page`);
+    }
+    if (revision.approvalStatus !== 'PENDING') {
+      throw new BadRequestException('This revision has already been resolved');
+    }
+    if (revision.editorId === voterId) {
+      throw new ForbiddenException('You cannot vote on your own revision');
     }
 
-    await this.prisma.pageConfirmation.upsert({
-      where: { revisionId_userId: { revisionId: latest.id, userId } },
-      create: { revisionId: latest.id, userId },
-      update: {},
-    });
-
-    const confirmationCount = await this.prisma.pageConfirmation.count({
-      where: { revisionId: latest.id },
-    });
-
-    if (confirmationCount >= CONFIRMATION_THRESHOLD) {
-      const page = await this.prisma.adventurePage.update({
-        where: { id: pageId },
-        data: { verificationStatus: 'VERIFIED' },
-        select: { title: true, slug: true },
+    const isAdminOrMod = voterRole === Role.ADMIN || voterRole === Role.MODERATOR;
+    if (!isAdminOrMod) {
+      const profile = await this.prisma.guideProfile.findUnique({
+        where: { userId: voterId },
+        select: { guideLevel: true },
       });
+      const minGuideLevel = this.settings.getNumber('approval.minGuideLevel');
+      if (!isApprovalEligible(voterRole, profile?.guideLevel ?? 1, minGuideLevel)) {
+        throw new ForbiddenException(`Guide level ${minGuideLevel}+ is required to vote on pending revisions`);
+      }
+    }
 
+    const existingVote = await this.prisma.pageConfirmation.findUnique({
+      where: { revisionId_userId: { revisionId: revision.id, userId: voterId } },
+    });
+    await this.prisma.pageConfirmation.upsert({
+      where: { revisionId_userId: { revisionId: revision.id, userId: voterId } },
+      create: { revisionId: revision.id, userId: voterId, decision: dto.decision },
+      update: { decision: dto.decision },
+    });
+    if (!existingVote) {
+      await this.prisma.guideProfile.updateMany({
+        where: { userId: voterId },
+        data: { approvalsGiven: { increment: 1 } },
+      });
+    }
+
+    const [approveCount, rejectCount] = await Promise.all([
+      this.prisma.pageConfirmation.count({ where: { revisionId: revision.id, decision: 'APPROVE' } }),
+      this.prisma.pageConfirmation.count({ where: { revisionId: revision.id, decision: 'REJECT' } }),
+    ]);
+    const threshold = this.settings.getNumber('approval.threshold');
+    const outcome = resolveVoteOutcome(dto.decision, isAdminOrMod, approveCount, rejectCount, threshold);
+
+    if (outcome === 'APPROVED') {
+      await this.applyApproval(pageId, revision, voterId);
+    } else if (outcome === 'REJECTED') {
+      await this.applyRejection(pageId, revision, voterId, dto.rejectionReason);
+    }
+
+    return { revisionId: revision.id, outcome, approveCount, rejectCount, threshold };
+  }
+
+  // Applies the winning revision - for pages there's no live-row content to
+  // overwrite (see submitRevision's comment), so this is mostly bookkeeping:
+  // supersede older pending revisions, flip approvedRevisionId, award points,
+  // and notify contributors if this is the vote that reaches VERIFIED.
+  private async applyApproval(pageId: string, revision: PageRevision, approverId: string): Promise<void> {
+    const before = await this.prisma.adventurePage.findUniqueOrThrow({
+      where: { id: pageId },
+      select: { verificationStatus: true },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      await tx.pageRevision.update({
+        where: { id: revision.id },
+        data: { approvalStatus: 'APPROVED', resolvedAt: now, resolvedById: approverId },
+      });
+      await tx.pageRevision.updateMany({
+        where: { adventurePageId: pageId, approvalStatus: 'PENDING', version: { lt: revision.version } },
+        data: { approvalStatus: 'REJECTED', resolvedAt: now, resolvedById: approverId, rejectionReason: 'SUPERSEDED' },
+      });
+      await tx.adventurePage.update({ where: { id: pageId }, data: { approvedRevisionId: revision.id } });
+      await this.recomputeStatus(tx, pageId);
+    });
+
+    // MILESTONE_3.md §3.2: v1 always pays PAGE_CREATE; later versions pay
+    // PAGE_UPDATE only when the editor differs from v1's editor (self-edits
+    // earn nothing).
+    if (revision.version === 1) {
+      await this.contributions.award({
+        userId: revision.editorId,
+        reason: ContributionReason.PAGE_CREATE,
+        targetType: ContributionTargetType.ADVENTURE_PAGE,
+        targetId: pageId,
+      });
+    } else {
+      const v1 = await this.prisma.pageRevision.findUnique({
+        where: { adventurePageId_version: { adventurePageId: pageId, version: 1 } },
+        select: { editorId: true },
+      });
+      if (v1 && v1.editorId !== revision.editorId) {
+        await this.contributions.award({
+          userId: revision.editorId,
+          reason: ContributionReason.PAGE_UPDATE,
+          targetType: ContributionTargetType.PAGE_REVISION,
+          targetId: revision.id,
+        });
+      }
+    }
+
+    const after = await this.prisma.adventurePage.findUnique({
+      where: { id: pageId },
+      select: { title: true, slug: true, verificationStatus: true },
+    });
+    if (after && before.verificationStatus !== 'VERIFIED' && after.verificationStatus === 'VERIFIED') {
       const contributorRows = await this.prisma.pageRevision.findMany({
         where: { adventurePageId: pageId },
         distinct: ['editorId'],
@@ -402,14 +499,55 @@ export class AdventurePagesService {
       });
       await this.notifications.notifyMany(
         contributorRows.map((row) => row.editorId),
-        userId,
+        approverId,
         NotificationType.PAGE_VERIFIED,
-        `"${page.title}" was confirmed as verified`,
-        `/adventures/${page.slug}`,
+        `"${after.title}" was confirmed as verified`,
+        `/adventures/${after.slug}`,
       );
     }
+  }
 
-    return { revisionId: latest.id, confirmationCount, threshold: CONFIRMATION_THRESHOLD };
+  private async applyRejection(
+    pageId: string,
+    revision: PageRevision,
+    approverId: string,
+    rejectionReason: string | undefined,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.pageRevision.update({
+        where: { id: revision.id },
+        data: {
+          approvalStatus: 'REJECTED',
+          resolvedAt: new Date(),
+          resolvedById: approverId,
+          rejectionReason: rejectionReason ?? null,
+        },
+      });
+      await this.recomputeStatus(tx, pageId);
+    });
+  }
+
+  // Recomputes pendingRevisionCount + the derived verificationStatus for a
+  // page, inside the caller's transaction - called after every revision
+  // insert/approve/reject so the two never drift apart.
+  private async recomputeStatus(tx: Prisma.TransactionClient, pageId: string): Promise<void> {
+    const page = await tx.adventurePage.findUniqueOrThrow({
+      where: { id: pageId },
+      select: { approvedRevisionId: true },
+    });
+    const latest = await tx.pageRevision.findFirst({
+      where: { adventurePageId: pageId },
+      orderBy: { version: 'desc' },
+    });
+    const pending = await tx.pageRevision.findMany({
+      where: { adventurePageId: pageId, approvalStatus: 'PENDING' },
+      select: { isSafetyCriticalEdit: true },
+    });
+    const verificationStatus = deriveVerificationStatus(page.approvedRevisionId, latest!.id, pending);
+    await tx.adventurePage.update({
+      where: { id: pageId },
+      data: { pendingRevisionCount: pending.length, verificationStatus },
+    });
   }
 
   async like(pageId: string, userId: string) {
@@ -440,7 +578,7 @@ export class AdventurePagesService {
 
   async addMedia(pageId: string, uploadedById: string, dto: AddMediaDto) {
     await this.ensureExists(pageId);
-    return this.prisma.media.create({
+    const media = await this.prisma.media.create({
       data: {
         adventurePageId: pageId,
         url: dto.url,
@@ -450,6 +588,15 @@ export class AdventurePagesService {
         uploadedById,
       },
     });
+
+    await this.contributions.award({
+      userId: uploadedById,
+      reason: ContributionReason.MEDIA_UPLOAD,
+      targetType: ContributionTargetType.MEDIA,
+      targetId: media.id,
+    });
+
+    return media;
   }
 
   async removeMedia(pageId: string, mediaId: string, currentUser: AuthenticatedUser) {

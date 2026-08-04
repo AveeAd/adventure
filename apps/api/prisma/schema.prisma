@@ -9,6 +9,7 @@ generator client {
 
 enum Role {
   ADMIN
+  MODERATOR
   USER
 }
 
@@ -38,6 +39,13 @@ model User {
   spotConfirmations  SpotConfirmation[]
   spotRevisions      SpotRevision[] @relation("SpotRevisionEditor")
 
+  // MILESTONE_3.md §5.1: the approver whose vote resolved a pending revision
+  // (blank for the pre-Phase-21 backfill, and for votes that never crossed
+  // the threshold on their own - see the "resolvedById" comment on each).
+  resolvedPageRevisions  PageRevision[]  @relation("PageRevisionResolvedBy")
+  resolvedTrailRevisions TrailRevision[] @relation("TrailRevisionResolvedBy")
+  resolvedSpotRevisions  SpotRevision[]  @relation("SpotRevisionResolvedBy")
+
   tripReports     TripReport[]
   tripReportKudos TripReportKudos[]
   comments        Comment[]
@@ -47,6 +55,8 @@ model User {
   tripGroupMemberships TripGroupMember[]
 
   guideProfile GuideProfile?
+
+  contributionEvents ContributionEvent[]
 
   notifications Notification[]
 
@@ -209,6 +219,20 @@ enum PageVerificationStatus {
   NEEDS_REVIEW
 }
 
+// MILESTONE_3.md §5.1: the approval-pipeline axis. PENDING revisions sit in
+// the queue until enough votes (or one admin/moderator vote) land; approving
+// one applies its snapshot to the live row and supersedes older pending ones.
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ApprovalDecision {
+  APPROVE
+  REJECT
+}
+
 model AdventurePage {
   id                 String   @id @default(uuid())
   title              String
@@ -222,6 +246,12 @@ model AdventurePage {
   durationMaxDays    Int?
   maxAltitudeMeters  Int?
   verificationStatus PageVerificationStatus @default(UNVERIFIED)
+  // MILESTONE_3.md §5.1: null until any revision has ever been approved -
+  // the published version. pendingRevisionCount is a cache for the "N
+  // unapproved changes" badge (Phase 22 UI), recomputed on every vote.
+  approvedRevisionId   String? @unique
+  approvedRevision     PageRevision? @relation("ApprovedPageRevision", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
+  pendingRevisionCount Int      @default(0)
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -276,18 +306,32 @@ model PageRevision {
   editor               User          @relation(fields: [editorId], references: [id], onDelete: Restrict)
   createdAt            DateTime      @default(now())
 
+  // MILESTONE_3.md §5.1: the pending queue. Pre-Phase-21 rows are backfilled
+  // to APPROVED by the migration (§5.5) so the live site doesn't flip to
+  // "unapproved" on deploy.
+  approvalStatus  ApprovalStatus @default(PENDING)
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolvedBy      User?          @relation("PageRevisionResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  rejectionReason String?
+  approvedForPage AdventurePage? @relation("ApprovedPageRevision")
+
   confirmations PageConfirmation[]
 
   @@unique([adventurePageId, version])
   @@map("page_revisions")
 }
 
+// The vote ballot - CHANGED, not new, per GEODATA_HISTORY.md's precedent of
+// retargeting confirmation tables to revisionId. `decision` turns what used
+// to be a pure confirm-count into an APPROVE/REJECT vote.
 model PageConfirmation {
   id         String   @id @default(uuid())
   revisionId String
   revision   PageRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
   userId     String
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decision   ApprovalDecision @default(APPROVE)
   createdAt  DateTime @default(now())
 
   @@unique([revisionId, userId])
@@ -436,6 +480,9 @@ model Trail {
   distanceMeters     Int?
   source             TrailSource @default(DRAWN)
   verificationStatus GeoVerificationStatus @default(UNVERIFIED)
+  approvedRevisionId   String? @unique
+  approvedRevision     TrailRevision? @relation("ApprovedTrail", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
+  pendingRevisionCount Int      @default(0)
   isActive           Boolean  @default(true)
   createdById        String
   createdBy          User     @relation("TrailCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
@@ -478,6 +525,7 @@ model TrailConfirmation {
   revision   TrailRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
   userId     String
   user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decision   ApprovalDecision @default(APPROVE)
   createdAt  DateTime      @default(now())
 
   @@unique([revisionId, userId])
@@ -499,6 +547,14 @@ model TrailRevision {
   editor               User     @relation("TrailRevisionEditor", fields: [editorId], references: [id], onDelete: Restrict)
   createdAt            DateTime @default(now())
 
+  // MILESTONE_3.md §5.1 - see PageRevision's identical block for the full note.
+  approvalStatus  ApprovalStatus @default(PENDING)
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolvedBy      User?          @relation("TrailRevisionResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  rejectionReason String?
+  approvedForTrail Trail?        @relation("ApprovedTrail")
+
   confirmations TrailConfirmation[]
 
   @@unique([trailId, version])
@@ -516,6 +572,9 @@ model Spot {
   geometry           Unsupported("geometry(Point, 4326)")
   elevationMeters    Int?
   verificationStatus GeoVerificationStatus @default(UNVERIFIED)
+  approvedRevisionId   String? @unique
+  approvedRevision     SpotRevision? @relation("ApprovedSpot", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
+  pendingRevisionCount Int      @default(0)
   isActive           Boolean  @default(true)
   createdById        String
   createdBy          User     @relation("SpotCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
@@ -536,6 +595,7 @@ model SpotConfirmation {
   revision   SpotRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
   userId     String
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decision   ApprovalDecision @default(APPROVE)
   createdAt  DateTime     @default(now())
 
   @@unique([revisionId, userId])
@@ -559,6 +619,14 @@ model SpotRevision {
   editorId             String
   editor               User     @relation("SpotRevisionEditor", fields: [editorId], references: [id], onDelete: Restrict)
   createdAt            DateTime @default(now())
+
+  // MILESTONE_3.md §5.1 - see PageRevision's identical block for the full note.
+  approvalStatus  ApprovalStatus @default(PENDING)
+  resolvedAt      DateTime?
+  resolvedById    String?
+  resolvedBy      User?          @relation("SpotRevisionResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  rejectionReason String?
+  approvedForSpot Spot?          @relation("ApprovedSpot")
 
   confirmations SpotConfirmation[]
 
@@ -788,6 +856,15 @@ model GuideProfile {
   currency           String   @default("NPR")
   verificationStatus GuideVerificationStatus @default(UNVERIFIED)
   isActive           Boolean  @default(true)
+  // MILESTONE_3.md §2.2: GuideProfile becomes universal (one row per user,
+  // auto-created on first login), so the public /guides directory now
+  // filters on this rather than listing every row.
+  isListed           Boolean  @default(false)
+  // Denormalized caches over ContributionEvent / approval votes - the
+  // ledger is the source of truth; a recompute command exists for drift.
+  contributionPoints Int      @default(0)
+  guideLevel         Int      @default(1)
+  approvalsGiven     Int      @default(0)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -855,4 +932,71 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+// MILESTONE_3.md §6: runtime-tunable economy/threshold values (approval
+// threshold, minimum guide levels, point values) so the contribution
+// economy doesn't require a deploy to adjust. Read through a cached
+// SettingsService, admin-only write, every write logged with updatedById.
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+// MILESTONE_3.md §3.1: append-only contribution ledger. Points are awarded
+// only on the write paths listed below (all pre-approval-gate for now -
+// the gate itself arrives in Phase 21, see §5); this table is the source
+// of truth, GuideProfile.contributionPoints/guideLevel are caches over it.
+enum ContributionReason {
+  PAGE_CREATE // +10
+  PAGE_UPDATE // +20 (only when editing someone else's page)
+  GEO_CREATE // +20 (trail or spot added to an activity)
+  GEO_UPDATE // +25 (only when editing someone else's trail/spot)
+  MEDIA_UPLOAD // +2 per image
+  STORY_CREATE // +5 (trip report; no approval gate)
+  MEDIA_REPORT_UPHELD // -3
+  GEO_REPORT_UPHELD // -30
+  PAGE_REPORT_UPHELD // reverses the original award (-10 / -20)
+  BACKFILL // one-off replay of pre-Milestone-3 history
+  ADMIN_ADJUSTMENT // manual correction, requires a note
+}
+
+enum ContributionTargetType {
+  ADVENTURE_PAGE
+  PAGE_REVISION
+  TRAIL
+  TRAIL_REVISION
+  SPOT
+  SPOT_REVISION
+  MEDIA
+  TRIP_REPORT
+}
+
+// targetId deliberately carries no FK - see MILESTONE_3.md §3.1: eight
+// duplicated ledger tables would be absurd, and this is an append-only
+// audit log never joined for referential integrity. Reads resolve the
+// target lazily and tolerate a missing row (content can be hard-deleted).
+model ContributionEvent {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason     ContributionReason
+  points     Int // signed
+  targetType ContributionTargetType
+  targetId   String
+  note       String?
+  createdAt  DateTime @default(now())
+
+  // anti-double-award guard: approving a revision twice, or a retried
+  // transaction, cannot pay twice.
+  @@unique([userId, reason, targetId])
+  @@index([userId, createdAt])
+  @@map("contribution_events")
 }

@@ -3,6 +3,24 @@ import { tokenStore } from './token-store';
 
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
+// MILESTONE_3.md §2.1: admin-site login is allowed for ADMIN and MODERATOR
+// only. Nothing on the backend rejects a plain USER's OAuth login (it's a
+// shared Google flow with apps/public), so the gate has to live here -
+// every other admin endpoint already 403s a USER via @Roles, but the app
+// shell itself would otherwise still load for them.
+const ADMIN_SITE_ROLES = ['ADMIN', 'MODERATOR'];
+
+async function fetchIdentityRole(token: string): Promise<string | null> {
+  const res = await fetch(`${API_URL}/api/v1/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    return null;
+  }
+  const identity = await res.json();
+  return identity?.role ?? null;
+}
+
 export const authProvider: AuthProvider = {
   login: async () => {
     const redirectUrl = window.location.origin;
@@ -20,25 +38,38 @@ export const authProvider: AuthProvider = {
   },
 
   check: async () => {
-    if (tokenStore.get()) {
-      return { authenticated: true };
-    }
-    // no in-memory token (e.g. fresh page load) - try a silent refresh
-    // using the httpOnly cookie before giving up
-    try {
-      const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const { accessToken } = await res.json();
-        tokenStore.set(accessToken);
-        return { authenticated: true };
+    let token = tokenStore.get();
+    if (!token) {
+      // no in-memory token (e.g. fresh page load) - try a silent refresh
+      // using the httpOnly cookie before giving up
+      try {
+        const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const { accessToken } = await res.json();
+          tokenStore.set(accessToken);
+          token = accessToken;
+        }
+      } catch {
+        // fall through to unauthenticated
       }
-    } catch {
-      // fall through to unauthenticated
     }
-    return { authenticated: false, redirectTo: '/login' };
+    if (!token) {
+      return { authenticated: false, redirectTo: '/login' };
+    }
+
+    const role = await fetchIdentityRole(token);
+    if (!role || !ADMIN_SITE_ROLES.includes(role)) {
+      tokenStore.set(null);
+      return {
+        authenticated: false,
+        redirectTo: '/login',
+        error: { name: 'Forbidden', message: 'This account is not permitted to access the admin site.' },
+      };
+    }
+    return { authenticated: true };
   },
 
   onError: async (error) => {

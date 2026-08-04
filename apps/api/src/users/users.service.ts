@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
+import { levelProgress } from '../contributions/guide-level.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -23,7 +24,13 @@ export class UsersService {
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: 'desc' },
-        include: { profile: { select: { name: true } } },
+        // MILESTONE_3.md §9.2: "Existing Users list gains level/points/role
+        // columns" - guideProfile is universal since Phase 19, so every row
+        // has one.
+        include: {
+          profile: { select: { name: true } },
+          guideProfile: { select: { guideLevel: true, contributionPoints: true } },
+        },
       }),
       this.prisma.user.count(),
     ]);
@@ -60,22 +67,34 @@ export class UsersService {
   async getPublicProfile(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { profile: true },
+      include: { profile: true, guideProfile: true },
     });
     if (!user || !user.isActive) {
       throw new NotFoundException(`User ${id} not found`);
     }
 
-    const [editedPages, tripReportCount, trailConfirmationCount, spotConfirmationCount] = await Promise.all([
-      this.prisma.pageRevision.findMany({
-        where: { editorId: id },
-        select: { adventurePageId: true },
-        distinct: ['adventurePageId'],
-      }),
-      this.prisma.tripReport.count({ where: { authorId: id, isActive: true } }),
-      this.prisma.trailConfirmation.count({ where: { userId: id } }),
-      this.prisma.spotConfirmation.count({ where: { userId: id } }),
-    ]);
+    const [editedPages, tripReportCount, trailConfirmationCount, spotConfirmationCount, contributionsByReason] =
+      await Promise.all([
+        this.prisma.pageRevision.findMany({
+          where: { editorId: id },
+          select: { adventurePageId: true },
+          distinct: ['adventurePageId'],
+        }),
+        this.prisma.tripReport.count({ where: { authorId: id, isActive: true } }),
+        this.prisma.trailConfirmation.count({ where: { userId: id } }),
+        this.prisma.spotConfirmation.count({ where: { userId: id } }),
+        // MILESTONE_3.md §9.1: "a contribution breakdown" - grouped by
+        // reason rather than a bespoke per-category query, so it stays
+        // accurate as new ContributionReasons are added.
+        this.prisma.contributionEvent.groupBy({
+          by: ['reason'],
+          where: { userId: id },
+          _count: { _all: true },
+          _sum: { points: true },
+        }),
+      ]);
+
+    const contributionPoints = user.guideProfile?.contributionPoints ?? 0;
 
     return {
       id: user.id,
@@ -84,12 +103,24 @@ export class UsersService {
       pagesEditedCount: editedPages.length,
       tripReportCount,
       confirmationsGivenCount: trailConfirmationCount + spotConfirmationCount,
+      guideLevel: user.guideProfile?.guideLevel ?? 1,
+      contributionPoints,
+      approvalsGiven: user.guideProfile?.approvalsGiven ?? 0,
+      levelProgress: levelProgress(contributionPoints),
+      contributionBreakdown: contributionsByReason.map((row) => ({
+        reason: row.reason,
+        count: row._count._all,
+        points: row._sum.points ?? 0,
+      })),
     };
   }
 
   // role only applies on create - an existing user's role is never touched here
-  upsertGoogleUser(params: { email: string; googleId: string; roleOnCreate: Role }) {
-    return this.prisma.user.upsert({
+  upsertGoogleUser(
+    params: { email: string; googleId: string; roleOnCreate: Role },
+    tx: Prisma.TransactionClient | PrismaService = this.prisma,
+  ) {
+    return tx.user.upsert({
       where: { email: params.email },
       create: {
         email: params.email,

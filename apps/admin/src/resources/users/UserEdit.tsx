@@ -15,6 +15,7 @@ export const UserEdit = () => {
           <Select
             options={[
               { value: 'USER', label: t('users.roles.USER') },
+              { value: 'MODERATOR', label: t('users.roles.MODERATOR') },
               { value: 'ADMIN', label: t('users.roles.ADMIN') },
             ]}
           />

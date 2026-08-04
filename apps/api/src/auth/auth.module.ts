@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { APP_GUARD } from '@nestjs/core';
+import { GuideProfilesModule } from '../guide-profiles/guide-profiles.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
@@ -13,7 +14,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
-  imports: [PassportModule, JwtModule.register({}), UsersModule, ProfilesModule],
+  imports: [PassportModule, JwtModule.register({}), UsersModule, ProfilesModule, GuideProfilesModule],
   controllers: [AuthController],
   providers: [
     AuthService,

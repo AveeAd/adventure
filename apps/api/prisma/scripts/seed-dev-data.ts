@@ -37,6 +37,15 @@ async function upsertDemoUser(email: string, googleId: string, name: string) {
     update: { name },
     create: { userId: user.id, name },
   });
+  // MILESTONE_3.md §2.2: GuideProfile is universal since Phase 19 (every
+  // real user gets one via AuthService.handleGoogleLogin) - this script
+  // bypasses that login flow, so it has to create the row itself or these
+  // demo users would never accumulate contribution points/level.
+  await prisma.guideProfile.upsert({
+    where: { userId: user.id },
+    update: {},
+    create: { userId: user.id },
+  });
   return user;
 }
 
@@ -282,37 +291,92 @@ async function main() {
   }
 
   // --- Guide profiles (manual-review-only trust, see CLAUDE.md) ---
+  // update mirrors create: upsertDemoUser() above already created an empty
+  // GuideProfile row for every demo user (MILESTONE_3.md §2.2 - the row is
+  // universal now), so this upsert always takes the update branch, not create.
+  const carolGuideFields = {
+    isListed: true,
+    bio: 'Licensed trekking guide with 10 years of experience across the Annapurna region.',
+    rateMin: 30,
+    rateMax: 45,
+    rateUnit: 'PER_DAY' as const,
+    verificationStatus: 'VERIFIED' as const,
+  };
   const carolGuide = await prisma.guideProfile.upsert({
     where: { userId: carol.id },
-    update: {},
+    update: carolGuideFields,
     create: {
       userId: carol.id,
-      bio: 'Licensed trekking guide with 10 years of experience across the Annapurna region.',
-      rateMin: 30,
-      rateMax: 45,
-      rateUnit: 'PER_DAY',
-      verificationStatus: 'VERIFIED',
+      ...carolGuideFields,
       specialties: { create: [{ activityTypeId: teahouseTrekking.id }] },
       regions: { create: [{ districtId: kaski.id }] },
       languages: { create: [{ languageId: english.id }, { languageId: nepali.id }] },
     },
   });
+  await Promise.all([
+    prisma.guideSpecialty.upsert({
+      where: { guideProfileId_activityTypeId: { guideProfileId: carolGuide.id, activityTypeId: teahouseTrekking.id } },
+      update: {},
+      create: { guideProfileId: carolGuide.id, activityTypeId: teahouseTrekking.id },
+    }),
+    prisma.guideRegion.upsert({
+      where: { guideProfileId_districtId: { guideProfileId: carolGuide.id, districtId: kaski.id } },
+      update: {},
+      create: { guideProfileId: carolGuide.id, districtId: kaski.id },
+    }),
+    prisma.guideLanguage.upsert({
+      where: { guideProfileId_languageId: { guideProfileId: carolGuide.id, languageId: english.id } },
+      update: {},
+      create: { guideProfileId: carolGuide.id, languageId: english.id },
+    }),
+    prisma.guideLanguage.upsert({
+      where: { guideProfileId_languageId: { guideProfileId: carolGuide.id, languageId: nepali.id } },
+      update: {},
+      create: { guideProfileId: carolGuide.id, languageId: nepali.id },
+    }),
+  ]);
 
-  await prisma.guideProfile.upsert({
+  const dawaGuideFields = {
+    isListed: true,
+    licenseNumber: 'NTB-2026-00042',
+    bio: 'Specializes in restricted-area treks (Manaslu, Upper Mustang) with a registered agency.',
+    rateMin: 40,
+    rateUnit: 'PER_DAY' as const,
+    verificationStatus: 'PENDING_LICENSE_REVIEW' as const,
+  };
+  const dawaGuide = await prisma.guideProfile.upsert({
     where: { userId: dawa.id },
-    update: {},
+    update: dawaGuideFields,
     create: {
       userId: dawa.id,
-      licenseNumber: 'NTB-2026-00042',
-      bio: 'Specializes in restricted-area treks (Manaslu, Upper Mustang) with a registered agency.',
-      rateMin: 40,
-      rateUnit: 'PER_DAY',
-      verificationStatus: 'PENDING_LICENSE_REVIEW',
+      ...dawaGuideFields,
       specialties: { create: [{ activityTypeId: restrictedTrekking.id }] },
       regions: { create: [{ districtId: gorkha.id }, { districtId: soluDistrict.id }] },
       languages: { create: [{ languageId: english.id }] },
     },
   });
+  await Promise.all([
+    prisma.guideSpecialty.upsert({
+      where: { guideProfileId_activityTypeId: { guideProfileId: dawaGuide.id, activityTypeId: restrictedTrekking.id } },
+      update: {},
+      create: { guideProfileId: dawaGuide.id, activityTypeId: restrictedTrekking.id },
+    }),
+    prisma.guideRegion.upsert({
+      where: { guideProfileId_districtId: { guideProfileId: dawaGuide.id, districtId: gorkha.id } },
+      update: {},
+      create: { guideProfileId: dawaGuide.id, districtId: gorkha.id },
+    }),
+    prisma.guideRegion.upsert({
+      where: { guideProfileId_districtId: { guideProfileId: dawaGuide.id, districtId: soluDistrict.id } },
+      update: {},
+      create: { guideProfileId: dawaGuide.id, districtId: soluDistrict.id },
+    }),
+    prisma.guideLanguage.upsert({
+      where: { guideProfileId_languageId: { guideProfileId: dawaGuide.id, languageId: english.id } },
+      update: {},
+      create: { guideProfileId: dawaGuide.id, languageId: english.id },
+    }),
+  ]);
 
   async function getOrCreateNotification(data: Parameters<typeof prisma.notification.create>[0]['data']) {
     const existing = await prisma.notification.findFirst({

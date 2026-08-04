@@ -140,11 +140,14 @@
       "name": "Name",
       "role": "Role",
       "isActive": "Active",
-      "joined": "Joined"
+      "joined": "Joined",
+      "guideLevel": "Level",
+      "contributionPoints": "Points"
     },
     "roles": {
-      "USER": "User",
-      "ADMIN": "Admin"
+      "USER": "Member",
+      "ADMIN": "Admin",
+      "MODERATOR": "Moderator"
     },
     "yes": "Yes",
     "no": "No"

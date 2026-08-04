@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import { createHmac, randomBytes } from 'crypto';
 import ms from 'ms';
+import { GuideProfilesService } from '../guide-profiles/guide-profiles.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { UsersService } from '../users/users.service';
@@ -19,6 +20,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly profilesService: ProfilesService,
+    private readonly guideProfilesService: GuideProfilesService,
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
@@ -36,15 +38,23 @@ export class AuthService {
       ? Role.ADMIN
       : Role.USER;
 
-    const user = await this.usersService.upsertGoogleUser({
-      email: profile.email,
-      googleId: profile.googleId,
-      roleOnCreate,
-    });
+    const user = await this.prisma.$transaction(async (tx) => {
+      const user = await this.usersService.upsertGoogleUser(
+        { email: profile.email, googleId: profile.googleId, roleOnCreate },
+        tx,
+      );
 
-    await this.profilesService.upsertForUser(user.id, {
-      name: profile.name,
-      avatarUrl: profile.avatarUrl,
+      await this.profilesService.upsertForUser(
+        user.id,
+        { name: profile.name, avatarUrl: profile.avatarUrl },
+        tx,
+      );
+
+      // MILESTONE_3.md §2.2: GuideProfile is universal now - every user
+      // gets one alongside Profile, not just users who opt into guiding.
+      await this.guideProfilesService.ensureForUser(user.id, tx);
+
+      return user;
     });
 
     return this.issueTokenPair(user.id, user.email, user.role);

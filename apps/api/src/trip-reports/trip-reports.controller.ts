@@ -32,7 +32,7 @@ export class AdventurePageTripReportsController {
 export class TripReportsController {
   constructor(private readonly tripReportsService: TripReportsService) {}
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MODERATOR)
   @Get()
   list(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     return this.tripReportsService.listAll(Number(page) || 1, Number(pageSize) || 20);

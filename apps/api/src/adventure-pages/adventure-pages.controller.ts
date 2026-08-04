@@ -16,6 +16,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { AdventurePagesService } from './adventure-pages.service';
 import { AddMediaDto } from './dto/add-media.dto';
 import { AddRelatedPageDto } from './dto/add-related-page.dto';
+import { CastVoteDto } from './dto/cast-vote.dto';
 import { CreateAdventurePageDto } from './dto/create-adventure-page.dto';
 import { SubmitRevisionDto } from './dto/submit-revision.dto';
 import { UpdateAdventurePageMetadataDto } from './dto/update-adventure-page-metadata.dto';
@@ -64,13 +65,13 @@ export class AdventurePagesController {
     return this.adventurePagesService.updateMetadata(id, dto);
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MODERATOR)
   @Delete(':id')
   delete(@Param('id') id: string) {
     return this.adventurePagesService.delete(id);
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.MODERATOR)
   @Patch(':id/verification-status')
   updateVerificationStatus(@Param('id') id: string, @Body() dto: UpdateVerificationStatusDto) {
     return this.adventurePagesService.updateVerificationStatus(id, dto.status);
@@ -78,8 +79,8 @@ export class AdventurePagesController {
 
   @Public()
   @Get(':id/revisions')
-  listRevisions(@Param('id') id: string) {
-    return this.adventurePagesService.listRevisions(id);
+  listRevisions(@Param('id') id: string, @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
+    return this.adventurePagesService.listRevisions(id, status);
   }
 
   @Public()
@@ -112,9 +113,14 @@ export class AdventurePagesController {
     return this.adventurePagesService.revert(id, user.userId, version);
   }
 
-  @Post(':id/confirmations')
-  confirm(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.adventurePagesService.confirm(id, user.userId);
+  @Post(':id/revisions/:version/votes')
+  voteOnRevision(
+    @Param('id') id: string,
+    @Param('version', ParseIntPipe) version: number,
+    @Body() dto: CastVoteDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.adventurePagesService.voteOnRevision(id, version, user.userId, user.role, dto);
   }
 
   @Post(':id/likes')

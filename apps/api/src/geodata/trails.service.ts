@@ -1,14 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationType, TrailElevationProfile } from '@prisma/client';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ContributionReason, ContributionTargetType, NotificationType, Prisma, Role, TrailElevationProfile } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { deriveVerificationStatus, isApprovalEligible, resolveVoteOutcome } from '../approvals/approval-rules.util';
+import { ContributionsService } from '../contributions/contributions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SettingsService } from '../settings/settings.service';
 import { assertWithinNepal, buildSamples, computeAggregates, simplifyPoints, TrackAggregates } from '../tracks/track-geometry.util';
+import { CastVoteDto } from './dto/cast-vote.dto';
 import { CreateTrailDto } from './dto/create-trail.dto';
 import { deriveDistrictTags } from './district-derivation.util';
 import { UpdateTrailDto } from './dto/update-trail.dto';
-
-const CONFIRMATION_THRESHOLD = 2;
 
 export interface TrailRow {
   id: string;
@@ -37,6 +39,10 @@ export interface TrailRevisionSummary {
   editorId: string;
   editSummary: string | null;
   isSafetyCriticalEdit: boolean;
+  approvalStatus: string;
+  resolvedAt: Date | null;
+  resolvedById: string | null;
+  rejectionReason: string | null;
   createdAt: Date;
 }
 
@@ -52,6 +58,8 @@ export class TrailsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly contributions: ContributionsService,
+    private readonly settings: SettingsService,
   ) {}
 
   // LEFT JOINs the elevation profile - unlike get(id)'s explicit extra
@@ -101,8 +109,11 @@ export class TrailsService {
   // Insert creates a version:1 TrailRevision in the same transaction,
   // mirroring AdventurePagesService.create()'s page+revision transaction.
   // source defaults to DRAWN (hand-clicked in DrawMap); TracksService's
-  // promote-to-trail flow passes RECORDED_ACTIVITY instead.
-  async create(pageId: string, userId: string, dto: CreateTrailDto, source: 'DRAWN' | 'RECORDED_ACTIVITY' = 'DRAWN'): Promise<TrailRow> {
+  // promote-to-trail flow passes RECORDED_ACTIVITY instead. When a trail
+  // already exists for this page, the "create" is really an edit and goes
+  // through update() - which, under MILESTONE_3.md's approval gate, now
+  // returns a pending TrailRevisionDetail rather than the live TrailRow.
+  async create(pageId: string, userId: string, dto: CreateTrailDto, source: 'DRAWN' | 'RECORDED_ACTIVITY' = 'DRAWN'): Promise<TrailRow | TrailRevisionDetail> {
     const existingId = await this.findActiveTrailId(pageId);
     if (existingId) {
       return this.update(existingId, userId, {
@@ -147,71 +158,68 @@ export class TrailsService {
       await deriveDistrictTags(tx, 'trails', id, pageId);
     });
 
+    // MILESTONE_3.md §3.2: points are awarded on approval, not on submit -
+    // v1 sits PENDING like any other revision, GEO_CREATE moves to
+    // applyApproval().
     return this.get(id);
   }
 
-  // Creates a new TrailRevision as a transactional side effect of the same
-  // PATCH entry point the contribute UI already uses - see GEODATA_HISTORY.md's
-  // "the divergence" note on why this isn't a separate POST :id/revisions route
-  // the way adventure pages are. The trailConfirmation.deleteMany call that
-  // used to run here is gone: confirmations are revision-scoped now, so they
-  // go stale for free by pointing at a superseded revision.
-  async update(id: string, userId: string, dto: UpdateTrailDto): Promise<TrailRow> {
+  // MILESTONE_3.md §5.2: the significant refactor. Under the approval gate
+  // an edit writes only a new PENDING TrailRevision - it never touches the
+  // live trails row (geometry/name/distanceMeters/verificationStatus), which
+  // only changes when a revision is later approved (applyApproval). The new
+  // revision's unspecified fields are COALESCEd against the *latest existing
+  // revision* (pending or approved), not the live row, since the live row
+  // can now lag behind a still-pending edit.
+  //
+  // Elevation-profile invalidation stays here, immediate and ungated, same
+  // as before this phase - TRAIL_ELEVATION.md never made it part of the
+  // revision/confirmation trust model (it's a derived "sidecar", not
+  // reviewable content), and its source data (per-point elevation) only
+  // exists transiently at submit time, not in the stored 2D geometry, so it
+  // cannot be reconstructed later at approval time. deriveDistrictTags is
+  // the same kind of additive-only derived metadata (FEATURE.md §4) and
+  // stays ungated for the same reason.
+  async update(id: string, userId: string, dto: UpdateTrailDto): Promise<TrailRevisionDetail> {
     const existing = await this.get(id);
-    const nextStatus = dto.isSafetyCriticalEdit ? 'NEEDS_REVIEW' : 'UNVERIFIED';
     const now = new Date();
     const revisionId = randomUUID();
 
+    const baseRows = await this.prisma.$queryRaw<{ version: number; name: string | null; geometryText: string }[]>`
+      SELECT version, name, ST_AsGeoJSON(geometry) AS "geometryText"
+      FROM trail_revisions WHERE "trailId" = ${id} ORDER BY version DESC LIMIT 1
+    `;
+    const base = baseRows[0];
+    if (!base) {
+      throw new NotFoundException(`Trail ${id} has no revisions to edit`);
+    }
+    const nextVersion = base.version + 1;
+    const geojson = dto.geometry ? JSON.stringify(dto.geometry) : base.geometryText;
+
     await this.prisma.$transaction(async (tx) => {
-      if (dto.geometry) {
-        const geojson = JSON.stringify(dto.geometry);
-        await tx.$executeRaw`
-          UPDATE trails
-          SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
-              "distanceMeters" = COALESCE(${dto.distanceMeters ?? null}, ST_Length(ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326)::geography)::int),
-              name = COALESCE(${dto.name ?? null}, name),
-              "verificationStatus" = ${nextStatus}::"GeoVerificationStatus",
-              "lastEditedById" = ${userId},
-              "updatedAt" = ${now}
-          WHERE id = ${id}
-        `;
-      } else {
-        await tx.$executeRaw`
-          UPDATE trails
-          SET name = COALESCE(${dto.name ?? null}, name),
-              "verificationStatus" = ${nextStatus}::"GeoVerificationStatus",
-              "lastEditedById" = ${userId},
-              "updatedAt" = ${now}
-          WHERE id = ${id}
-        `;
-      }
-
-      const latest = await tx.$queryRaw<{ version: number }[]>`
-        SELECT version FROM trail_revisions WHERE "trailId" = ${id} ORDER BY version DESC LIMIT 1
-      `;
-      const nextVersion = (latest[0]?.version ?? 0) + 1;
-
       await tx.$executeRaw`
         INSERT INTO trail_revisions (
           id, "trailId", version, geometry, name, "distanceMeters",
           "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
         )
-        SELECT ${revisionId}, id, ${nextVersion}, geometry, name, "distanceMeters",
-               ${dto.editSummary ?? null}, ${dto.isSafetyCriticalEdit ?? false}, ${userId}, ${now}
-        FROM trails WHERE id = ${id}
+        VALUES (
+          ${revisionId}, ${id}, ${nextVersion},
+          ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+          COALESCE(${dto.name ?? null}, ${base?.name ?? null}),
+          COALESCE(${dto.distanceMeters ?? null}, ST_Length(ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326)::geography)::int),
+          ${dto.editSummary ?? null}, ${dto.isSafetyCriticalEdit ?? false}, ${userId}, ${now}
+        )
       `;
 
-      // TRAIL_ELEVATION.md's invalidation rule: a profile is only meaningful
-      // for the exact path it was derived from, so it's deleted in the same
-      // transaction as the geometry change - but geometry-conditional, not
-      // unconditional, or a name-only edit would wipe a perfectly good profile.
       if (dto.geometry) {
         await tx.trailElevationProfile.deleteMany({ where: { trailId: id } });
         await deriveDistrictTags(tx, 'trails', id, existing.adventurePageId);
       }
+
+      await this.recomputeStatus(tx, id);
     });
 
-    return this.get(id);
+    return this.getRevision(id, nextVersion);
   }
 
   async delete(id: string): Promise<TrailRow> {
@@ -220,42 +228,177 @@ export class TrailsService {
     return this.get(id);
   }
 
-  // Confirms against the current revision's confirmations, not the row's
-  // all-time total - see GEODATA_HISTORY.md's per-table notes.
-  async confirm(trailId: string, userId: string) {
-    const trail = await this.get(trailId);
-    const latest = await this.currentRevisionId(trailId);
+  // MILESTONE_3.md §5.3: casts an APPROVE/REJECT vote on a specific pending
+  // revision. Replaces the retired confirm()/CONFIRMATION_THRESHOLD flow.
+  async voteOnRevision(trailId: string, version: number, voterId: string, voterRole: Role, dto: CastVoteDto) {
+    const revision = await this.prisma.trailRevision.findUnique({
+      where: { trailId_version: { trailId, version } },
+    });
+    if (!revision) {
+      throw new NotFoundException(`Revision ${version} not found for this trail`);
+    }
+    if (revision.approvalStatus !== 'PENDING') {
+      throw new BadRequestException('This revision has already been resolved');
+    }
+    if (revision.editorId === voterId) {
+      throw new ForbiddenException('You cannot vote on your own revision');
+    }
 
+    const isAdminOrMod = voterRole === Role.ADMIN || voterRole === Role.MODERATOR;
+    if (!isAdminOrMod) {
+      const profile = await this.prisma.guideProfile.findUnique({
+        where: { userId: voterId },
+        select: { guideLevel: true },
+      });
+      const minGuideLevel = this.settings.getNumber('approval.minGuideLevel');
+      if (!isApprovalEligible(voterRole, profile?.guideLevel ?? 1, minGuideLevel)) {
+        throw new ForbiddenException(`Guide level ${minGuideLevel}+ is required to vote on pending revisions`);
+      }
+    }
+
+    const existingVote = await this.prisma.trailConfirmation.findUnique({
+      where: { revisionId_userId: { revisionId: revision.id, userId: voterId } },
+    });
     await this.prisma.trailConfirmation.upsert({
-      where: { revisionId_userId: { revisionId: latest, userId } },
-      create: { revisionId: latest, userId },
-      update: {},
+      where: { revisionId_userId: { revisionId: revision.id, userId: voterId } },
+      create: { revisionId: revision.id, userId: voterId, decision: dto.decision },
+      update: { decision: dto.decision },
+    });
+    if (!existingVote) {
+      await this.prisma.guideProfile.updateMany({
+        where: { userId: voterId },
+        data: { approvalsGiven: { increment: 1 } },
+      });
+    }
+
+    const [approveCount, rejectCount] = await Promise.all([
+      this.prisma.trailConfirmation.count({ where: { revisionId: revision.id, decision: 'APPROVE' } }),
+      this.prisma.trailConfirmation.count({ where: { revisionId: revision.id, decision: 'REJECT' } }),
+    ]);
+    const threshold = this.settings.getNumber('approval.threshold');
+    const outcome = resolveVoteOutcome(dto.decision, isAdminOrMod, approveCount, rejectCount, threshold);
+
+    if (outcome === 'APPROVED') {
+      await this.applyApproval(trailId, revision, voterId);
+    } else if (outcome === 'REJECTED') {
+      await this.applyRejection(trailId, revision, voterId, dto.rejectionReason);
+    }
+
+    return { revisionId: revision.id, outcome, approveCount, rejectCount, threshold };
+  }
+
+  // Applies the winning revision's snapshot to the live row - this is the
+  // one point where geometry/name/distanceMeters actually go live, per
+  // MILESTONE_3.md §5.2.
+  private async applyApproval(
+    trailId: string,
+    revision: { id: string; version: number; editorId: string },
+    approverId: string,
+  ): Promise<void> {
+    const before = await this.get(trailId);
+    const now = new Date();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.trailRevision.update({
+        where: { id: revision.id },
+        data: { approvalStatus: 'APPROVED', resolvedAt: now, resolvedById: approverId },
+      });
+      await tx.trailRevision.updateMany({
+        where: { trailId, approvalStatus: 'PENDING', version: { lt: revision.version } },
+        data: { approvalStatus: 'REJECTED', resolvedAt: now, resolvedById: approverId, rejectionReason: 'SUPERSEDED' },
+      });
+
+      await tx.$executeRaw`
+        UPDATE trails t
+        SET geometry = r.geometry, name = r.name, "distanceMeters" = r."distanceMeters",
+            "lastEditedById" = r."editorId", "approvedRevisionId" = r.id, "updatedAt" = ${now}
+        FROM trail_revisions r
+        WHERE r.id = ${revision.id} AND t.id = ${trailId}
+      `;
+
+      await this.recomputeStatus(tx, trailId);
     });
 
-    const confirmationCount = await this.prisma.trailConfirmation.count({ where: { revisionId: latest } });
-    if (confirmationCount >= CONFIRMATION_THRESHOLD) {
-      await this.prisma.$executeRaw`UPDATE trails SET "verificationStatus" = 'VERIFIED'::"GeoVerificationStatus" WHERE id = ${trailId}`;
+    // MILESTONE_3.md §3.2: v1 always pays GEO_CREATE; later versions pay
+    // GEO_UPDATE only when the editor differs from the trail's creator.
+    if (revision.version === 1) {
+      await this.contributions.award({
+        userId: revision.editorId,
+        reason: ContributionReason.GEO_CREATE,
+        targetType: ContributionTargetType.TRAIL,
+        targetId: trailId,
+      });
+    } else if (before.createdById !== revision.editorId) {
+      await this.contributions.award({
+        userId: revision.editorId,
+        reason: ContributionReason.GEO_UPDATE,
+        targetType: ContributionTargetType.TRAIL_REVISION,
+        targetId: revision.id,
+      });
+    }
 
+    const after = await this.get(trailId);
+    if (before.verificationStatus !== 'VERIFIED' && after.verificationStatus === 'VERIFIED') {
       const page = await this.prisma.adventurePage.findUnique({
-        where: { id: trail.adventurePageId },
+        where: { id: before.adventurePageId },
         select: { slug: true },
       });
       await this.notifications.notify(
-        trail.createdById,
-        userId,
+        before.createdById,
+        approverId,
         NotificationType.TRAIL_VERIFIED,
-        `"${trail.name ?? 'Your trail'}" was confirmed as accurate`,
+        `"${after.name ?? 'Your trail'}" was confirmed as accurate`,
         page ? `/adventures/${page.slug}` : undefined,
       );
     }
-
-    return { trailId, confirmationCount, threshold: CONFIRMATION_THRESHOLD };
   }
 
-  async listRevisions(trailId: string): Promise<TrailRevisionSummary[]> {
+  private async applyRejection(
+    trailId: string,
+    revision: { id: string },
+    approverId: string,
+    rejectionReason: string | undefined,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.trailRevision.update({
+        where: { id: revision.id },
+        data: {
+          approvalStatus: 'REJECTED',
+          resolvedAt: new Date(),
+          resolvedById: approverId,
+          rejectionReason: rejectionReason ?? null,
+        },
+      });
+      await this.recomputeStatus(tx, trailId);
+    });
+  }
+
+  // Recomputes pendingRevisionCount + the derived verificationStatus for a
+  // trail, inside the caller's transaction - mirrors
+  // AdventurePagesService.recomputeStatus, in raw SQL since Trail's geometry
+  // column is Unsupported and most of this service already talks to the
+  // trails/trail_revisions tables directly.
+  private async recomputeStatus(tx: Prisma.TransactionClient, trailId: string): Promise<void> {
+    const trailRows = await tx.$queryRaw<{ approvedRevisionId: string | null }[]>`
+      SELECT "approvedRevisionId" FROM trails WHERE id = ${trailId}
+    `;
+    const latestRows = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM trail_revisions WHERE "trailId" = ${trailId} ORDER BY version DESC LIMIT 1
+    `;
+    const pending = await tx.$queryRaw<{ isSafetyCriticalEdit: boolean }[]>`
+      SELECT "isSafetyCriticalEdit" FROM trail_revisions WHERE "trailId" = ${trailId} AND "approvalStatus" = 'PENDING'
+    `;
+    const verificationStatus = deriveVerificationStatus(trailRows[0]?.approvedRevisionId ?? null, latestRows[0].id, pending);
+    await tx.$executeRaw`
+      UPDATE trails SET "pendingRevisionCount" = ${pending.length}, "verificationStatus" = ${verificationStatus}::"GeoVerificationStatus"
+      WHERE id = ${trailId}
+    `;
+  }
+
+  async listRevisions(trailId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<TrailRevisionSummary[]> {
     await this.get(trailId);
     return this.prisma.trailRevision.findMany({
-      where: { trailId },
+      where: { trailId, approvalStatus: status },
       orderBy: { version: 'asc' },
       select: {
         id: true,
@@ -263,6 +406,10 @@ export class TrailsService {
         editorId: true,
         editSummary: true,
         isSafetyCriticalEdit: true,
+        approvalStatus: true,
+        resolvedAt: true,
+        resolvedById: true,
+        rejectionReason: true,
         createdAt: true,
       },
     });
@@ -271,7 +418,8 @@ export class TrailsService {
   async getRevision(trailId: string, version: number): Promise<TrailRevisionDetail> {
     const rows = await this.prisma.$queryRaw<TrailRevisionDetail[]>`
       SELECT id, "trailId", version, ST_AsGeoJSON(geometry)::json AS geometry, name,
-             "distanceMeters", "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
+             "distanceMeters", "editSummary", "isSafetyCriticalEdit", "approvalStatus",
+             "resolvedAt", "resolvedById", "rejectionReason", "editorId", "createdAt"
       FROM trail_revisions
       WHERE "trailId" = ${trailId} AND version = ${version}
     `;
@@ -340,8 +488,9 @@ export class TrailsService {
   }
 
   // Creates a NEW revision copying the target snapshot forward - never a
-  // delete or pointer move, per FEATURE.md §3's revert convention.
-  async revert(trailId: string, editorId: string, version: number): Promise<TrailRow> {
+  // delete or pointer move, per FEATURE.md §3's revert convention. Now
+  // pending-gated like any other edit, via update().
+  async revert(trailId: string, editorId: string, version: number): Promise<TrailRevisionDetail> {
     const target = await this.getRevision(trailId, version);
     return this.update(trailId, editorId, {
       geometry: target.geometry as UpdateTrailDto['geometry'],
@@ -415,7 +564,7 @@ export class TrailsService {
     userId: string,
     points: { lng: number; lat: number; ele?: number }[],
     name: string | undefined,
-  ): Promise<TrailRow & { elevationProfile: TrailElevationProfile | null }> {
+  ): Promise<(TrailRow & { elevationProfile: TrailElevationProfile | null }) | TrailRevisionDetail> {
     assertWithinNepal(points);
     const simplified = simplifyPoints(points, 5);
     const geometry = { type: 'LineString' as const, coordinates: simplified.map((p) => [p.lng, p.lat]) };
@@ -425,7 +574,7 @@ export class TrailsService {
 
     const existingId = await this.findActiveTrailId(pageId);
     if (existingId) {
-      return this.replaceGeometryFromGpx(existingId, pageId, userId, name, geojson, aggregates, hasElevation, points);
+      return this.replaceGeometryFromGpx(existingId, userId, name, geojson, aggregates, hasElevation, points);
     }
 
     const id = randomUUID();
@@ -477,50 +626,44 @@ export class TrailsService {
       await deriveDistrictTags(tx, 'trails', id, pageId);
     });
 
+    // MILESTONE_3.md §3.2: points move to approval - no award here.
     return this.get(id);
   }
 
   // Re-importing a GPX for a page that already has a trail replaces its
-  // geometry via a new TrailRevision, mirroring update()'s geometry branch,
-  // instead of importGpx() inserting a second Trail row.
+  // geometry via a new PENDING TrailRevision, mirroring update()'s gated
+  // shape, instead of importGpx() inserting a second Trail row. Elevation-
+  // profile handling stays immediate/ungated - see update()'s comment for why.
   private async replaceGeometryFromGpx(
     trailId: string,
-    pageId: string,
     userId: string,
     name: string | undefined,
     geojson: string,
     aggregates: TrackAggregates,
     hasElevation: boolean,
     points: { lng: number; lat: number; ele?: number }[],
-  ): Promise<TrailRow & { elevationProfile: TrailElevationProfile | null }> {
+  ): Promise<TrailRevisionDetail> {
+    const existing = await this.get(trailId);
     const now = new Date();
     const revisionId = randomUUID();
 
+    const baseRows = await this.prisma.$queryRaw<{ version: number }[]>`
+      SELECT version FROM trail_revisions WHERE "trailId" = ${trailId} ORDER BY version DESC LIMIT 1
+    `;
+    const nextVersion = (baseRows[0]?.version ?? 0) + 1;
+
     await this.prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`
-        UPDATE trails
-        SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
-            "distanceMeters" = ${aggregates.distanceMeters},
-            name = COALESCE(${name ?? null}, name),
-            "verificationStatus" = 'UNVERIFIED',
-            "lastEditedById" = ${userId},
-            "updatedAt" = ${now}
-        WHERE id = ${trailId}
-      `;
-
-      const latest = await tx.$queryRaw<{ version: number }[]>`
-        SELECT version FROM trail_revisions WHERE "trailId" = ${trailId} ORDER BY version DESC LIMIT 1
-      `;
-      const nextVersion = (latest[0]?.version ?? 0) + 1;
-
       await tx.$executeRaw`
         INSERT INTO trail_revisions (
           id, "trailId", version, geometry, name, "distanceMeters",
           "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
         )
-        SELECT ${revisionId}, id, ${nextVersion}, geometry, name, "distanceMeters",
-               'Replaced via GPX re-import', false, ${userId}, ${now}
-        FROM trails WHERE id = ${trailId}
+        VALUES (
+          ${revisionId}, ${trailId}, ${nextVersion},
+          ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+          ${name ?? null}, ${aggregates.distanceMeters},
+          'Replaced via GPX re-import', false, ${userId}, ${now}
+        )
       `;
 
       await tx.trailElevationProfile.deleteMany({ where: { trailId } });
@@ -540,10 +683,11 @@ export class TrailsService {
         });
       }
 
-      await deriveDistrictTags(tx, 'trails', trailId, pageId);
+      await deriveDistrictTags(tx, 'trails', trailId, existing.adventurePageId);
+      await this.recomputeStatus(tx, trailId);
     });
 
-    return this.get(trailId);
+    return this.getRevision(trailId, nextVersion);
   }
 
   // admin-only escape hatch for a bad import - deletes the profile without
@@ -551,17 +695,5 @@ export class TrailsService {
   async deleteElevationProfile(trailId: string): Promise<void> {
     await this.get(trailId);
     await this.prisma.trailElevationProfile.deleteMany({ where: { trailId } });
-  }
-
-  private async currentRevisionId(trailId: string): Promise<string> {
-    const latest = await this.prisma.trailRevision.findFirst({
-      where: { trailId },
-      orderBy: { version: 'desc' },
-      select: { id: true },
-    });
-    if (!latest) {
-      throw new NotFoundException('This trail has no revisions to confirm');
-    }
-    return latest.id;
   }
 }
