@@ -41,10 +41,11 @@ export function SystemSettingsPage() {
   const rows = Array.isArray(result?.data) ? result.data : (result?.data?.data ?? []);
 
   const columns = [
-    { title: t('system-settings.fields.key'), dataIndex: 'key' },
+    { title: t('system-settings.fields.key'), dataIndex: 'key', width: 220 },
     { title: t('system-settings.fields.description'), dataIndex: 'description' },
     {
       title: t('system-settings.fields.value'),
+      width: 360,
       render: (_: unknown, row: SystemSettingRow) => <SettingValueEditor row={row} onSaved={() => refetch()} />,
     },
   ];
@@ -96,11 +97,11 @@ function SettingValueEditor({ row, onSaved }: { row: SystemSettingRow; onSaved: 
   };
 
   return (
-    <Space>
-      <Input style={{ width: 140 }} value={value} onChange={(e) => setValue(e.target.value)} />
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <Input style={{ flex: 1, minWidth: 0 }} value={value} onChange={(e) => setValue(e.target.value)} />
       <Button size="small" type="primary" disabled={!dirty} loading={mutation.isPending} onClick={save}>
         {t('system-settings.save')}
       </Button>
-    </Space>
+    </div>
   );
 }
