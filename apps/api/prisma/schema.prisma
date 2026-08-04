@@ -928,9 +928,7 @@ enum NotificationType {
   GUIDE_VERIFIED
   // MILESTONE_3.md §8/§9.4: report resolution is in Phase 23's scope even
   // though the full notification-type sweep is Phase 25's job - "editor and
-  // reporter both notified" is a stated Phase 23 requirement. The other
-  // §9.4 types (CHANGE_APPROVED, CHANGE_REJECTED, LEVEL_UP) stay deferred
-  // to Phase 25.
+  // reporter both notified" is a stated Phase 23 requirement.
   REPORT_RESOLVED
   REPORT_UPHELD_AGAINST_YOU
   // §7: "Approval sets user.role = MODERATOR ... and notifies" - pulled
@@ -938,6 +936,10 @@ enum NotificationType {
   // two REPORT_* types above: it's a stated requirement of the phase that
   // actually builds the feature, not the later i18n/notification sweep.
   MODERATOR_APPLICATION_DECIDED
+  // MILESTONE_3.md §9.4, completing the sweep in Phase 25.
+  CHANGE_APPROVED
+  CHANGE_REJECTED
+  LEVEL_UP
 }
 
 // one-way system messages, not user chat - doesn't reopen IDEA.md's

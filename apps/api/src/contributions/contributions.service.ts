@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ContributionReason, ContributionTargetType, Prisma } from '@prisma/client';
+import { ContributionReason, ContributionTargetType, NotificationType, Prisma } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
 import { POINTS_SETTING_KEY } from './contributions.constants';
@@ -21,6 +22,7 @@ export class ContributionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly settings: SettingsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // MILESTONE_3.md §3.1: "Points are awarded only on approval" is the
@@ -33,8 +35,9 @@ export class ContributionsService {
   async award(params: AwardParams): Promise<void> {
     const points = params.points ?? this.settingPoints(params.reason);
 
+    let newLevel: number | undefined;
     try {
-      await this.prisma.$transaction(async (tx) => {
+      newLevel = await this.prisma.$transaction(async (tx) => {
         await tx.contributionEvent.create({
           data: {
             userId: params.userId,
@@ -45,13 +48,24 @@ export class ContributionsService {
             note: params.note,
           },
         });
-        await this.applyDelta(tx, params.userId, points);
+        return this.applyDelta(tx, params.userId, points);
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         return;
       }
       throw error;
+    }
+
+    // MILESTONE_3.md §9.4: fired on the level actually rising, not on every
+    // point award - a rejection/report penalty can only ever lower guideLevel
+    // (§3.2), never trigger this. Sent after the transaction commits, like
+    // every other notification in this codebase (never from inside a $transaction
+    // callback, since Notification.create always uses the top-level client, not
+    // tx). No actorId: this is a system event about the user's own progress,
+    // not caused by another user's action.
+    if (newLevel !== undefined) {
+      await this.notifications.notify(params.userId, undefined, NotificationType.LEVEL_UP, `You reached guide level ${newLevel}`, `/users/${params.userId}`);
     }
   }
 
@@ -65,17 +79,17 @@ export class ContributionsService {
 
   // Negative events never take a user below 0 (§3.2) - the ledger itself
   // keeps the true signed value (recompute() below sums it verbatim), only
-  // the GuideProfile cache clamps.
-  private async applyDelta(tx: Prisma.TransactionClient, userId: string, delta: number): Promise<void> {
+  // the GuideProfile cache clamps. Returns the new level iff it rose, so the
+  // caller can fire LEVEL_UP after the transaction commits.
+  private async applyDelta(tx: Prisma.TransactionClient, userId: string, delta: number): Promise<number | undefined> {
     const profile = await tx.guideProfile.findUnique({ where: { userId } });
     if (!profile) {
-      return;
+      return undefined;
     }
     const contributionPoints = Math.max(0, profile.contributionPoints + delta);
     const guideLevel = levelForPoints(contributionPoints);
     await tx.guideProfile.update({ where: { userId }, data: { contributionPoints, guideLevel } });
-    // LEVEL_UP notification is Phase 25 (NotificationType doesn't carry it
-    // yet) - see MILESTONE_3.md §9.4.
+    return guideLevel > profile.guideLevel ? guideLevel : undefined;
   }
 
   // Drift-correction command (§2.2's "recompute command exists for drift"):

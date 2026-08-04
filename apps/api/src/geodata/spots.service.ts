@@ -308,24 +308,31 @@ export class SpotsService {
     }
 
     const after = await this.get(spotId);
+    const linkedPage = await this.prisma.adventurePage.findUnique({
+      where: { id: before.adventurePageId },
+      select: { slug: true },
+    });
+    await this.notifications.notify(
+      revision.editorId,
+      approverId,
+      NotificationType.CHANGE_APPROVED,
+      `Your edit to "${after.name}" was approved`,
+      linkedPage ? `/adventures/${linkedPage.slug}` : undefined,
+    );
     if (before.verificationStatus !== 'VERIFIED' && after.verificationStatus === 'VERIFIED') {
-      const page = await this.prisma.adventurePage.findUnique({
-        where: { id: before.adventurePageId },
-        select: { slug: true },
-      });
       await this.notifications.notify(
         before.createdById,
         approverId,
         NotificationType.SPOT_VERIFIED,
         `"${after.name}" was confirmed as accurate`,
-        page ? `/adventures/${page.slug}` : undefined,
+        linkedPage ? `/adventures/${linkedPage.slug}` : undefined,
       );
     }
   }
 
   private async applyRejection(
     spotId: string,
-    revision: { id: string },
+    revision: { id: string; editorId: string },
     approverId: string,
     rejectionReason: string | undefined,
   ): Promise<void> {
@@ -341,6 +348,19 @@ export class SpotsService {
       });
       await this.recomputeStatus(tx, spotId);
     });
+
+    const spot = await this.get(spotId);
+    const linkedPage = await this.prisma.adventurePage.findUnique({
+      where: { id: spot.adventurePageId },
+      select: { slug: true },
+    });
+    await this.notifications.notify(
+      revision.editorId,
+      approverId,
+      NotificationType.CHANGE_REJECTED,
+      `Your edit to "${spot.name}" was declined${rejectionReason ? `: ${rejectionReason}` : ''}`,
+      linkedPage ? `/adventures/${linkedPage.slug}` : undefined,
+    );
   }
 
   // Recomputes pendingRevisionCount + the derived verificationStatus for a

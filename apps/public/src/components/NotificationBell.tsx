@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { Bell } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { authFetch, authPatch, authPost } from '../lib/auth/auth-fetch';
 import { formatDateTime } from '../lib/format';
 
@@ -14,6 +15,7 @@ interface NotificationItem {
 }
 
 export function NotificationBell() {
+  const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -61,7 +63,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={handleOpen}
-        aria-label="Notifications"
+        aria-label={t('notifications.bellLabel')}
         className="relative inline-flex items-center justify-center rounded-lg p-2 text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800"
       >
         <Bell className="h-5 w-5" />
@@ -75,20 +77,20 @@ export function NotificationBell() {
       {open && (
         <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-stone-200 bg-white shadow-lg dark:border-stone-700 dark:bg-stone-900">
           <div className="flex items-center justify-between border-b border-stone-200 px-3 py-2 dark:border-stone-700">
-            <span className="text-sm font-medium text-stone-900 dark:text-stone-50">Notifications</span>
+            <span className="text-sm font-medium text-stone-900 dark:text-stone-50">{t('notifications.heading')}</span>
             {unreadCount > 0 && (
               <button
                 type="button"
                 onClick={markAllRead}
                 className="text-xs text-primary-700 hover:underline dark:text-primary-400"
               >
-                Mark all read
+                {t('notifications.markAllRead')}
               </button>
             )}
           </div>
           <ul className="max-h-96 overflow-y-auto">
             {items.length === 0 ? (
-              <li className="px-3 py-4 text-sm text-stone-500 dark:text-stone-400">No notifications yet.</li>
+              <li className="px-3 py-4 text-sm text-stone-500 dark:text-stone-400">{t('notifications.empty')}</li>
             ) : (
               items.map((item) => (
                 <li key={item.id} className="border-b border-stone-100 last:border-0 dark:border-stone-800">

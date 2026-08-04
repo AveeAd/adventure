@@ -14,6 +14,7 @@
     "seed:system-settings": "tsx prisma/scripts/seed-system-settings.ts",
     "seed:dev-data": "tsx prisma/scripts/seed-dev-data.ts",
     "backfill:contributions": "tsx prisma/scripts/backfill-contributions.ts",
+    "recompute:contributions": "tsx prisma/scripts/recompute-contributions.ts",
     "seed:all": "npm run seed:locations && npm run seed:district-boundaries && npm run seed:master-data && npm run seed:system-settings && npm run seed:dev-data && npm run backfill:contributions"
   },
   "dependencies": {

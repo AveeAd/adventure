@@ -521,6 +521,15 @@ export class AdventurePagesService {
       where: { id: pageId },
       select: { title: true, slug: true, verificationStatus: true },
     });
+    if (after) {
+      await this.notifications.notify(
+        revision.editorId,
+        approverId,
+        NotificationType.CHANGE_APPROVED,
+        `Your edit to "${after.title}" was approved`,
+        `/adventures/${after.slug}`,
+      );
+    }
     if (after && before.verificationStatus !== 'VERIFIED' && after.verificationStatus === 'VERIFIED') {
       const contributorRows = await this.prisma.pageRevision.findMany({
         where: { adventurePageId: pageId },
@@ -555,6 +564,17 @@ export class AdventurePagesService {
       });
       await this.recomputeStatus(tx, pageId);
     });
+
+    const page = await this.prisma.adventurePage.findUnique({ where: { id: pageId }, select: { title: true, slug: true } });
+    if (page) {
+      await this.notifications.notify(
+        revision.editorId,
+        approverId,
+        NotificationType.CHANGE_REJECTED,
+        `Your edit to "${page.title}" was declined${rejectionReason ? `: ${rejectionReason}` : ''}`,
+        `/adventures/${page.slug}`,
+      );
+    }
   }
 
   // Recomputes pendingRevisionCount + the derived verificationStatus for a

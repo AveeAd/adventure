@@ -360,24 +360,31 @@ export class TrailsService {
     }
 
     const after = await this.get(trailId);
+    const linkedPage = await this.prisma.adventurePage.findUnique({
+      where: { id: before.adventurePageId },
+      select: { slug: true },
+    });
+    await this.notifications.notify(
+      revision.editorId,
+      approverId,
+      NotificationType.CHANGE_APPROVED,
+      `Your edit to "${after.name ?? 'a trail'}" was approved`,
+      linkedPage ? `/adventures/${linkedPage.slug}` : undefined,
+    );
     if (before.verificationStatus !== 'VERIFIED' && after.verificationStatus === 'VERIFIED') {
-      const page = await this.prisma.adventurePage.findUnique({
-        where: { id: before.adventurePageId },
-        select: { slug: true },
-      });
       await this.notifications.notify(
         before.createdById,
         approverId,
         NotificationType.TRAIL_VERIFIED,
         `"${after.name ?? 'Your trail'}" was confirmed as accurate`,
-        page ? `/adventures/${page.slug}` : undefined,
+        linkedPage ? `/adventures/${linkedPage.slug}` : undefined,
       );
     }
   }
 
   private async applyRejection(
     trailId: string,
-    revision: { id: string },
+    revision: { id: string; editorId: string },
     approverId: string,
     rejectionReason: string | undefined,
   ): Promise<void> {
@@ -393,6 +400,19 @@ export class TrailsService {
       });
       await this.recomputeStatus(tx, trailId);
     });
+
+    const trail = await this.get(trailId);
+    const linkedPage = await this.prisma.adventurePage.findUnique({
+      where: { id: trail.adventurePageId },
+      select: { slug: true },
+    });
+    await this.notifications.notify(
+      revision.editorId,
+      approverId,
+      NotificationType.CHANGE_REJECTED,
+      `Your edit to "${trail.name ?? 'a trail'}" was declined${rejectionReason ? `: ${rejectionReason}` : ''}`,
+      linkedPage ? `/adventures/${linkedPage.slug}` : undefined,
+    );
   }
 
   // Recomputes pendingRevisionCount + the derived verificationStatus for a

@@ -39,6 +39,12 @@
     "PER_TRIP": "per trip",
     "PER_HOUR": "per hour"
   },
+  "notifications": {
+    "bellLabel": "Notifications",
+    "heading": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet."
+  },
   "report": {
     "button": "Report",
     "reasonLabel": "Reason",

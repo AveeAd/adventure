@@ -2,7 +2,7 @@
 
 Merged from the 10 per-phase design docs that previously lived at the repo root (ADVENTURE_PAGES.md, DATABASE.md, DEPLOYMENT.md, GUIDES.md, MAP_GEODATA.md, PUBLIC_PAGES.md, ROADMAP.md, SEARCH_AND_NOTIFICATIONS.md, TRIP_GROUPS.md, TRIP_REPORTS.md), now that all of Phases 1–14 are built (see CLAUDE.md). Sections below are ordered to match build order; each keeps its schema, entity-relationship diagram, and non-obvious service-layer rationale, but drops the "not built yet" scaffolding (status lines, per-doc dependency preambles, "required additions to existing models" tables) that only mattered while each phase was still pending — those additions are all long since applied to the live `apps/api/prisma/schema.prisma`, which remains the actual source of truth for the schema.
 
-For product vision and the trust model, see [IDEA.md](IDEA.md). For the Phase 1–5 architecture (repo layout, NestJS module map, RBAC, generic CRUD, admin app), see [ARCHITECTURE.md](ARCHITECTURE.md). Four items that were fully undesigned as of an earlier roadmap pass got design docs in one pass: UI i18n ([I18N.md](I18N.md)), trail elevation profiles + GPX import ([TRAIL_ELEVATION.md](TRAIL_ELEVATION.md)), spatially-derived district tagging (§4, below), and geodata changeset history ([GEODATA_HISTORY.md](GEODATA_HISTORY.md)) — the last of which is now **built** (Milestone 2 Phase 15, §1 below), the other three still designed-not-built. [REMAINING_WORK_PLAN.md](REMAINING_WORK_PLAN.md) is the design-process record for how those four were scoped. Two more followed the same rhythm: personal activity tracks + file import ([ACTIVITY_TRACKS.md](ACTIVITY_TRACKS.md)) and mobile client readiness ([MOBILE_CLIENT.md](MOBILE_CLIENT.md)), scoped in [TRACKS_AND_MOBILE_PLAN.md](TRACKS_AND_MOBILE_PLAN.md).
+For product vision and the trust model, see [IDEA.md](IDEA.md). For the Phase 1–5 architecture (repo layout, NestJS module map, RBAC, generic CRUD, admin app), see [ARCHITECTURE.md](ARCHITECTURE.md). Four items that were fully undesigned as of an earlier roadmap pass got design docs in one pass: UI i18n ([I18N.md](I18N.md)), trail elevation profiles + GPX import ([TRAIL_ELEVATION.md](TRAIL_ELEVATION.md)), spatially-derived district tagging (§4, below), and geodata changeset history ([GEODATA_HISTORY.md](GEODATA_HISTORY.md)) — all **built**, closing out Milestone 2 (§1 below). [REMAINING_WORK_PLAN.md](REMAINING_WORK_PLAN.md) is the design-process record for how those four were scoped. Two more followed the same rhythm: personal activity tracks + file import ([ACTIVITY_TRACKS.md](ACTIVITY_TRACKS.md)) and mobile client readiness ([MOBILE_CLIENT.md](MOBILE_CLIENT.md)), scoped in [TRACKS_AND_MOBILE_PLAN.md](TRACKS_AND_MOBILE_PLAN.md) — both also built except mobile, which stays out of scope. [MILESTONE_3.md](MILESTONE_3.md) is a third, later round: contribution points/levels, approval-gated edits, moderation — also **built** (§1 below); unlike the docs above it isn't folded line-by-line into this file's schema sections, since it adds a new orthogonal trust axis (`ContributionEvent`, `ContentReport`, `ModeratorApplication`, `SystemSetting`, plus `approvalStatus`/`approvedRevisionId` columns on the existing revision/content tables) rather than extending the ones described here — MILESTONE_3.md stays the source of truth for that schema. Only the shared `NotificationType` enum (§9) is updated in place, since notifications are one model both rounds write into.
 
 ## Contents
 
@@ -24,7 +24,7 @@ For product vision and the trust model, see [IDEA.md](IDEA.md). For the Phase 1�
 
 Companion to IDEA.md — solo side project, phases sized to be shippable in evenings/weekends. Stack locked at Phase 1: **NestJS** (backend), **PostgreSQL + PostGIS** (PostGIS enabled from day one so the later map phase needs no extension migration), **Prisma** (ORM; PostGIS geometry columns use `Unsupported("geometry")` + raw SQL since Prisma can't natively type them), **React + Refine + Ant Design** (admin), and later **TanStack Start** (public site, §7). Full container dev via docker-compose — nothing needs installing on the host except Docker.
 
-Grouped into milestones: **Milestone 1** is everything that's actually running in production today. **Milestone 2** is the next batch of designed-not-built work, phased for build order. Mobile (MOBILE_CLIENT.md) is designed but deliberately **not** slotted into Milestone 2 — see the note below the table.
+Grouped into milestones: **Milestone 1** and **Milestone 2** are both done and running in production. **Milestone 3** (MILESTONE_3.md) closes out contribution levels, gated approval, and community moderation — also done. Mobile (MOBILE_CLIENT.md) is designed but deliberately **not** slotted into any milestone yet — see the note below the Milestone 2 table.
 
 ### Milestone 1 — done
 
@@ -62,6 +62,22 @@ All four items below were independently "designed, not built" with no hard techn
 | 18 | UI i18n — I18N.md (wire the library, extract every string to a catalogue, ship `en` only) | **built** — see I18N.md's "What's actually extracted" | none — fully orthogonal to the geodata work above, sequenced last because it's independent and lower urgency, and benefits from a stable `Notification.message` string set once Phases 15–17 stop touching notification-triggering copy |
 
 **Mobile is explicitly out of Milestone 2.** MOBILE_CLIENT.md stays "designed, not built" with no phase number and no scheduled milestone — not being built soon. Its auth hardening items (the missing `secure` cookie flag, no rate limiting) are real bugs independent of mobile and worth picking up opportunistically, but the doc as a whole waits until a mobile app is actually being started.
+
+### Milestone 3 — done
+
+MILESTONE_3.md turns contribution into something earned and gated: an append-only points ledger (`ContributionEvent`) driving a `guideLevel` cache on `GuideProfile`; edits to existing adventure pages/trails/spots sit as a `PENDING` revision until enough `guideLevel`-eligible votes (or one admin/moderator) approve or reject it, with the live row showing the last *approved* revision and `verificationStatus` now derived from approval rather than a standalone confirm button; a `ContentReport` queue any member can file and a level-10+ reviewer resolves, with an upheld report reverting content via a new `revertToPreviousApproved()` path (not a literal call into GEODATA_HISTORY.md's `revert()`, which only files another pending revision) and deducting points; and a `Role.MODERATOR` tier reached through a `ModeratorApplication` an admin decides, with a reduced admin resource set. See MILESTONE_3.md §11 for the seven decisions locked with the product owner and §12 for what's still explicitly open (reject-threshold auto-expiry, per-image vs. per-page media approval batching, and others).
+
+| Phase | Name | Status |
+|---|---|---|
+| 19 | Roles & profile foundation — `MODERATOR` role, `GuideProfile` extension (`isListed`/points/level/approvals caches), `SystemSetting` + `SettingsService` | done |
+| 20 | Contribution ledger — `ContributionEvent`, award/recompute logic, backfill script, profile UI | done |
+| 21 | Approval pipeline (API) — revision `approvalStatus`/`approvedRevisionId`, vote endpoints, derived `verificationStatus`, retired `CONFIRMATION_THRESHOLD` | done |
+| 22 | Approval UI — approved-vs-pending rendering, diff + vote buttons, review queue | done |
+| 23 | Reporting & enforcement — `ContentReport`, revert-on-uphold, penalties, rate limiting | done |
+| 24 | Moderation console — `ModeratorApplication` + admin review, settings resource, moderator-restricted resource set | done |
+| 25 | Polish & docs — remaining `NotificationType` sweep (`CHANGE_APPROVED`/`CHANGE_REJECTED`/`LEVEL_UP`), i18n catalogue gap fill, `recompute:contributions` drift command, this fold-in | done |
+
+Notification types added across the milestone (§9, below): `REPORT_RESOLVED`/`REPORT_UPHELD_AGAINST_YOU` (pulled forward into Phase 23), `MODERATOR_APPLICATION_DECIDED` (pulled forward into Phase 24), and `CHANGE_APPROVED`/`CHANGE_REJECTED`/`LEVEL_UP` (Phase 25).
 
 ---
 
@@ -1386,6 +1402,13 @@ enum NotificationType {
   TRAIL_VERIFIED
   SPOT_VERIFIED
   GUIDE_VERIFIED
+  // Milestone 3 (MILESTONE_3.md §9.4) — the approval/contribution/moderation axis
+  REPORT_RESOLVED
+  REPORT_UPHELD_AGAINST_YOU
+  MODERATOR_APPLICATION_DECIDED
+  CHANGE_APPROVED
+  CHANGE_REJECTED
+  LEVEL_UP
 }
 
 model Notification {
@@ -1416,6 +1439,12 @@ model Notification {
 | Adventure page confirmations cross the threshold | `PAGE_VERIFIED` | All page contributors (distinct `editorId`s) |
 | Trail/spot confirmations cross the threshold | `TRAIL_VERIFIED` / `SPOT_VERIFIED` | The trail/spot's `createdById` |
 | Admin sets a guide profile to `VERIFIED` | `GUIDE_VERIFIED` | The guide |
+| A pending page/trail/spot revision is approved / rejected | `CHANGE_APPROVED` / `CHANGE_REJECTED` | The revision's editor |
+| A user's `guideLevel` rises | `LEVEL_UP` | That user |
+| A report is resolved / upheld against a user's content | `REPORT_RESOLVED` / `REPORT_UPHELD_AGAINST_YOU` | The reporter / the content's editor |
+| A moderator application is approved or rejected | `MODERATOR_APPLICATION_DECIDED` | The applicant |
+
+The last five rows are Milestone 3's approval/contribution/moderation axis (MILESTONE_3.md §9.4) — layered onto the same one-way, self-notification-suppressed, precomputed-`message` model described above rather than a parallel mechanism.
 
 `GET/PATCH /notifications` (list + mark-one-read) and `POST /notifications/read-all` — no per-type filtering yet. Surfaced as a bell icon (`components/NotificationBell.tsx`) with an unread badge, polling every 60s rather than a socket.
 

@@ -1,0 +1,4 @@
+-- AlterEnum
+ALTER TYPE "NotificationType" ADD VALUE 'CHANGE_APPROVED';
+ALTER TYPE "NotificationType" ADD VALUE 'CHANGE_REJECTED';
+ALTER TYPE "NotificationType" ADD VALUE 'LEVEL_UP';
