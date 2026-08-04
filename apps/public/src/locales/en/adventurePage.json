@@ -3,6 +3,8 @@
   "createSubheading": "Publishing creates the page and its first revision together.",
   "editTitle": "Edit {{title}}",
   "addTrailTitle": "Add a trail to {{title}}",
+  "updateTrailTitle": "Update the trail for {{title}}",
+  "updateTrailNotice": "This activity already has a trail. Submitting here replaces its route - the previous version stays available in the trail's history.",
   "addSpotTitle": "Add a spot to {{title}}",
   "fields": {
     "title": "Title",
@@ -40,6 +42,7 @@
     "submitRevision": "Submit revision",
     "adding": "Adding...",
     "addTrail": "Add trail",
+    "updateTrail": "Update trail",
     "addSpot": "Add spot",
     "drawOnMap": "Draw on map",
     "uploadGpx": "Upload GPX",

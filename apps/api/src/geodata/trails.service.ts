@@ -3,7 +3,7 @@ import { NotificationType, TrailElevationProfile } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { assertWithinNepal, buildSamples, computeAggregates, simplifyPoints } from '../tracks/track-geometry.util';
+import { assertWithinNepal, buildSamples, computeAggregates, simplifyPoints, TrackAggregates } from '../tracks/track-geometry.util';
 import { CreateTrailDto } from './dto/create-trail.dto';
 import { deriveDistrictTags } from './district-derivation.util';
 import { UpdateTrailDto } from './dto/update-trail.dto';
@@ -88,11 +88,31 @@ export class TrailsService {
     return { ...rows[0], elevationProfile };
   }
 
+  // One trail per activity page: a second "add trail" submission is an edit
+  // to the existing trail, not a new one, so it must go through update() and
+  // create a TrailRevision rather than a second Trail row.
+  private async findActiveTrailId(pageId: string): Promise<string | null> {
+    const rows = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM trails WHERE "adventurePageId" = ${pageId} AND "isActive" = true LIMIT 1
+    `;
+    return rows[0]?.id ?? null;
+  }
+
   // Insert creates a version:1 TrailRevision in the same transaction,
   // mirroring AdventurePagesService.create()'s page+revision transaction.
   // source defaults to DRAWN (hand-clicked in DrawMap); TracksService's
   // promote-to-trail flow passes RECORDED_ACTIVITY instead.
   async create(pageId: string, userId: string, dto: CreateTrailDto, source: 'DRAWN' | 'RECORDED_ACTIVITY' = 'DRAWN'): Promise<TrailRow> {
+    const existingId = await this.findActiveTrailId(pageId);
+    if (existingId) {
+      return this.update(existingId, userId, {
+        geometry: dto.geometry,
+        name: dto.name,
+        distanceMeters: dto.distanceMeters,
+        editSummary: 'Replaced via a new trail submission for this activity',
+      });
+    }
+
     const id = randomUUID();
     const revisionId = randomUUID();
     const now = new Date();
@@ -403,6 +423,11 @@ export class TrailsService {
     const aggregates = computeAggregates(points);
     const hasElevation = aggregates.minElevationMeters !== null;
 
+    const existingId = await this.findActiveTrailId(pageId);
+    if (existingId) {
+      return this.replaceGeometryFromGpx(existingId, pageId, userId, name, geojson, aggregates, hasElevation, points);
+    }
+
     const id = randomUUID();
     const revisionId = randomUUID();
     const profileId = randomUUID();
@@ -453,6 +478,72 @@ export class TrailsService {
     });
 
     return this.get(id);
+  }
+
+  // Re-importing a GPX for a page that already has a trail replaces its
+  // geometry via a new TrailRevision, mirroring update()'s geometry branch,
+  // instead of importGpx() inserting a second Trail row.
+  private async replaceGeometryFromGpx(
+    trailId: string,
+    pageId: string,
+    userId: string,
+    name: string | undefined,
+    geojson: string,
+    aggregates: TrackAggregates,
+    hasElevation: boolean,
+    points: { lng: number; lat: number; ele?: number }[],
+  ): Promise<TrailRow & { elevationProfile: TrailElevationProfile | null }> {
+    const now = new Date();
+    const revisionId = randomUUID();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`
+        UPDATE trails
+        SET geometry = ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+            "distanceMeters" = ${aggregates.distanceMeters},
+            name = COALESCE(${name ?? null}, name),
+            "verificationStatus" = 'UNVERIFIED',
+            "lastEditedById" = ${userId},
+            "updatedAt" = ${now}
+        WHERE id = ${trailId}
+      `;
+
+      const latest = await tx.$queryRaw<{ version: number }[]>`
+        SELECT version FROM trail_revisions WHERE "trailId" = ${trailId} ORDER BY version DESC LIMIT 1
+      `;
+      const nextVersion = (latest[0]?.version ?? 0) + 1;
+
+      await tx.$executeRaw`
+        INSERT INTO trail_revisions (
+          id, "trailId", version, geometry, name, "distanceMeters",
+          "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
+        )
+        SELECT ${revisionId}, id, ${nextVersion}, geometry, name, "distanceMeters",
+               'Replaced via GPX re-import', false, ${userId}, ${now}
+        FROM trails WHERE id = ${trailId}
+      `;
+
+      await tx.trailElevationProfile.deleteMany({ where: { trailId } });
+      if (hasElevation) {
+        const samples = buildSamples(points);
+        await tx.trailElevationProfile.create({
+          data: {
+            id: randomUUID(),
+            trailId,
+            samples,
+            sampleCount: samples.length,
+            ascentMeters: aggregates.ascentMeters,
+            descentMeters: aggregates.descentMeters,
+            minElevationMeters: aggregates.minElevationMeters!,
+            maxElevationMeters: aggregates.maxElevationMeters!,
+          },
+        });
+      }
+
+      await deriveDistrictTags(tx, 'trails', trailId, pageId);
+    });
+
+    return this.get(trailId);
   }
 
   // admin-only escape hatch for a bad import - deletes the profile without

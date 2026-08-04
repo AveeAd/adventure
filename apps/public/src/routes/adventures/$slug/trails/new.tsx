@@ -22,7 +22,9 @@ export const Route = createFileRoute('/adventures/$slug/trails/new')({
       throw new Error('Failed to load adventure page');
     }
     const page: { id: string; title: string } = await pageRes.json();
-    return { page };
+    const trailsRes = await fetch(apiUrl(`/adventure-pages/${page.id}/trails`));
+    const trails: unknown[] = trailsRes.ok ? await trailsRes.json() : [];
+    return { page, hasExistingTrail: trails.length > 0 };
   },
   component: NewTrailPage,
   head: ({ loaderData }) => ({
@@ -31,7 +33,7 @@ export const Route = createFileRoute('/adventures/$slug/trails/new')({
 });
 
 function NewTrailPage() {
-  const { page } = Route.useLoaderData();
+  const { page, hasExistingTrail } = Route.useLoaderData();
   const { slug } = Route.useParams();
   const authStatus = useRequireAuth(`/adventures/${slug}/trails/new`);
   const navigate = useNavigate();
@@ -97,8 +99,11 @@ function NewTrailPage() {
   return (
     <Container>
       <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-        {t('addTrailTitle', { title: page.title })}
+        {hasExistingTrail ? t('updateTrailTitle', { title: page.title }) : t('addTrailTitle', { title: page.title })}
       </h1>
+      {hasExistingTrail && (
+        <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{t('updateTrailNotice')}</p>
+      )}
 
       <div className="mt-4 inline-flex rounded-lg border border-stone-200 p-1 dark:border-stone-800">
         <button
@@ -164,7 +169,11 @@ function NewTrailPage() {
           )}
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" disabled={submitting} className="self-start">
-            {submitting ? t('actions.adding') : t('actions.addTrail')}
+            {submitting
+              ? t('actions.adding')
+              : hasExistingTrail
+                ? t('actions.updateTrail')
+                : t('actions.addTrail')}
           </Button>
         </form>
       </Card>

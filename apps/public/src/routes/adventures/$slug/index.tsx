@@ -514,7 +514,7 @@ function TrailsAndSpotsSection({
           <div className="flex gap-2">
             <Link to="/adventures/$slug/trails/new" params={{ slug }}>
               <Button variant="secondary" size="sm">
-                <Plus className="h-3.5 w-3.5" /> {t('actions.addTrail')}
+                <Plus className="h-3.5 w-3.5" /> {trails.length > 0 ? t('actions.updateTrail') : t('actions.addTrail')}
               </Button>
             </Link>
             <Link to="/adventures/$slug/spots/new" params={{ slug }}>
