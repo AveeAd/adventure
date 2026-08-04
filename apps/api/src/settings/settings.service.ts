@@ -53,4 +53,10 @@ export class SettingsService implements OnModuleInit {
       description: SETTING_DEFAULTS[key].description,
     }));
   }
+
+  listPublic(): { key: string; value: string }[] {
+    return Object.entries(SETTING_DEFAULTS)
+      .filter(([, def]) => def.public)
+      .map(([key]) => ({ key, value: this.get(key) }));
+  }
 }

@@ -8,12 +8,13 @@ import { Button } from '../components/Button'
 import { NotificationBell } from '../components/NotificationBell'
 import { fetchCurrentUser, logout, type CurrentUser } from '../lib/auth/session'
 import { useApprovalEligibility } from '../lib/auth/eligibility'
+import { fetchAppConfig } from '../lib/app-config'
 import '../lib/i18n' // side-effect: initializes the shared i18next instance
 import { resolveLocale } from '../lib/i18n/locale'
 
 export const Route = createRootRoute({
-  loader: async () => ({ locale: await resolveLocale() }),
-  head: () => ({
+  loader: async () => ({ locale: await resolveLocale(), appConfig: await fetchAppConfig() }),
+  head: ({ loaderData }) => ({
     meta: [
       {
         charSet: 'utf-8',
@@ -23,7 +24,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'Adventure Nepal',
+        title: loaderData?.appConfig.name ?? 'Adventure Nepal',
       },
     ],
     links: [
@@ -75,7 +76,7 @@ function PrimaryNavLink({
 function RootDocument({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { t } = useTranslation()
-  const { locale } = Route.useLoaderData()
+  const { locale, appConfig } = Route.useLoaderData()
 
   return (
     <html lang={locale}>
@@ -87,7 +88,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
             <Link to="/" className="flex items-center gap-2 text-primary-800 dark:text-primary-300">
               <Mountain className="h-6 w-6" strokeWidth={2.5} />
-              <span className="text-lg font-semibold tracking-tight">{t('appName')}</span>
+              <span className="text-lg font-semibold tracking-tight">{appConfig.name}</span>
             </Link>
 
             <nav className="hidden items-center gap-6 sm:flex">
@@ -127,7 +128,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div className="flex-1">{children}</div>
 
         <footer className="border-t border-stone-200 py-8 text-center text-sm text-stone-500 dark:border-stone-800 dark:text-stone-400">
-          {t('tagline')}
+          {appConfig.tagline}
         </footer>
 
         <Scripts />

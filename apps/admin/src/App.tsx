@@ -1,4 +1,5 @@
 import { Authenticated, Refine } from '@refinedev/core';
+import { useEffect } from 'react';
 import { ThemedLayout } from '@refinedev/antd';
 import routerProvider, { CatchAllNavigate } from '@refinedev/react-router';
 import { ConfigProvider } from 'antd';
@@ -9,6 +10,7 @@ import { accessControlProvider } from './auth/access-control-provider';
 import { authProvider } from './auth/auth-provider';
 import { useRole } from './auth/role-store';
 import { dataProvider } from './data-provider';
+import { useAppConfig } from './hooks/useAppConfig';
 import { usePrefersDark } from './hooks/usePrefersDark';
 import i18n from './lib/i18n';
 import { AuthCallbackPage } from './pages/AuthCallback';
@@ -76,6 +78,11 @@ function App() {
   // moderators, rather than relying on accessControlProvider to hide a
   // menu item after the fact.
   const isAdmin = useRole() === 'ADMIN';
+  const { name: appName } = useAppConfig();
+
+  useEffect(() => {
+    document.title = `${appName} Admin`;
+  }, [appName]);
 
   return (
     <ConfigProvider theme={prefersDark ? darkTheme : lightTheme} locale={enUS}>

@@ -2,7 +2,7 @@
 // threshold plus one per point value in §3.1, so the contribution economy
 // is tunable without a deploy. `value` here is the seed/fallback default;
 // the DB row (once seeded) is the live source of truth.
-export const SETTING_DEFAULTS: Record<string, { value: string; description: string }> = {
+export const SETTING_DEFAULTS: Record<string, { value: string; description: string; public?: boolean }> = {
   'approval.threshold': {
     value: '5',
     description: 'APPROVE (or REJECT) votes needed to resolve a pending revision',
@@ -27,4 +27,27 @@ export const SETTING_DEFAULTS: Record<string, { value: string; description: stri
   'points.storyCreate': { value: '5', description: 'Points for STORY_CREATE (trip report publish)' },
   'points.mediaReportUpheld': { value: '-3', description: 'Points for MEDIA_REPORT_UPHELD' },
   'points.geoReportUpheld': { value: '-30', description: 'Points for GEO_REPORT_UPHELD' },
+
+  // Public branding keys - readable via GET /settings/public (no auth) so
+  // apps/public and apps/admin can render the app's name/tagline without
+  // hardcoding it, and it can be changed later without a deploy.
+  'app.name': {
+    value: 'Adventure Nepal',
+    description: 'Public-facing app name (header, titles, login screens)',
+    public: true,
+  },
+  'app.tagline': {
+    value: 'Adventure Nepal — a non-commercial map, wiki, and activity log for Nepal, built by contributors.',
+    description: 'Short tagline shown in the public site footer',
+    public: true,
+  },
+  'app.description': {
+    value: 'Adventure Nepal — a non-commercial map, wiki, and activity log for Nepal, built by contributors.',
+    description: 'Longer description for future meta/SEO use',
+    public: true,
+  },
+  'app.contactEmail': { value: '', description: 'Public contact email (not yet rendered)', public: true },
+  'app.social.twitter': { value: '', description: 'Twitter/X profile URL (not yet rendered)', public: true },
+  'app.social.instagram': { value: '', description: 'Instagram profile URL (not yet rendered)', public: true },
+  'app.social.github': { value: '', description: 'GitHub org/repo URL (not yet rendered)', public: true },
 };

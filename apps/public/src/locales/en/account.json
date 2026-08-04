@@ -113,7 +113,7 @@
   },
   "login": {
     "pageTitle": "Sign in",
-    "heading": "Sign in to Adventure Nepal",
+    "heading": "Sign in to {{appName}}",
     "subheading": "Contribute pages, log trips, and connect with guides.",
     "signInWithGoogle": "Sign in with Google"
   },

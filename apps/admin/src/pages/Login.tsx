@@ -2,6 +2,7 @@ import { useLogin } from '@refinedev/core';
 import { Card, Typography } from 'antd';
 import { Mountain } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAppConfig } from '../hooks/useAppConfig';
 import { usePrefersDark } from '../hooks/usePrefersDark';
 
 const GoogleIcon = () => (
@@ -26,6 +27,7 @@ export const LoginPage = () => {
   const { mutate: login, isPending } = useLogin();
   const prefersDark = usePrefersDark();
   const { t } = useTranslation('common');
+  const { name: appName } = useAppConfig();
 
   return (
     <div
@@ -43,7 +45,7 @@ export const LoginPage = () => {
       <Card style={{ width: 360, textAlign: 'center' }} styles={{ body: { padding: 32 } }}>
         <Mountain size={40} strokeWidth={2.5} color="#2f6b4f" style={{ margin: '0 auto' }} />
         <Typography.Title level={4} style={{ marginTop: 12, marginBottom: 4 }}>
-          {t('login.signInTo', { appName: t('appName') })}
+          {t('login.signInTo', { appName })}
         </Typography.Title>
         <Typography.Text type="secondary">{t('login.subtitle')}</Typography.Text>
 
