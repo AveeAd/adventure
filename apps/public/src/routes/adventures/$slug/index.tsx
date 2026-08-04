@@ -1,5 +1,5 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { Calendar, CheckCircle2, Clock, Hammer, Heart, ImagePlus, MapPin, MountainSnow, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock, Hammer, Heart, ImagePlus, MapPin, MountainSnow, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../lib/auth/api';
@@ -40,7 +40,10 @@ interface AdventurePageDetail {
   seasons: { season: { name: string } }[];
   tags: { tag: { id: string; name: string } }[];
   relatedPages: { id: string; title: string; slug: string; summary: string | null }[];
-  currentRevision: { content: string; createdAt: string } | null;
+  currentRevision: { content: string; createdAt: string; version: number } | null;
+  approvedRevision: { content: string; createdAt: string; version: number } | null;
+  approvedRevisionId: string | null;
+  pendingRevisionCount: number;
   contributorIds: string[];
   likeCount: number;
   likedByMe: boolean;
@@ -139,6 +142,7 @@ function AdventurePageView() {
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <StatusBadge status={page.verificationStatus} />
+          {!page.approvedRevisionId && <Badge tone="warning">{t('approval.unapprovedBadge')}</Badge>}
           {page.activityType && <Badge tone="neutral">{page.activityType.name}</Badge>}
           {page.difficultyLevel && <Badge tone="neutral">{page.difficultyLevel.name}</Badge>}
           {page.tags.map(({ tag }) => (
@@ -147,6 +151,17 @@ function AdventurePageView() {
             </Badge>
           ))}
         </div>
+
+        {page.pendingRevisionCount > 0 && page.currentRevision && (
+          <Link
+            to="/adventures/$slug/history/$version"
+            params={{ slug, version: String(page.currentRevision.version) }}
+            className="mt-3 flex w-fit items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            {t('approval.pendingChanges', { count: page.pendingRevisionCount })}
+          </Link>
+        )}
 
         <Card className="mt-6 grid grid-cols-2 gap-4 p-5 sm:grid-cols-4">
           {(page.durationMinDays || page.durationMaxDays) && (
@@ -186,9 +201,9 @@ function AdventurePageView() {
 
         <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} contributeMode={contributeMode} />
 
-        {page.currentRevision && (
+        {(page.approvedRevision ?? page.currentRevision) && (
           <div className="mt-6">
-            <MarkdownContent content={page.currentRevision.content} />
+            <MarkdownContent content={(page.approvedRevision ?? page.currentRevision)!.content} />
           </div>
         )}
 
@@ -494,17 +509,6 @@ function TrailsAndSpotsSection({
   contributeMode: boolean;
 }) {
   const { t } = useTranslation(['adventurePage', 'common']);
-  const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
-
-  async function confirmTrail(id: string) {
-    await authPost(`/trails/${id}/confirmations`);
-    setConfirmed((prev) => new Set(prev).add(id));
-  }
-
-  async function confirmSpot(id: string) {
-    await authPost(`/spots/${id}/confirmations`);
-    setConfirmed((prev) => new Set(prev).add(id));
-  }
 
   return (
     <section className="mt-10">
@@ -542,7 +546,13 @@ function TrailsAndSpotsSection({
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? t('trailsAndSpots.trailFallback')}</div>
-                      <StatusBadge status={trail.verificationStatus} />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusBadge status={trail.verificationStatus} />
+                        {!trail.approvedRevisionId && <Badge tone="warning">{t('approval.unapprovedBadge')}</Badge>}
+                        {!!trail.pendingRevisionCount && (
+                          <Badge tone="warning">{t('approval.pendingChanges', { count: trail.pendingRevisionCount })}</Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Link
@@ -552,17 +562,6 @@ function TrailsAndSpotsSection({
                       >
                         {t('common:actions.history')}
                       </Link>
-                      {contributeMode && (
-                        <Button
-                          variant={confirmed.has(trail.id) ? 'ghost' : 'secondary'}
-                          size="sm"
-                          disabled={confirmed.has(trail.id)}
-                          onClick={() => confirmTrail(trail.id)}
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          {confirmed.has(trail.id) ? t('common:actions.confirmed') : t('common:actions.confirmAccurate')}
-                        </Button>
-                      )}
                     </div>
                   </div>
                   {trail.elevationSamples && trail.elevationSamples.length > 1 && (
@@ -583,9 +582,13 @@ function TrailsAndSpotsSection({
                 <Card className="flex items-center justify-between p-4">
                   <div>
                     <div className="font-medium text-stone-900 dark:text-stone-50">{spot.name}</div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {spot.spotTypeName && <Badge tone="neutral">{spot.spotTypeName}</Badge>}
                       <StatusBadge status={spot.verificationStatus} />
+                      {!spot.approvedRevisionId && <Badge tone="warning">{t('approval.unapprovedBadge')}</Badge>}
+                      {!!spot.pendingRevisionCount && (
+                        <Badge tone="warning">{t('approval.pendingChanges', { count: spot.pendingRevisionCount })}</Badge>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -596,17 +599,6 @@ function TrailsAndSpotsSection({
                     >
                       {t('common:actions.history')}
                     </Link>
-                    {contributeMode && (
-                      <Button
-                        variant={confirmed.has(spot.id) ? 'ghost' : 'secondary'}
-                        size="sm"
-                        disabled={confirmed.has(spot.id)}
-                        onClick={() => confirmSpot(spot.id)}
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {confirmed.has(spot.id) ? t('common:actions.confirmed') : t('common:actions.confirmAccurate')}
-                      </Button>
-                    )}
                   </div>
                 </Card>
               </li>

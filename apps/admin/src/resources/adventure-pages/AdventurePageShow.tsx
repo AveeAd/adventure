@@ -2,6 +2,7 @@ import { DeleteButton, Show } from '@refinedev/antd';
 import { useCustomMutation, useInvalidate, useShow } from '@refinedev/core';
 import { Button, Descriptions, Image, Space, Tag, Typography, message } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { PageHistory } from '../common/PageHistory';
 import { VerificationStatusControl } from '../common/VerificationStatusControl';
 
 interface MediaItem {
@@ -16,11 +17,14 @@ interface AdventurePageDetail {
   title: string;
   summary: string | null;
   verificationStatus: string;
+  approvedRevisionId: string | null;
+  pendingRevisionCount: number;
   activityType: { name: string } | null;
   difficultyLevel: { name: string } | null;
   districts: { district: { name: string } }[];
   seasons: { season: { name: string } }[];
   currentRevision: { content: string } | null;
+  approvedRevision: { content: string } | null;
   contributorIds: string[];
   likeCount: number;
   media: MediaItem[];
@@ -56,6 +60,10 @@ export const AdventurePageShow = () => {
             <Descriptions.Item label={t('adventure-pages.fields.likes')}>{record.likeCount}</Descriptions.Item>
             <Descriptions.Item label={t('adventure-pages.fields.currentStatus')}>
               <Tag>{record.verificationStatus}</Tag>
+              {!record.approvedRevisionId && <Tag color="gold">{t('approval.status.PENDING')}</Tag>}
+              {record.pendingRevisionCount > 0 && (
+                <Tag color="gold">{t('geodataHistory.pendingCount', { count: record.pendingRevisionCount })}</Tag>
+              )}
             </Descriptions.Item>
           </Descriptions>
 
@@ -76,13 +84,18 @@ export const AdventurePageShow = () => {
             style={{ whiteSpace: 'pre-wrap', maxHeight: 400, overflow: 'auto' }}
             type="secondary"
           >
-            {record.currentRevision?.content ?? t('adventure-pages.noContent')}
+            {(record.approvedRevision ?? record.currentRevision)?.content ?? t('adventure-pages.noContent')}
           </Typography.Paragraph>
 
           <Typography.Title level={5} style={{ marginTop: 24 }}>
             {t('adventure-pages.fields.photos')}
           </Typography.Title>
           <MediaGallery pageId={record.id} media={record.media} />
+
+          <Typography.Title level={5} style={{ marginTop: 24 }}>
+            {t('adventure-pages.fields.history')}
+          </Typography.Title>
+          <PageHistory pageId={record.id} />
         </>
       )}
     </Show>

@@ -14,6 +14,9 @@ const STATUS_TONE: Record<string, Tone> = {
   UNVERIFIED: 'neutral',
   NEEDS_REVIEW: 'warning',
   PENDING_LICENSE_REVIEW: 'warning',
+  PENDING: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'danger',
 };
 
 export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: React.ReactNode }) {

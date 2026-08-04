@@ -21,6 +21,8 @@ export interface SpotRow {
   geometry: unknown;
   elevationMeters: number | null;
   verificationStatus: string;
+  approvedRevisionId: string | null;
+  pendingRevisionCount: number;
   isActive: boolean;
   createdById: string;
   lastEditedById: string;
@@ -63,7 +65,7 @@ export class SpotsService {
     return this.prisma.$queryRaw<SpotRow[]>`
       SELECT s.id, s."adventurePageId", s."spotTypeId", st.name AS "spotTypeName", s.name, s.description,
              ST_AsGeoJSON(s.geometry)::json AS geometry, s."elevationMeters",
-             s."verificationStatus", s."isActive",
+             s."verificationStatus", s."approvedRevisionId", s."pendingRevisionCount", s."isActive",
              s."createdById", s."lastEditedById", s."createdAt", s."updatedAt"
       FROM spots s
       JOIN spot_types st ON st.id = s."spotTypeId"
@@ -71,11 +73,11 @@ export class SpotsService {
     `;
   }
 
-  async get(id: string): Promise<SpotRow> {
+  async get(id: string): Promise<SpotRow & { approvedRevision: SpotRevisionDetail | null }> {
     const rows = await this.prisma.$queryRaw<SpotRow[]>`
       SELECT s.id, s."adventurePageId", s."spotTypeId", st.name AS "spotTypeName", s.name, s.description,
              ST_AsGeoJSON(s.geometry)::json AS geometry, s."elevationMeters",
-             s."verificationStatus", s."isActive",
+             s."verificationStatus", s."approvedRevisionId", s."pendingRevisionCount", s."isActive",
              s."createdById", s."lastEditedById", s."createdAt", s."updatedAt"
       FROM spots s
       JOIN spot_types st ON st.id = s."spotTypeId"
@@ -84,6 +86,19 @@ export class SpotsService {
     if (rows.length === 0) {
       throw new NotFoundException(`Spot ${id} not found`);
     }
+    const approvedRevision = rows[0].approvedRevisionId ? await this.getRevisionById(rows[0].approvedRevisionId) : null;
+    return { ...rows[0], approvedRevision };
+  }
+
+  private async getRevisionById(revisionId: string): Promise<SpotRevisionDetail> {
+    const rows = await this.prisma.$queryRaw<SpotRevisionDetail[]>`
+      SELECT id, "spotId", version, ST_AsGeoJSON(geometry)::json AS geometry, "spotTypeId",
+             name, description, "elevationMeters", "editSummary", "isSafetyCriticalEdit",
+             "approvalStatus", "resolvedAt", "resolvedById", "rejectionReason",
+             "editorId", "createdAt"
+      FROM spot_revisions
+      WHERE id = ${revisionId}
+    `;
     return rows[0];
   }
 
@@ -347,9 +362,9 @@ export class SpotsService {
     `;
   }
 
-  async listRevisions(spotId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<SpotRevisionSummary[]> {
+  async listRevisions(spotId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<(SpotRevisionSummary & { approveCount: number; rejectCount: number; threshold: number })[]> {
     await this.get(spotId);
-    return this.prisma.spotRevision.findMany({
+    const revisions = await this.prisma.spotRevision.findMany({
       where: { spotId, approvalStatus: status },
       orderBy: { version: 'asc' },
       select: {
@@ -365,9 +380,10 @@ export class SpotsService {
         createdAt: true,
       },
     });
+    return this.withVoteCounts(revisions);
   }
 
-  async getRevision(spotId: string, version: number): Promise<SpotRevisionDetail> {
+  async getRevision(spotId: string, version: number): Promise<SpotRevisionDetail & { approveCount: number; rejectCount: number; threshold: number }> {
     const rows = await this.prisma.$queryRaw<SpotRevisionDetail[]>`
       SELECT id, "spotId", version, ST_AsGeoJSON(geometry)::json AS geometry, "spotTypeId",
              name, description, "elevationMeters", "editSummary", "isSafetyCriticalEdit",
@@ -379,7 +395,27 @@ export class SpotsService {
     if (rows.length === 0) {
       throw new NotFoundException(`Revision ${version} not found for this spot`);
     }
-    return rows[0];
+    const [withCounts] = await this.withVoteCounts([rows[0]]);
+    return withCounts;
+  }
+
+  // MILESTONE_3.md §9.1 - mirrors AdventurePagesService.withVoteCounts.
+  private async withVoteCounts<T extends { id: string; approvalStatus: string }>(
+    revisions: T[],
+  ): Promise<(T & { approveCount: number; rejectCount: number; threshold: number })[]> {
+    const threshold = this.settings.getNumber('approval.threshold');
+    return Promise.all(
+      revisions.map(async (revision) => {
+        if (revision.approvalStatus !== 'PENDING') {
+          return { ...revision, approveCount: 0, rejectCount: 0, threshold };
+        }
+        const [approveCount, rejectCount] = await Promise.all([
+          this.prisma.spotConfirmation.count({ where: { revisionId: revision.id, decision: 'APPROVE' } }),
+          this.prisma.spotConfirmation.count({ where: { revisionId: revision.id, decision: 'REJECT' } }),
+        ]);
+        return { ...revision, approveCount, rejectCount, threshold };
+      }),
+    );
   }
 
   async diff(spotId: string, fromVersion: number, toVersion: number) {
@@ -486,7 +522,7 @@ export class SpotsService {
         SELECT s.id, s."adventurePageId", ap.title AS "adventurePageTitle", s."spotTypeId",
                st.name AS "spotTypeName", s.name, s.description,
                ST_AsGeoJSON(s.geometry)::json AS geometry, s."elevationMeters",
-               s."verificationStatus", s."isActive",
+               s."verificationStatus", s."approvedRevisionId", s."pendingRevisionCount", s."isActive",
                s."createdById", s."lastEditedById", s."createdAt", s."updatedAt"
         FROM spots s
         JOIN spot_types st ON st.id = s."spotTypeId"

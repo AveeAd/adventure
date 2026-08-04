@@ -7,6 +7,7 @@
   "spot-types": { "label": "Spot Types" },
   "tags": { "label": "Tags" },
   "master-data": { "label": "Master Data" },
+  "review-queue": { "label": "Review Queue" },
   "locations": { "label": "Locations" },
   "provinces": { "label": "Provinces" },
   "districts": { "label": "Districts" },
@@ -26,6 +27,7 @@
       "verificationStatus": "Verification status",
       "currentRevisionContent": "Current revision content",
       "photos": "Photos",
+      "history": "History",
       "created": "Created"
     },
     "noContent": "No content",
@@ -174,10 +176,37 @@
     "lengthDelta": ", length Δ {{value}} m",
     "vertexDelta": ", vertices Δ {{value}}",
     "revertTo": "Revert to v{{version}}",
-    "reverted": "Reverted to version {{version}}"
+    "reverted": "Reverted to version {{version}}",
+    "pendingCount": "{{count}} unapproved change(s)"
   },
   "verification": {
     "updated": "Verification status updated"
+  },
+  "approval": {
+    "status": { "PENDING": "Pending", "APPROVED": "Approved", "REJECTED": "Declined" },
+    "approvedByLabel": "Approved by",
+    "declinedByLabel": "Declined by",
+    "rejectionReason": "Reason: {{reason}}",
+    "approve": "Approve",
+    "decline": "Decline",
+    "declineReasonPlaceholder": "Reason (optional)",
+    "voted": "Vote recorded",
+    "voteError": "Failed to submit vote",
+    "voteProgress": "{{approve}} approve · {{reject}} decline (of {{threshold}} needed)",
+    "reviewQueue": {
+      "title": "Review queue",
+      "empty": "Nothing pending review.",
+      "filterAllTypes": "All types",
+      "filterAllDistricts": "All districts",
+      "typePage": "Adventure page",
+      "typeTrail": "Trail",
+      "typeSpot": "Spot",
+      "view": "View",
+      "editSummary": "Summary",
+      "votes": "Approve / Decline / Threshold",
+      "submitted": "Submitted",
+      "type": "Type"
+    }
   },
   "fields": {
     "name": "Name",

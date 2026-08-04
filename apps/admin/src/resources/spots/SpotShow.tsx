@@ -1,6 +1,6 @@
 import { DeleteButton, Show } from '@refinedev/antd';
 import { useShow } from '@refinedev/core';
-import { Descriptions, Typography } from 'antd';
+import { Descriptions, Tag, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { GeometryMap } from '../../components/GeometryMap';
 import { GeodataHistory } from '../common/GeodataHistory';
@@ -15,6 +15,8 @@ interface SpotDetail {
   geometry: GeoJSON.Point;
   elevationMeters: number | null;
   verificationStatus: string;
+  approvedRevisionId: string | null;
+  pendingRevisionCount: number;
 }
 
 const STATUS_OPTIONS = ['UNVERIFIED', 'NEEDS_REVIEW', 'VERIFIED'];
@@ -35,6 +37,15 @@ export const SpotShow = () => {
             <Descriptions.Item label={t('spots.fields.type')}>{record.spotTypeName}</Descriptions.Item>
             <Descriptions.Item label={t('spots.fields.elevation')}>
               {record.elevationMeters ? `${record.elevationMeters}m` : '—'}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('adventure-pages.fields.currentStatus')}>
+              {!record.approvedRevisionId && <Tag color="gold">{t('approval.status.PENDING')}</Tag>}
+              {record.pendingRevisionCount > 0 && (
+                <Tag color="gold">{t('geodataHistory.pendingCount', { count: record.pendingRevisionCount })}</Tag>
+              )}
+              {record.approvedRevisionId && record.pendingRevisionCount === 0 && (
+                <Tag color="green">{t('approval.status.APPROVED')}</Tag>
+              )}
             </Descriptions.Item>
           </Descriptions>
 

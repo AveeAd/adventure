@@ -1,9 +1,8 @@
 import { useCustom, useCustomMutation, useInvalidate } from '@refinedev/core';
-import { Button, Collapse, Descriptions, Input, Space, Tag, Typography, message } from 'antd';
+import { Button, Collapse, Input, Space, Tag, Typography, message } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDateTime } from '../../lib/format';
-import { GeometryMap } from '../../components/GeometryMap';
 import { UserRef } from '../../components/UserRef';
 
 interface RevisionSummary {
@@ -22,33 +21,18 @@ interface RevisionSummary {
   createdAt: string;
 }
 
-const APPROVAL_TAG_COLOR: Record<string, string> = { PENDING: 'gold', APPROVED: 'green', REJECTED: 'red' };
-
-interface DiffResult {
-  from: number;
-  to: number;
-  changes: { field: string; from: unknown; to: unknown }[];
-  geometry: {
-    from: GeoJSON.Geometry;
-    to: GeoJSON.Geometry;
-    maxDeviationMeters: number;
-    geometryChanged: boolean;
-    vertexDelta?: number;
-    lengthDeltaMeters?: number;
-  };
+interface DiffChange {
+  value: string;
+  added?: boolean;
+  removed?: boolean;
 }
 
-// Read-only revision timeline for TrailShow/SpotShow - expand a row to see
-// its diff against the prior version (geometry overlay + scalar stats), plus
-// a revert action reusing the same public endpoint the contribute UI uses.
-// No new Refine resource: revisions aren't independently CRUDable, staying
-// inside admin's "read + moderate, not full authoring" boundary. See
-// GEODATA_HISTORY.md's Admin section.
-export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots'; id: string }) {
-  const { result, query } = useCustom<RevisionSummary[]>({
-    url: `/${resource}/${id}/revisions`,
-    method: 'get',
-  });
+const APPROVAL_TAG_COLOR: Record<string, string> = { PENDING: 'gold', APPROVED: 'green', REJECTED: 'red' };
+
+// MILESTONE_3.md §9.1 (admin): the approvers-column + vote panel AdventurePageShow
+// was missing entirely - text-diff sibling of GeodataHistory.
+export function PageHistory({ pageId }: { pageId: string }) {
+  const { result, query } = useCustom<RevisionSummary[]>({ url: `/adventure-pages/${pageId}/revisions`, method: 'get' });
   const invalidate = useInvalidate();
   const { mutate: revertMutate, mutation: revertMutation } = useCustomMutation();
   const { t } = useTranslation('resources');
@@ -57,11 +41,11 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
 
   const revert = (version: number) => {
     revertMutate(
-      { url: `/${resource}/${id}/revisions/${version}/revert`, method: 'post', values: {} },
+      { url: `/adventure-pages/${pageId}/revisions/${version}/revert`, method: 'post', values: {} },
       {
         onSuccess: () => {
           message.success(t('geodataHistory.reverted', { version }));
-          invalidate({ resource, invalidates: ['detail', 'list'], id });
+          invalidate({ resource: 'adventure-pages', invalidates: ['detail', 'list'], id: pageId });
           query.refetch();
         },
       },
@@ -76,9 +60,7 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
           <Space>
             <strong>v{revision.version}</strong>
             <span>{formatDateTime(revision.createdAt)}</span>
-            <Tag color={APPROVAL_TAG_COLOR[revision.approvalStatus]}>
-              {t(`approval.status.${revision.approvalStatus}`)}
-            </Tag>
+            <Tag color={APPROVAL_TAG_COLOR[revision.approvalStatus]}>{t(`approval.status.${revision.approvalStatus}`)}</Tag>
             {revision.isSafetyCriticalEdit && <Tag color="orange">{t('geodataHistory.safetyCritical')}</Tag>}
             {revision.editSummary && <span style={{ color: '#888' }}>{revision.editSummary}</span>}
           </Space>
@@ -96,24 +78,16 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
                 {t('approval.rejectionReason', { reason: revision.rejectionReason })}
               </Typography.Paragraph>
             )}
-            <RevisionDiffPanel
-              resource={resource}
-              id={id}
-              version={revision.version}
-              canRevert={revision.version !== revisions[0]?.version}
-              onRevert={() => revert(revision.version)}
-              reverting={revertMutation.isPending}
-            />
+            <RevisionContentPanel pageId={pageId} version={revision.version} canRevert={revision.version !== revisions[0]?.version} onRevert={() => revert(revision.version)} reverting={revertMutation.isPending} />
             {revision.approvalStatus === 'PENDING' && (
               <VotePanel
-                resource={resource}
-                id={id}
+                pageId={pageId}
                 version={revision.version}
                 approveCount={revision.approveCount}
                 rejectCount={revision.rejectCount}
                 threshold={revision.threshold}
                 onVoted={() => {
-                  invalidate({ resource, invalidates: ['detail', 'list'], id });
+                  invalidate({ resource: 'adventure-pages', invalidates: ['detail', 'list'], id: pageId });
                   query.refetch();
                 }}
               />
@@ -125,23 +99,21 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
   );
 }
 
-function RevisionDiffPanel({
-  resource,
-  id,
+function RevisionContentPanel({
+  pageId,
   version,
   canRevert,
   onRevert,
   reverting,
 }: {
-  resource: 'trails' | 'spots';
-  id: string;
+  pageId: string;
   version: number;
   canRevert: boolean;
   onRevert: () => void;
   reverting: boolean;
 }) {
-  const { result, query } = useCustom<DiffResult>({
-    url: `/${resource}/${id}/diff`,
+  const { result, query } = useCustom<{ changes: DiffChange[] }>({
+    url: `/adventure-pages/${pageId}/diff`,
     method: 'get',
     config: { query: { from: Math.max(1, version - 1), to: version } },
     queryOptions: { enabled: version > 1 },
@@ -149,48 +121,28 @@ function RevisionDiffPanel({
   const { t } = useTranslation('resources');
 
   if (version === 1) {
-    return (
-      <p style={{ color: '#888' }}>
-        {t('geodataHistory.firstRevision')}
-      </p>
-    );
+    return <p style={{ color: '#888' }}>{t('geodataHistory.firstRevision')}</p>;
   }
 
-  if (query.isLoading || !result?.data || !('changes' in result.data)) {
+  if (query.isLoading || !result?.data) {
     return <p>{t('geodataHistory.loadingDiff')}</p>;
   }
 
-  const diff = result.data;
-
   return (
     <>
-      {diff.changes.length > 0 && (
-        <Descriptions bordered size="small" column={1} style={{ marginBottom: 16 }}>
-          {diff.changes.map((change) => (
-            <Descriptions.Item key={change.field} label={change.field}>
-              {String(change.from ?? '—')} → {String(change.to ?? '—')}
-            </Descriptions.Item>
-          ))}
-        </Descriptions>
-      )}
-
-      <Space style={{ marginBottom: 12 }}>
-        <Tag color={diff.geometry.geometryChanged ? 'blue' : 'default'}>
-          {diff.geometry.geometryChanged ? t('geodataHistory.geometryChanged') : t('geodataHistory.geometryUnchanged')}
-        </Tag>
-        {diff.geometry.geometryChanged && (
-          <span style={{ color: '#888' }}>
-            {t('geodataHistory.maxDeviation', { value: Math.round(diff.geometry.maxDeviationMeters) })}
-            {diff.geometry.lengthDeltaMeters !== undefined &&
-              t('geodataHistory.lengthDelta', { value: diff.geometry.lengthDeltaMeters })}
-            {diff.geometry.vertexDelta !== undefined &&
-              t('geodataHistory.vertexDelta', { value: diff.geometry.vertexDelta })}
+      <pre style={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflow: 'auto', fontSize: 12 }}>
+        {result.data.changes.map((change, index) => (
+          <span
+            key={index}
+            style={{
+              backgroundColor: change.added ? '#d9f7be' : change.removed ? '#ffccc7' : undefined,
+              textDecoration: change.removed ? 'line-through' : undefined,
+            }}
+          >
+            {change.value}
           </span>
-        )}
-      </Space>
-
-      <GeometryMap geometry={diff.geometry.to} compareGeometry={diff.geometry.from} />
-
+        ))}
+      </pre>
       {canRevert && (
         <Button style={{ marginTop: 12 }} danger onClick={onRevert} loading={reverting}>
           {t('geodataHistory.revertTo', { version })}
@@ -200,20 +152,15 @@ function RevisionDiffPanel({
   );
 }
 
-// MILESTONE_3.md §5.3: an admin/moderator vote always finalizes immediately
-// in the direction cast, no threshold - see resolveVoteOutcome. Shown for
-// any still-PENDING revision, mirroring apps/public's VoteControls.
 function VotePanel({
-  resource,
-  id,
+  pageId,
   version,
   approveCount,
   rejectCount,
   threshold,
   onVoted,
 }: {
-  resource: 'trails' | 'spots';
-  id: string;
+  pageId: string;
   version: number;
   approveCount: number;
   rejectCount: number;
@@ -227,7 +174,7 @@ function VotePanel({
   const vote = (decision: 'APPROVE' | 'REJECT') => {
     mutate(
       {
-        url: `/${resource}/${id}/revisions/${version}/votes`,
+        url: `/adventure-pages/${pageId}/revisions/${version}/votes`,
         method: 'post',
         values: { decision, rejectionReason: decision === 'REJECT' && reason ? reason : undefined },
       },

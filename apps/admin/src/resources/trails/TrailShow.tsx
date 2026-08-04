@@ -22,6 +22,8 @@ interface TrailDetail {
   distanceMeters: number | null;
   source: string;
   verificationStatus: string;
+  approvedRevisionId: string | null;
+  pendingRevisionCount: number;
   elevationProfile: TrailElevationProfile | null;
 }
 
@@ -60,6 +62,15 @@ export const TrailShow = () => {
             </Descriptions.Item>
             <Descriptions.Item label={t('trails.fields.source')}>
               <Tag>{record.source.replaceAll('_', ' ')}</Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label={t('adventure-pages.fields.currentStatus')}>
+              {!record.approvedRevisionId && <Tag color="gold">{t('approval.status.PENDING')}</Tag>}
+              {record.pendingRevisionCount > 0 && (
+                <Tag color="gold">{t('geodataHistory.pendingCount', { count: record.pendingRevisionCount })}</Tag>
+              )}
+              {record.approvedRevisionId && record.pendingRevisionCount === 0 && (
+                <Tag color="green">{t('approval.status.APPROVED')}</Tag>
+              )}
             </Descriptions.Item>
           </Descriptions>
 

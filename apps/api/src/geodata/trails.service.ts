@@ -20,6 +20,8 @@ export interface TrailRow {
   distanceMeters: number | null;
   source: string;
   verificationStatus: string;
+  approvedRevisionId: string | null;
+  pendingRevisionCount: number;
   isActive: boolean;
   createdById: string;
   lastEditedById: string;
@@ -69,7 +71,8 @@ export class TrailsService {
   async listForPage(pageId: string): Promise<TrailListRow[]> {
     return this.prisma.$queryRaw<TrailListRow[]>`
       SELECT t.id, t."adventurePageId", t.name, ST_AsGeoJSON(t.geometry)::json AS geometry,
-             t."distanceMeters", t.source, t."verificationStatus", t."isActive",
+             t."distanceMeters", t.source, t."verificationStatus",
+             t."approvedRevisionId", t."pendingRevisionCount", t."isActive",
              t."createdById", t."lastEditedById", t."createdAt", t."updatedAt",
              p.samples AS "elevationSamples", p."ascentMeters", p."descentMeters"
       FROM trails t
@@ -81,10 +84,11 @@ export class TrailsService {
   // Response gains elevationProfile (aggregates + samples) when present, per
   // TRAIL_ELEVATION.md - an explicit extra select, not selected on the list/
   // bbox paths above, matching the doc's "not selected unless asked for" rule.
-  async get(id: string): Promise<TrailRow & { elevationProfile: TrailElevationProfile | null }> {
+  async get(id: string): Promise<TrailRow & { elevationProfile: TrailElevationProfile | null; approvedRevision: TrailRevisionDetail | null }> {
     const rows = await this.prisma.$queryRaw<TrailRow[]>`
       SELECT id, "adventurePageId", name, ST_AsGeoJSON(geometry)::json AS geometry,
-             "distanceMeters", source, "verificationStatus", "isActive",
+             "distanceMeters", source, "verificationStatus",
+             "approvedRevisionId", "pendingRevisionCount", "isActive",
              "createdById", "lastEditedById", "createdAt", "updatedAt"
       FROM trails
       WHERE id = ${id}
@@ -93,7 +97,25 @@ export class TrailsService {
       throw new NotFoundException(`Trail ${id} not found`);
     }
     const elevationProfile = await this.prisma.trailElevationProfile.findUnique({ where: { trailId: id } });
-    return { ...rows[0], elevationProfile };
+    // MILESTONE_3.md §9.1: the live row's own name/geometry/distanceMeters
+    // stay whatever the last *approved* revision wrote (see applyApproval),
+    // so they already reflect the approved version - approvedRevision here
+    // is only needed so the frontend can diff against a version number.
+    const approvedRevision = rows[0].approvedRevisionId
+      ? await this.getRevisionById(rows[0].approvedRevisionId)
+      : null;
+    return { ...rows[0], elevationProfile, approvedRevision };
+  }
+
+  private async getRevisionById(revisionId: string): Promise<TrailRevisionDetail> {
+    const rows = await this.prisma.$queryRaw<TrailRevisionDetail[]>`
+      SELECT id, "trailId", version, ST_AsGeoJSON(geometry)::json AS geometry, name,
+             "distanceMeters", "editSummary", "isSafetyCriticalEdit", "approvalStatus",
+             "resolvedAt", "resolvedById", "rejectionReason", "editorId", "createdAt"
+      FROM trail_revisions
+      WHERE id = ${revisionId}
+    `;
+    return rows[0];
   }
 
   // One trail per activity page: a second "add trail" submission is an edit
@@ -395,9 +417,9 @@ export class TrailsService {
     `;
   }
 
-  async listRevisions(trailId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<TrailRevisionSummary[]> {
+  async listRevisions(trailId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<(TrailRevisionSummary & { approveCount: number; rejectCount: number; threshold: number })[]> {
     await this.get(trailId);
-    return this.prisma.trailRevision.findMany({
+    const revisions = await this.prisma.trailRevision.findMany({
       where: { trailId, approvalStatus: status },
       orderBy: { version: 'asc' },
       select: {
@@ -413,9 +435,10 @@ export class TrailsService {
         createdAt: true,
       },
     });
+    return this.withVoteCounts(revisions);
   }
 
-  async getRevision(trailId: string, version: number): Promise<TrailRevisionDetail> {
+  async getRevision(trailId: string, version: number): Promise<TrailRevisionDetail & { approveCount: number; rejectCount: number; threshold: number }> {
     const rows = await this.prisma.$queryRaw<TrailRevisionDetail[]>`
       SELECT id, "trailId", version, ST_AsGeoJSON(geometry)::json AS geometry, name,
              "distanceMeters", "editSummary", "isSafetyCriticalEdit", "approvalStatus",
@@ -426,7 +449,27 @@ export class TrailsService {
     if (rows.length === 0) {
       throw new NotFoundException(`Revision ${version} not found for this trail`);
     }
-    return rows[0];
+    const [withCounts] = await this.withVoteCounts([rows[0]]);
+    return withCounts;
+  }
+
+  // MILESTONE_3.md §9.1 - mirrors AdventurePagesService.withVoteCounts.
+  private async withVoteCounts<T extends { id: string; approvalStatus: string }>(
+    revisions: T[],
+  ): Promise<(T & { approveCount: number; rejectCount: number; threshold: number })[]> {
+    const threshold = this.settings.getNumber('approval.threshold');
+    return Promise.all(
+      revisions.map(async (revision) => {
+        if (revision.approvalStatus !== 'PENDING') {
+          return { ...revision, approveCount: 0, rejectCount: 0, threshold };
+        }
+        const [approveCount, rejectCount] = await Promise.all([
+          this.prisma.trailConfirmation.count({ where: { revisionId: revision.id, decision: 'APPROVE' } }),
+          this.prisma.trailConfirmation.count({ where: { revisionId: revision.id, decision: 'REJECT' } }),
+        ]);
+        return { ...revision, approveCount, rejectCount, threshold };
+      }),
+    );
   }
 
   // diffLines is meaningless for a LineString, so geodata diverges from
@@ -534,7 +577,7 @@ export class TrailsService {
       this.prisma.$queryRaw<(TrailRow & { adventurePageTitle: string })[]>`
         SELECT t.id, t."adventurePageId", ap.title AS "adventurePageTitle", t.name,
                ST_AsGeoJSON(t.geometry)::json AS geometry, t."distanceMeters", t.source,
-               t."verificationStatus", t."isActive",
+               t."verificationStatus", t."approvedRevisionId", t."pendingRevisionCount", t."isActive",
                t."createdById", t."lastEditedById", t."createdAt", t."updatedAt"
         FROM trails t
         JOIN adventure_pages ap ON ap.id = t."adventurePageId"

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AdventurePagesModule } from './adventure-pages/adventure-pages.module';
+import { ApprovalsModule } from './approvals/approvals.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from './config/config.module';
 import { ContributionsModule } from './contributions/contributions.module';
@@ -25,6 +26,7 @@ import { HealthController } from './health/health.controller';
     AuthModule,
     MasterDataModule,
     AdventurePagesModule,
+    ApprovalsModule,
     GeodataModule,
     TripReportsModule,
     TripGroupsModule,

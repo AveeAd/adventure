@@ -8,6 +8,7 @@
     "locations": "Locations"
   },
   "descriptions": {
+    "review-queue": "Pending revisions awaiting approval",
     "adventure-pages": "Moderate content & verification status",
     "trip-reports": "View and remove trip logs",
     "trip-groups": "Companion groups by route & date",

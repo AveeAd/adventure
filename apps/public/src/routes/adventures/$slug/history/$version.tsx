@@ -5,14 +5,32 @@ import { apiUrl } from '../../../../lib/auth/api';
 import i18n from '../../../../lib/i18n';
 import { authPost } from '../../../../lib/auth/auth-fetch';
 import { checkAuth } from '../../../../lib/auth/session';
+import { StatusBadge } from '../../../../components/Badge';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
+import { UserRef } from '../../../../components/UserRef';
+import { VoteControls } from '../../../../components/VoteControls';
+import { formatDateTime } from '../../../../lib/format';
 
 interface DiffChange {
   value: string;
   added?: boolean;
   removed?: boolean;
+}
+
+interface RevisionDetail {
+  id: string;
+  version: number;
+  content: string;
+  editorId: string;
+  approvalStatus: string;
+  resolvedAt: string | null;
+  resolvedById: string | null;
+  rejectionReason: string | null;
+  approveCount: number;
+  rejectCount: number;
+  threshold: number;
 }
 
 export const Route = createFileRoute('/adventures/$slug/history/$version')({
@@ -27,21 +45,21 @@ export const Route = createFileRoute('/adventures/$slug/history/$version')({
     const page: { id: string; title: string } = await pageRes.json();
     const version = Number(params.version);
 
-    if (version <= 1) {
-      const revisionRes = await fetch(apiUrl(`/adventure-pages/${page.id}/revisions/${version}`));
-      if (!revisionRes.ok) {
-        throw notFound();
-      }
-      const revision: { content: string } = await revisionRes.json();
-      return { slug: params.slug, page, version, mode: 'full' as const, content: revision.content, changes: null };
-    }
-
-    const diffRes = await fetch(apiUrl(`/adventure-pages/${page.id}/diff?from=${version - 1}&to=${version}`));
-    if (!diffRes.ok) {
+    const revisionRes = await fetch(apiUrl(`/adventure-pages/${page.id}/revisions/${version}`));
+    if (!revisionRes.ok) {
       throw notFound();
     }
-    const diff: { changes: DiffChange[] } = await diffRes.json();
-    return { slug: params.slug, page, version, mode: 'diff' as const, content: null, changes: diff.changes };
+    const revision: RevisionDetail = await revisionRes.json();
+
+    let changes: DiffChange[] | null = null;
+    if (version > 1) {
+      const diffRes = await fetch(apiUrl(`/adventure-pages/${page.id}/diff?from=${version - 1}&to=${version}`));
+      if (diffRes.ok) {
+        const diff: { changes: DiffChange[] } = await diffRes.json();
+        changes = diff.changes;
+      }
+    }
+    return { slug: params.slug, page, version, revision, changes };
   },
   component: RevisionDiffPage,
   head: ({ loaderData }) => ({
@@ -52,12 +70,13 @@ export const Route = createFileRoute('/adventures/$slug/history/$version')({
 });
 
 function RevisionDiffPage() {
-  const { slug, page, version, mode, content, changes } = Route.useLoaderData();
+  const { slug, page, version, revision: initialRevision, changes } = Route.useLoaderData();
   const navigate = useNavigate();
   const { t } = useTranslation('adventurePage');
   const [signedIn, setSignedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reverting, setReverting] = useState(false);
+  const [revision, setRevision] = useState(initialRevision);
 
   useEffect(() => {
     checkAuth().then(setSignedIn);
@@ -77,18 +96,34 @@ function RevisionDiffPage() {
 
   return (
     <Container>
-      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-        {t('history.diffTitle', { name: page.title, version })}
-      </h1>
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+          {t('history.diffTitle', { name: page.title, version })}
+        </h1>
+        <StatusBadge status={revision.approvalStatus} />
+      </div>
+
+      {revision.resolvedById && (
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+          {revision.approvalStatus === 'REJECTED' ? t('history.declinedBy') : t('history.approvedBy')}{' '}
+          <UserRef userId={revision.resolvedById} />
+          {revision.resolvedAt && <> {t('history.resolvedAt', { date: formatDateTime(revision.resolvedAt) })}</>}
+        </p>
+      )}
+      {revision.rejectionReason && (
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+          {t('history.rejectionReason', { reason: revision.rejectionReason })}
+        </p>
+      )}
 
       <Card className="mt-6 overflow-x-auto p-5">
-        {mode === 'full' ? (
+        {changes === null ? (
           <article className="whitespace-pre-wrap font-mono text-sm text-stone-800 dark:text-stone-200">
-            {content}
+            {revision.content}
           </article>
         ) : (
           <pre className="whitespace-pre-wrap font-mono text-sm">
-            {changes?.map((change, index) => (
+            {changes.map((change, index) => (
               <span
                 key={index}
                 className={
@@ -105,6 +140,23 @@ function RevisionDiffPage() {
           </pre>
         )}
       </Card>
+
+      <VoteControls
+        voteUrl={`/adventure-pages/${page.id}/revisions/${version}/votes`}
+        editorId={revision.editorId}
+        approvalStatus={revision.approvalStatus}
+        approveCount={revision.approveCount}
+        rejectCount={revision.rejectCount}
+        threshold={revision.threshold}
+        onVoted={(result) =>
+          setRevision((r) => ({
+            ...r,
+            approveCount: result.approveCount,
+            rejectCount: result.rejectCount,
+            approvalStatus: result.outcome,
+          }))
+        }
+      />
 
       {signedIn && (
         <div className="mt-4">

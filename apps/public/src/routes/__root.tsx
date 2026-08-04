@@ -1,5 +1,5 @@
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
-import { FilePlus, LogOut, Menu, Mountain, UserRound, X } from 'lucide-react'
+import { ClipboardCheck, FilePlus, LogOut, Menu, Mountain, UserRound, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -7,6 +7,7 @@ import appCss from '../styles.css?url'
 import { Button } from '../components/Button'
 import { NotificationBell } from '../components/NotificationBell'
 import { fetchCurrentUser, logout, type CurrentUser } from '../lib/auth/session'
+import { useApprovalEligibility } from '../lib/auth/eligibility'
 import '../lib/i18n' // side-effect: initializes the shared i18next instance
 import { resolveLocale } from '../lib/i18n/locale'
 
@@ -189,6 +190,7 @@ function AccountMenu({
   const containerRef = useRef<HTMLDivElement>(null)
   const initial = user.email[0]?.toUpperCase() ?? '?'
   const { t } = useTranslation()
+  const { canVote } = useApprovalEligibility()
 
   useEffect(() => {
     if (!open) return
@@ -222,6 +224,11 @@ function AccountMenu({
         <Link to="/account/guide-profile" className={navLinkClass}>
           <UserRound className="h-4 w-4" /> {t('nav.guideProfile')}
         </Link>
+        {canVote && (
+          <Link to="/review-queue" className={navLinkClass}>
+            <ClipboardCheck className="h-4 w-4" /> {t('nav.reviewQueue')}
+          </Link>
+        )}
         <button type="button" onClick={handleSignOut} className={`${navLinkClass} text-left`}>
           <LogOut className="h-4 w-4" /> {t('nav.signOut')}
         </button>
@@ -264,6 +271,15 @@ function AccountMenu({
           >
             <UserRound className="h-4 w-4" /> {t('nav.guideProfile')}
           </Link>
+          {canVote && (
+            <Link
+              to="/review-queue"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
+            >
+              <ClipboardCheck className="h-4 w-4" /> {t('nav.reviewQueue')}
+            </Link>
+          )}
           <button
             type="button"
             onClick={handleSignOut}

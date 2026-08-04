@@ -167,6 +167,13 @@ export class AdventurePagesService {
       orderBy: { version: 'desc' },
     });
 
+    // MILESTONE_3.md §9.1 read model: approvedRevision (not currentRevision)
+    // is what the public UI renders by default; currentRevision stays
+    // available so a "N unapproved changes" control can compare against it.
+    const approvedRevision = page.approvedRevisionId
+      ? await this.prisma.pageRevision.findUnique({ where: { id: page.approvedRevisionId } })
+      : null;
+
     const contributorRows = await this.prisma.pageRevision.findMany({
       where: { adventurePageId: id },
       distinct: ['editorId'],
@@ -183,6 +190,7 @@ export class AdventurePagesService {
     return {
       ...rest,
       currentRevision,
+      approvedRevision,
       contributorIds: contributorRows.map((row) => row.editorId),
       likeCount: _count.likes,
       likedByMe,
@@ -299,7 +307,7 @@ export class AdventurePagesService {
 
   async listRevisions(pageId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
     await this.ensureExists(pageId);
-    return this.prisma.pageRevision.findMany({
+    const revisions = await this.prisma.pageRevision.findMany({
       where: { adventurePageId: pageId, approvalStatus: status },
       orderBy: { version: 'asc' },
       select: {
@@ -315,6 +323,7 @@ export class AdventurePagesService {
         createdAt: true,
       },
     });
+    return this.withVoteCounts(revisions);
   }
 
   async getRevision(pageId: string, version: number) {
@@ -324,7 +333,28 @@ export class AdventurePagesService {
     if (!revision) {
       throw new NotFoundException(`Revision ${version} not found for this page`);
     }
-    return revision;
+    const [withCounts] = await this.withVoteCounts([revision]);
+    return withCounts;
+  }
+
+  // MILESTONE_3.md §9.1: the pending-revision diff view needs vote counts +
+  // threshold to render "N of 5 approvals" alongside the vote buttons.
+  private async withVoteCounts<T extends { id: string; approvalStatus: string }>(
+    revisions: T[],
+  ): Promise<(T & { approveCount: number; rejectCount: number; threshold: number })[]> {
+    const threshold = this.settings.getNumber('approval.threshold');
+    return Promise.all(
+      revisions.map(async (revision) => {
+        if (revision.approvalStatus !== 'PENDING') {
+          return { ...revision, approveCount: 0, rejectCount: 0, threshold };
+        }
+        const [approveCount, rejectCount] = await Promise.all([
+          this.prisma.pageConfirmation.count({ where: { revisionId: revision.id, decision: 'APPROVE' } }),
+          this.prisma.pageConfirmation.count({ where: { revisionId: revision.id, decision: 'REJECT' } }),
+        ]);
+        return { ...revision, approveCount, rejectCount, threshold };
+      }),
+    );
   }
 
   async diff(pageId: string, fromVersion: number, toVersion: number) {

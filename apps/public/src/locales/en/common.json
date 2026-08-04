@@ -9,7 +9,8 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "contribute": "Contribute",
-    "guideProfile": "Guide profile"
+    "guideProfile": "Guide profile",
+    "reviewQueue": "Review queue"
   },
   "actions": {
     "save": "Save",
@@ -18,8 +19,6 @@
     "delete": "Delete",
     "edit": "Edit",
     "confirm": "Confirm",
-    "confirmed": "Confirmed",
-    "confirmAccurate": "Confirm accurate",
     "loading": "Loading...",
     "checkingSignIn": "Checking sign-in...",
     "history": "History"
@@ -28,7 +27,10 @@
     "VERIFIED": "Verified",
     "UNVERIFIED": "Unverified",
     "NEEDS_REVIEW": "Needs review",
-    "PENDING_LICENSE_REVIEW": "Pending license review"
+    "PENDING_LICENSE_REVIEW": "Pending license review",
+    "PENDING": "Pending",
+    "APPROVED": "Approved",
+    "REJECTED": "Declined"
   },
   "rateUnit": {
     "PER_DAY": "per day",

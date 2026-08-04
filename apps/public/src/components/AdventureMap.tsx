@@ -29,6 +29,9 @@ export interface MapTrail {
   elevationSamples?: { d: number; e: number }[] | null;
   ascentMeters?: number | null;
   descentMeters?: number | null;
+  // MILESTONE_3.md §9.1 - same "present on the page list, absent on bbox" caveat
+  approvedRevisionId?: string | null;
+  pendingRevisionCount?: number;
 }
 
 export interface MapSpot {
@@ -39,6 +42,8 @@ export interface MapSpot {
   verificationStatus: string;
   pageSlug?: string;
   pageTitle?: string;
+  approvedRevisionId?: string | null;
+  pendingRevisionCount?: number;
 }
 
 function FitBounds({ trails, spots }: { trails: MapTrail[]; spots: MapSpot[] }) {

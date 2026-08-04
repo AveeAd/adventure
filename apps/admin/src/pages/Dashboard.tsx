@@ -4,6 +4,7 @@ import {
   BookOpen,
   Building2,
   CalendarDays,
+  ClipboardCheck,
   Compass,
   Flag,
   Gauge,
@@ -36,6 +37,7 @@ interface ResourceLink {
 }
 
 const contentLinks: ResourceLink[] = [
+  { to: '/review-queue', key: 'review-queue', icon: ClipboardCheck },
   { to: '/adventure-pages', key: 'adventure-pages', icon: BookOpen },
   { to: '/trip-reports', key: 'trip-reports', icon: Tent },
   { to: '/trip-groups', key: 'trip-groups', icon: UsersRound },
