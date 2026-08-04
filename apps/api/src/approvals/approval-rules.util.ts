@@ -36,13 +36,19 @@ export function resolveVoteOutcome(
 }
 
 // MILESTONE_3.md §5.4: verificationStatus derived from approval state.
-// The report-upheld NEEDS_REVIEW path isn't wired here - ContentReport
-// doesn't exist yet (Phase 23).
+// `hasUpheldReport` is Phase 23's wiring of the third NEEDS_REVIEW trigger -
+// an upheld ContentReport forces NEEDS_REVIEW regardless of what the
+// approved/latest comparison below would otherwise say, since the content
+// was just reverted specifically because it failed review.
 export function deriveVerificationStatus(
   approvedRevisionId: string | null,
   latestRevisionId: string,
   pendingRevisions: { isSafetyCriticalEdit: boolean }[],
+  hasUpheldReport = false,
 ): 'UNVERIFIED' | 'VERIFIED' | 'NEEDS_REVIEW' {
+  if (hasUpheldReport) {
+    return 'NEEDS_REVIEW';
+  }
   if (!approvedRevisionId) {
     return 'UNVERIFIED';
   }

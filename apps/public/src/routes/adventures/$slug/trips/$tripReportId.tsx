@@ -12,6 +12,7 @@ import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
 import { Textarea } from '../../../../components/FormField';
 import { MarkdownContent } from '../../../../components/MarkdownContent';
+import { ReportButton } from '../../../../components/ReportButton';
 
 interface TripReportDetail {
   id: string;
@@ -181,6 +182,7 @@ function TripReportPage() {
             <Heart className="h-4 w-4" /> {t('kudosCount', { count: kudosCount })}
           </span>
         )}
+        <ReportButton targetType="TRIP_REPORT" targetId={report.id} />
       </div>
 
       <section className="mt-10">
@@ -262,16 +264,18 @@ function CommentThread({
           </span>
         </div>
         <p className="mt-2 text-sm text-stone-700 dark:text-stone-300">{comment.content}</p>
-        {signedIn && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-2"
-            onClick={() => setReplyingToId(isReplying ? null : comment.id)}
-          >
-            {t('reply')}
-          </Button>
-        )}
+        <div className="mt-2 flex items-center gap-2">
+          {signedIn && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setReplyingToId(isReplying ? null : comment.id)}
+            >
+              {t('reply')}
+            </Button>
+          )}
+          <ReportButton targetType="COMMENT" targetId={comment.id} />
+        </div>
         {isReplying && (
           <form onSubmit={handleReplySubmit} className="mt-3 flex flex-col gap-2">
             <Textarea

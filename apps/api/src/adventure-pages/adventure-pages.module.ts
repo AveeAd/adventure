@@ -7,5 +7,8 @@ import { AdventurePagesService } from './adventure-pages.service';
   imports: [UploadsModule],
   controllers: [AdventurePagesController],
   providers: [AdventurePagesService],
+  // Reused by ReportsModule for revert-on-uphold and media deactivation
+  // (MILESTONE_3.md §8).
+  exports: [AdventurePagesService],
 })
 export class AdventurePagesModule {}

@@ -13,6 +13,7 @@ import { Container } from '../../../components/Container';
 import { EmptyState } from '../../../components/EmptyState';
 import { Textarea, Input, Field, Select } from '../../../components/FormField';
 import { MarkdownContent } from '../../../components/MarkdownContent';
+import { ReportButton } from '../../../components/ReportButton';
 import { LazyAdventureMap } from '../../../components/LazyAdventureMap';
 import type { MapSpot, MapTrail } from '../../../components/AdventureMap';
 import { ElevationProfile } from '../../../components/ElevationProfile';
@@ -150,6 +151,7 @@ function AdventurePageView() {
               #{tag.name}
             </Badge>
           ))}
+          <ReportButton targetType="ADVENTURE_PAGE" targetId={page.id} />
         </div>
 
         {page.pendingRevisionCount > 0 && page.currentRevision && (
@@ -437,27 +439,30 @@ function GallerySection({
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {media.map((item) => (
-            <figure key={item.id} className="group relative overflow-hidden rounded-lg">
-              <img
-                src={item.url}
-                alt={item.altText ?? ''}
-                className="h-32 w-full rounded-lg object-cover sm:h-36"
-              />
+            <figure key={item.id} className="group relative">
+              <div className="relative overflow-hidden rounded-lg">
+                <img
+                  src={item.url}
+                  alt={item.altText ?? ''}
+                  className="h-32 w-full rounded-lg object-cover sm:h-36"
+                />
+                {canDelete(item) && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item.id)}
+                    className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                    aria-label={t('gallery.deletePhoto')}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
               {item.caption && (
                 <figcaption className="mt-1 truncate text-xs text-stone-500 dark:text-stone-400">
                   {item.caption}
                 </figcaption>
               )}
-              {canDelete(item) && (
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  aria-label={t('gallery.deletePhoto')}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              )}
+              <ReportButton targetType="MEDIA" targetId={item.id} />
             </figure>
           ))}
         </div>
@@ -562,6 +567,7 @@ function TrailsAndSpotsSection({
                       >
                         {t('common:actions.history')}
                       </Link>
+                      <ReportButton targetType="TRAIL" targetId={trail.id} />
                     </div>
                   </div>
                   {trail.elevationSamples && trail.elevationSamples.length > 1 && (
@@ -599,6 +605,7 @@ function TrailsAndSpotsSection({
                     >
                       {t('common:actions.history')}
                     </Link>
+                    <ReportButton targetType="SPOT" targetId={spot.id} />
                   </div>
                 </Card>
               </li>

@@ -345,7 +345,7 @@ export class SpotsService {
 
   // Recomputes pendingRevisionCount + the derived verificationStatus for a
   // spot - mirrors TrailsService.recomputeStatus.
-  private async recomputeStatus(tx: Prisma.TransactionClient, spotId: string): Promise<void> {
+  private async recomputeStatus(tx: Prisma.TransactionClient, spotId: string, hasUpheldReport = false): Promise<void> {
     const spotRows = await tx.$queryRaw<{ approvedRevisionId: string | null }[]>`
       SELECT "approvedRevisionId" FROM spots WHERE id = ${spotId}
     `;
@@ -355,11 +355,50 @@ export class SpotsService {
     const pending = await tx.$queryRaw<{ isSafetyCriticalEdit: boolean }[]>`
       SELECT "isSafetyCriticalEdit" FROM spot_revisions WHERE "spotId" = ${spotId} AND "approvalStatus" = 'PENDING'
     `;
-    const verificationStatus = deriveVerificationStatus(spotRows[0]?.approvedRevisionId ?? null, latestRows[0].id, pending);
+    const verificationStatus = deriveVerificationStatus(spotRows[0]?.approvedRevisionId ?? null, latestRows[0].id, pending, hasUpheldReport);
     await tx.$executeRaw`
       UPDATE spots SET "pendingRevisionCount" = ${pending.length}, "verificationStatus" = ${verificationStatus}::"GeoVerificationStatus"
       WHERE id = ${spotId}
     `;
+  }
+
+  // MILESTONE_3.md §8: mirrors TrailsService.revertToPreviousApproved - see
+  // its comment for the full rationale (live-row content vs. a page's
+  // pointer-only revert, and the no-earlier-approved-version edge case).
+  async revertToPreviousApproved(spotId: string): Promise<{ reportedRevisionId: string; reportedEditorId: string }> {
+    const spotRows = await this.prisma.$queryRaw<{ approvedRevisionId: string | null }[]>`
+      SELECT "approvedRevisionId" FROM spots WHERE id = ${spotId}
+    `;
+    const approvedRevisionId = spotRows[0]?.approvedRevisionId;
+    if (!approvedRevisionId) {
+      throw new BadRequestException('This spot has no approved revision to revert');
+    }
+    const reported = await this.prisma.spotRevision.findUniqueOrThrow({ where: { id: approvedRevisionId } });
+    const previous = await this.prisma.spotRevision.findFirst({
+      where: { spotId, approvalStatus: 'APPROVED', version: { lt: reported.version } },
+      orderBy: { version: 'desc' },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      if (previous) {
+        await tx.$executeRaw`
+          UPDATE spots s
+          SET geometry = r.geometry, "spotTypeId" = r."spotTypeId", name = r.name,
+              description = r.description, "elevationMeters" = r."elevationMeters",
+              "lastEditedById" = r."editorId", "approvedRevisionId" = r.id, "updatedAt" = ${now}
+          FROM spot_revisions r
+          WHERE r.id = ${previous.id} AND s.id = ${spotId}
+        `;
+      } else {
+        await tx.$executeRaw`
+          UPDATE spots SET "approvedRevisionId" = NULL, "updatedAt" = ${now} WHERE id = ${spotId}
+        `;
+      }
+      await this.recomputeStatus(tx, spotId, true);
+    });
+
+    return { reportedRevisionId: reported.id, reportedEditorId: reported.editorId };
   }
 
   async listRevisions(spotId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<(SpotRevisionSummary & { approveCount: number; rejectCount: number; threshold: number })[]> {

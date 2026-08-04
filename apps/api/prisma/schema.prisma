@@ -60,6 +60,9 @@ model User {
 
   notifications Notification[]
 
+  reportsFiled    ContentReport[] @relation("ReportsFiled")
+  reportsResolved ContentReport[] @relation("ReportsResolved")
+
   @@map("users")
 }
 
@@ -423,6 +426,10 @@ model Media {
   sortOrder       Int      @default(0)
   uploadedById    String
   uploadedBy      User     @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  // MILESTONE_3.md §8: flipped false by an upheld MEDIA report - there's no
+  // prior version to fall back to, unlike page/trail/spot content, so this
+  // is a plain soft delete rather than a revert.
+  isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
 
   @@map("media")
@@ -916,6 +923,13 @@ enum NotificationType {
   TRAIL_VERIFIED
   SPOT_VERIFIED
   GUIDE_VERIFIED
+  // MILESTONE_3.md §8/§9.4: report resolution is in Phase 23's scope even
+  // though the full notification-type sweep is Phase 25's job - "editor and
+  // reporter both notified" is a stated Phase 23 requirement. The other
+  // §9.4 types (CHANGE_APPROVED, CHANGE_REJECTED, LEVEL_UP,
+  // MODERATOR_APPLICATION_DECIDED) stay deferred to Phase 25.
+  REPORT_RESOLVED
+  REPORT_UPHELD_AGAINST_YOU
 }
 
 // one-way system messages, not user chat - doesn't reopen IDEA.md's
@@ -999,4 +1013,56 @@ model ContributionEvent {
   @@unique([userId, reason, targetId])
   @@index([userId, createdAt])
   @@map("contribution_events")
+}
+
+// MILESTONE_3.md §8: one flat table for every reportable content type
+// (targetId deliberately carries no FK, same audit-log exception the
+// ContributionEvent doc comment explains - a report can outlive its target
+// if an admin hard-deletes something separately).
+enum ReportTargetType {
+  ADVENTURE_PAGE
+  PAGE_REVISION
+  TRAIL
+  TRAIL_REVISION
+  SPOT
+  SPOT_REVISION
+  MEDIA
+  TRIP_REPORT
+  COMMENT
+}
+
+enum ReportReason {
+  FAKE_OR_FALSE
+  INAPPROPRIATE
+  COPYRIGHT
+  DUPLICATE
+  SAFETY_RISK
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  UPHELD
+  REJECTED
+}
+
+model ContentReport {
+  id             String   @id @default(uuid())
+  reporterId     String
+  reporter       User     @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType     ReportTargetType
+  targetId       String
+  reason         ReportReason
+  details        String?
+  status         ReportStatus @default(PENDING)
+  resolvedById   String?
+  resolvedBy     User?    @relation("ReportsResolved", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedAt     DateTime?
+  resolutionNote String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@map("content_reports")
 }

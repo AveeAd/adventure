@@ -16,6 +16,7 @@ import { Route as AdventuresNewRouteImport } from './routes/adventures/new'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as GuidesIdRouteImport } from './routes/guides/$id'
+import { Route as ReportsIndexRouteImport } from './routes/reports/index'
 import { Route as ReviewQueueIndexRouteImport } from './routes/review-queue/index'
 import { Route as UsersIdRouteImport } from './routes/users/$id'
 import { Route as AdventuresSlugIndexRouteImport } from './routes/adventures/$slug/index'
@@ -69,6 +70,11 @@ const GuidesIndexRoute = GuidesIndexRouteImport.update({
 const GuidesIdRoute = GuidesIdRouteImport.update({
   id: '/guides/$id',
   path: '/guides/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsIndexRoute = ReportsIndexRouteImport.update({
+  id: '/reports/',
+  path: '/reports/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewQueueIndexRoute = ReviewQueueIndexRouteImport.update({
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
   '/guides/': typeof GuidesIndexRoute
+  '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
   '/guides': typeof GuidesIndexRoute
+  '/reports': typeof ReportsIndexRoute
   '/review-queue': typeof ReviewQueueIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
@@ -242,6 +250,7 @@ export interface FileRoutesById {
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
   '/guides/': typeof GuidesIndexRoute
+  '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
@@ -272,6 +281,7 @@ export interface FileRouteTypes {
     | '/guides/$id'
     | '/users/$id'
     | '/guides/'
+    | '/reports/'
     | '/review-queue/'
     | '/adventures/$slug/edit'
     | '/me/activity-tracks/$trackId'
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
     | '/guides/$id'
     | '/users/$id'
     | '/guides'
+    | '/reports'
     | '/review-queue'
     | '/adventures/$slug/edit'
     | '/me/activity-tracks/$trackId'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/guides/$id'
     | '/users/$id'
     | '/guides/'
+    | '/reports/'
     | '/review-queue/'
     | '/adventures/$slug/edit'
     | '/me/activity-tracks/$trackId'
@@ -357,6 +369,7 @@ export interface RootRouteChildren {
   GuidesIdRoute: typeof GuidesIdRoute
   UsersIdRoute: typeof UsersIdRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
+  ReportsIndexRoute: typeof ReportsIndexRoute
   ReviewQueueIndexRoute: typeof ReviewQueueIndexRoute
   AdventuresSlugEditRoute: typeof AdventuresSlugEditRoute
   MeActivityTracksTrackIdRoute: typeof MeActivityTracksTrackIdRoute
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       path: '/guides/$id'
       fullPath: '/guides/$id'
       preLoaderRoute: typeof GuidesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports/': {
+      id: '/reports/'
+      path: '/reports'
+      fullPath: '/reports/'
+      preLoaderRoute: typeof ReportsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/review-queue/': {
@@ -573,6 +593,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuidesIdRoute: GuidesIdRoute,
   UsersIdRoute: UsersIdRoute,
   GuidesIndexRoute: GuidesIndexRoute,
+  ReportsIndexRoute: ReportsIndexRoute,
   ReviewQueueIndexRoute: ReviewQueueIndexRoute,
   AdventuresSlugEditRoute: AdventuresSlugEditRoute,
   MeActivityTracksTrackIdRoute: MeActivityTracksTrackIdRoute,

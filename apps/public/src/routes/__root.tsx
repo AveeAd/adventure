@@ -1,5 +1,5 @@
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
-import { ClipboardCheck, FilePlus, LogOut, Menu, Mountain, UserRound, X } from 'lucide-react'
+import { ClipboardCheck, Flag, FilePlus, LogOut, Menu, Mountain, UserRound, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -229,6 +229,11 @@ function AccountMenu({
             <ClipboardCheck className="h-4 w-4" /> {t('nav.reviewQueue')}
           </Link>
         )}
+        {canVote && (
+          <Link to="/reports" className={navLinkClass}>
+            <Flag className="h-4 w-4" /> {t('nav.reportsQueue')}
+          </Link>
+        )}
         <button type="button" onClick={handleSignOut} className={`${navLinkClass} text-left`}>
           <LogOut className="h-4 w-4" /> {t('nav.signOut')}
         </button>
@@ -278,6 +283,15 @@ function AccountMenu({
               className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
             >
               <ClipboardCheck className="h-4 w-4" /> {t('nav.reviewQueue')}
+            </Link>
+          )}
+          {canVote && (
+            <Link
+              to="/reports"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
+            >
+              <Flag className="h-4 w-4" /> {t('nav.reportsQueue')}
             </Link>
           )}
           <button

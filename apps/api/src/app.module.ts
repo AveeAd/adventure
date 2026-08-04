@@ -9,6 +9,7 @@ import { GuideProfilesModule } from './guide-profiles/guide-profiles.module';
 import { MasterDataModule } from './master-data/master-data.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
 import { TracksModule } from './tracks/tracks.module';
 import { TripReportsModule } from './trip-reports/trip-reports.module';
@@ -27,6 +28,7 @@ import { HealthController } from './health/health.controller';
     MasterDataModule,
     AdventurePagesModule,
     ApprovalsModule,
+    ReportsModule,
     GeodataModule,
     TripReportsModule,
     TripGroupsModule,

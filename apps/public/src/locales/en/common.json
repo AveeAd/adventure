@@ -10,7 +10,8 @@
     "signOut": "Sign out",
     "contribute": "Contribute",
     "guideProfile": "Guide profile",
-    "reviewQueue": "Review queue"
+    "reviewQueue": "Review queue",
+    "reportsQueue": "Reports"
   },
   "actions": {
     "save": "Save",
@@ -36,5 +37,42 @@
     "PER_DAY": "per day",
     "PER_TRIP": "per trip",
     "PER_HOUR": "per hour"
+  },
+  "report": {
+    "button": "Report",
+    "reasonLabel": "Reason",
+    "detailsLabel": "Details (optional)",
+    "submit": "Submit report",
+    "submitting": "Submitting...",
+    "cancel": "Cancel",
+    "submitted": "Thanks - a reviewer will take a look.",
+    "signInToReport": "Sign in to report content.",
+    "error": "Failed to submit report",
+    "queueTitle": "Reports",
+    "queueEmpty": "No open reports.",
+    "queueNotEligible": "Guide level 10+ is required to resolve reports.",
+    "notePlaceholder": "Resolution note (optional)",
+    "uphold": "Uphold",
+    "reject": "Reject",
+    "resolveError": "Failed to resolve report",
+    "reason": {
+      "FAKE_OR_FALSE": "Fake or false",
+      "INAPPROPRIATE": "Inappropriate",
+      "COPYRIGHT": "Copyright",
+      "DUPLICATE": "Duplicate",
+      "SAFETY_RISK": "Safety risk",
+      "OTHER": "Other"
+    },
+    "targetType": {
+      "ADVENTURE_PAGE": "Adventure page",
+      "PAGE_REVISION": "Page revision",
+      "TRAIL": "Trail",
+      "TRAIL_REVISION": "Trail revision",
+      "SPOT": "Spot",
+      "SPOT_REVISION": "Spot revision",
+      "MEDIA": "Photo",
+      "TRIP_REPORT": "Trip report",
+      "COMMENT": "Comment"
+    }
   }
 }

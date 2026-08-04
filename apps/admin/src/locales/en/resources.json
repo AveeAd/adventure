@@ -8,6 +8,43 @@
   "tags": { "label": "Tags" },
   "master-data": { "label": "Master Data" },
   "review-queue": { "label": "Review Queue" },
+  "reports": {
+    "label": "Reports",
+    "title": "Content reports",
+    "empty": "No reports.",
+    "notePlaceholder": "Resolution note (optional)",
+    "uphold": "Uphold",
+    "reject": "Reject",
+    "resolved": "Report resolved",
+    "resolveError": "Failed to resolve report",
+    "fields": {
+      "reporter": "Reporter",
+      "target": "Reported content",
+      "reason": "Reason",
+      "details": "Details",
+      "submitted": "Submitted"
+    },
+    "status": { "PENDING": "Pending", "UPHELD": "Upheld", "REJECTED": "Rejected" },
+    "targetType": {
+      "ADVENTURE_PAGE": "Adventure page",
+      "PAGE_REVISION": "Page revision",
+      "TRAIL": "Trail",
+      "TRAIL_REVISION": "Trail revision",
+      "SPOT": "Spot",
+      "SPOT_REVISION": "Spot revision",
+      "MEDIA": "Photo",
+      "TRIP_REPORT": "Trip report",
+      "COMMENT": "Comment"
+    },
+    "reason": {
+      "FAKE_OR_FALSE": "Fake or false",
+      "INAPPROPRIATE": "Inappropriate",
+      "COPYRIGHT": "Copyright",
+      "DUPLICATE": "Duplicate",
+      "SAFETY_RISK": "Safety risk",
+      "OTHER": "Other"
+    }
+  },
   "locations": { "label": "Locations" },
   "provinces": { "label": "Provinces" },
   "districts": { "label": "Districts" },

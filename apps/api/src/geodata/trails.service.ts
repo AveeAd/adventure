@@ -400,7 +400,7 @@ export class TrailsService {
   // AdventurePagesService.recomputeStatus, in raw SQL since Trail's geometry
   // column is Unsupported and most of this service already talks to the
   // trails/trail_revisions tables directly.
-  private async recomputeStatus(tx: Prisma.TransactionClient, trailId: string): Promise<void> {
+  private async recomputeStatus(tx: Prisma.TransactionClient, trailId: string, hasUpheldReport = false): Promise<void> {
     const trailRows = await tx.$queryRaw<{ approvedRevisionId: string | null }[]>`
       SELECT "approvedRevisionId" FROM trails WHERE id = ${trailId}
     `;
@@ -410,11 +410,55 @@ export class TrailsService {
     const pending = await tx.$queryRaw<{ isSafetyCriticalEdit: boolean }[]>`
       SELECT "isSafetyCriticalEdit" FROM trail_revisions WHERE "trailId" = ${trailId} AND "approvalStatus" = 'PENDING'
     `;
-    const verificationStatus = deriveVerificationStatus(trailRows[0]?.approvedRevisionId ?? null, latestRows[0].id, pending);
+    const verificationStatus = deriveVerificationStatus(trailRows[0]?.approvedRevisionId ?? null, latestRows[0].id, pending, hasUpheldReport);
     await tx.$executeRaw`
       UPDATE trails SET "pendingRevisionCount" = ${pending.length}, "verificationStatus" = ${verificationStatus}::"GeoVerificationStatus"
       WHERE id = ${trailId}
     `;
+  }
+
+  // MILESTONE_3.md §8: called from ReportsService when an upheld
+  // TRAIL/TRAIL_REVISION report reverts the live trail. Unlike a page, a
+  // trail's live row holds real geometry written directly by applyApproval,
+  // so reverting means copying the previous approved revision's snapshot
+  // back onto it (not just repointing a FK). If the reported revision was
+  // v1 (no earlier approved version exists), there is nothing to restore -
+  // this leaves the live geometry as-is but clears approvedRevisionId and
+  // forces NEEDS_REVIEW, flagging it for a human rather than guessing at
+  // a deletion the spec doesn't call for.
+  async revertToPreviousApproved(trailId: string): Promise<{ reportedRevisionId: string; reportedEditorId: string }> {
+    const trailRows = await this.prisma.$queryRaw<{ approvedRevisionId: string | null }[]>`
+      SELECT "approvedRevisionId" FROM trails WHERE id = ${trailId}
+    `;
+    const approvedRevisionId = trailRows[0]?.approvedRevisionId;
+    if (!approvedRevisionId) {
+      throw new BadRequestException('This trail has no approved revision to revert');
+    }
+    const reported = await this.prisma.trailRevision.findUniqueOrThrow({ where: { id: approvedRevisionId } });
+    const previous = await this.prisma.trailRevision.findFirst({
+      where: { trailId, approvalStatus: 'APPROVED', version: { lt: reported.version } },
+      orderBy: { version: 'desc' },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      if (previous) {
+        await tx.$executeRaw`
+          UPDATE trails t
+          SET geometry = r.geometry, name = r.name, "distanceMeters" = r."distanceMeters",
+              "lastEditedById" = r."editorId", "approvedRevisionId" = r.id, "updatedAt" = ${now}
+          FROM trail_revisions r
+          WHERE r.id = ${previous.id} AND t.id = ${trailId}
+        `;
+      } else {
+        await tx.$executeRaw`
+          UPDATE trails SET "approvedRevisionId" = NULL, "updatedAt" = ${now} WHERE id = ${trailId}
+        `;
+      }
+      await this.recomputeStatus(tx, trailId, true);
+    });
+
+    return { reportedRevisionId: reported.id, reportedEditorId: reported.editorId };
   }
 
   async listRevisions(trailId: string, status?: 'PENDING' | 'APPROVED' | 'REJECTED'): Promise<(TrailRevisionSummary & { approveCount: number; rejectCount: number; threshold: number })[]> {

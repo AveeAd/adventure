@@ -44,7 +44,7 @@ export class AdventurePagesService {
         include: {
           activityType: true,
           difficultyLevel: true,
-          media: { take: 1, orderBy: { sortOrder: 'asc' } },
+          media: { where: { isActive: true }, take: 1, orderBy: { sortOrder: 'asc' } },
           tags: { include: { tag: true } },
           _count: { select: { likes: true } },
         },
@@ -72,7 +72,7 @@ export class AdventurePagesService {
       include: {
         activityType: true,
         difficultyLevel: true,
-        media: { take: 1, orderBy: { sortOrder: 'asc' } },
+        media: { where: { isActive: true }, take: 1, orderBy: { sortOrder: 'asc' } },
         tags: { include: { tag: true } },
         _count: { select: { likes: true, views: { where: { createdAt: { gte: sevenDaysAgo } } } } },
       },
@@ -146,7 +146,7 @@ export class AdventurePagesService {
         difficultyLevel: true,
         districts: { include: { district: true } },
         seasons: { include: { season: true } },
-        media: { orderBy: { sortOrder: 'asc' } },
+        media: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
         tags: { include: { tag: true } },
         relatedTo: {
           include: {
@@ -560,7 +560,11 @@ export class AdventurePagesService {
   // Recomputes pendingRevisionCount + the derived verificationStatus for a
   // page, inside the caller's transaction - called after every revision
   // insert/approve/reject so the two never drift apart.
-  private async recomputeStatus(tx: Prisma.TransactionClient, pageId: string): Promise<void> {
+  private async recomputeStatus(
+    tx: Prisma.TransactionClient,
+    pageId: string,
+    hasUpheldReport = false,
+  ): Promise<void> {
     const page = await tx.adventurePage.findUniqueOrThrow({
       where: { id: pageId },
       select: { approvedRevisionId: true },
@@ -573,11 +577,46 @@ export class AdventurePagesService {
       where: { adventurePageId: pageId, approvalStatus: 'PENDING' },
       select: { isSafetyCriticalEdit: true },
     });
-    const verificationStatus = deriveVerificationStatus(page.approvedRevisionId, latest!.id, pending);
+    const verificationStatus = deriveVerificationStatus(page.approvedRevisionId, latest!.id, pending, hasUpheldReport);
     await tx.adventurePage.update({
       where: { id: pageId },
       data: { pendingRevisionCount: pending.length, verificationStatus },
     });
+  }
+
+  // MILESTONE_3.md §8: called from ReportsService when an upheld
+  // PAGE_REVISION/ADVENTURE_PAGE report reverts the live page to whatever
+  // was approved before the reported revision. Unlike Trail/Spot, a page's
+  // live row carries no content of its own (see submitRevision's comment) -
+  // "reverting" is just repointing approvedRevisionId, or clearing it back
+  // to null if the reported revision was v1 and nothing earlier was ever
+  // approved. Returns the reported revision's editor/id so the caller can
+  // charge the PAGE_REPORT_UPHELD penalty.
+  async revertToPreviousApproved(pageId: string): Promise<{ reportedRevisionId: string; reportedEditorId: string; reportedWasCreate: boolean }> {
+    const page = await this.prisma.adventurePage.findUniqueOrThrow({
+      where: { id: pageId },
+      select: { approvedRevisionId: true },
+    });
+    if (!page.approvedRevisionId) {
+      throw new BadRequestException('This page has no approved revision to revert');
+    }
+    const reported = await this.prisma.pageRevision.findUniqueOrThrow({
+      where: { id: page.approvedRevisionId },
+    });
+    const previous = await this.prisma.pageRevision.findFirst({
+      where: { adventurePageId: pageId, approvalStatus: 'APPROVED', version: { lt: reported.version } },
+      orderBy: { version: 'desc' },
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.adventurePage.update({
+        where: { id: pageId },
+        data: { approvedRevisionId: previous?.id ?? null },
+      });
+      await this.recomputeStatus(tx, pageId, true);
+    });
+
+    return { reportedRevisionId: reported.id, reportedEditorId: reported.editorId, reportedWasCreate: reported.version === 1 };
   }
 
   async like(pageId: string, userId: string) {
@@ -640,6 +679,13 @@ export class AdventurePagesService {
     await this.prisma.media.delete({ where: { id: mediaId } });
     await this.uploads.deleteFile(media.url);
     return { success: true };
+  }
+
+  // MILESTONE_3.md §8: soft delete for an upheld MEDIA report - unlike
+  // removeMedia (owner/admin, hard delete + file removal), this keeps the
+  // row and file as evidence and just stops it from rendering.
+  async deactivateMedia(mediaId: string) {
+    return this.prisma.media.update({ where: { id: mediaId }, data: { isActive: false } });
   }
 
   // symmetric - "see also" makes sense from either page, so a suggestion

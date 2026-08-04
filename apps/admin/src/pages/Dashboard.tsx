@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   Compass,
   Flag,
+  Flag as ReportsIcon,
   Gauge,
   LandPlot,
   Languages,
@@ -38,6 +39,7 @@ interface ResourceLink {
 
 const contentLinks: ResourceLink[] = [
   { to: '/review-queue', key: 'review-queue', icon: ClipboardCheck },
+  { to: '/reports', key: 'reports', icon: ReportsIcon },
   { to: '/adventure-pages', key: 'adventure-pages', icon: BookOpen },
   { to: '/trip-reports', key: 'trip-reports', icon: Tent },
   { to: '/trip-groups', key: 'trip-groups', icon: UsersRound },

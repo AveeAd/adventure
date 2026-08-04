@@ -50,6 +50,7 @@ import { ActivityTrackShow } from './resources/activity-tracks/ActivityTrackShow
 import { UserList } from './resources/users/UserList';
 import { UserEdit } from './resources/users/UserEdit';
 import { ReviewQueuePage } from './pages/ReviewQueue';
+import { ReportsPage } from './pages/Reports';
 import { AppTitle } from './components/AppTitle';
 import { darkTheme, lightTheme } from './theme';
 
@@ -123,6 +124,11 @@ function App() {
               list: '/review-queue',
               meta: { label: t('review-queue.label') },
             },
+            {
+              name: 'reports',
+              list: '/reports',
+              meta: { label: t('reports.label') },
+            },
 
             { name: 'content', meta: { label: t('content.label') } },
             {
@@ -193,6 +199,7 @@ function App() {
               <Route index element={<DashboardPage />} />
 
               <Route path="/review-queue" element={<ReviewQueuePage />} />
+              <Route path="/reports" element={<ReportsPage />} />
 
               {masterDataResourceConfigs.map((config) => (
                 <Route key={config.resource} path={`/${config.resource}`}>
