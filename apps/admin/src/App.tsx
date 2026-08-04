@@ -58,6 +58,7 @@ import { ReportsPage } from './pages/Reports';
 import { ModeratorApplicationsPage } from './pages/ModeratorApplications';
 import { SystemSettingsPage } from './pages/SystemSettings';
 import { AppTitle } from './components/AppTitle';
+import { GroupedSider } from './components/GroupedSider';
 import { RestrictedRoute } from './components/RestrictedRoute';
 import { darkTheme, lightTheme } from './theme';
 
@@ -225,7 +226,7 @@ function App() {
             <Route
               element={
                 <Authenticated key="authenticated" fallback={<CatchAllNavigate to="/login" />}>
-                  <ThemedLayout Title={AppTitle}>
+                  <ThemedLayout Title={AppTitle} Sider={GroupedSider}>
                     <Outlet />
                   </ThemedLayout>
                 </Authenticated>

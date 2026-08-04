@@ -10,6 +10,11 @@
   "community": { "label": "Community" },
   "moderation": { "label": "Moderation" },
   "settings": { "label": "Settings" },
+  "sections": {
+    "content": "Content",
+    "people": "People",
+    "configuration": "Configuration"
+  },
   "review-queue": { "label": "Review Queue" },
   "reports": {
     "label": "Reports",
