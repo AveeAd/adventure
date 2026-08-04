@@ -15,7 +15,9 @@ import {
   MapPinned,
   MapPinned as SpotIcon,
   Route as RouteIcon,
+  Settings,
   ShieldCheck,
+  ShieldQuestion,
   Tent,
   UsersRound,
   Users as UsersIcon,
@@ -47,6 +49,14 @@ const contentLinks: ResourceLink[] = [
   { to: '/spots', key: 'spots', icon: LandPlot },
   { to: '/guide-profiles', key: 'guide-profiles', icon: ShieldCheck },
   { to: '/users', key: 'users', icon: UsersIcon },
+];
+
+// MILESTONE_3.md §2.1: admin-only tiles - moderators can't review
+// applications or edit system settings, so these are appended to
+// contentLinks conditionally rather than living in the static array above.
+const adminOnlyLinks: ResourceLink[] = [
+  { to: '/moderator-applications', key: 'moderator-applications', icon: ShieldQuestion },
+  { to: '/system-settings', key: 'system-settings', icon: Settings },
 ];
 
 const masterDataLinks: ResourceLink[] = [
@@ -107,7 +117,10 @@ export const DashboardPage = () => {
       <Typography.Title level={5} style={{ marginTop: 32 }}>
         {t('sections.contentAndUsers')}
       </Typography.Title>
-      <ResourceLinkGrid links={contentLinks} primaryColor={token.colorPrimary} />
+      <ResourceLinkGrid
+        links={identity?.role === 'ADMIN' ? [...contentLinks, ...adminOnlyLinks] : contentLinks}
+        primaryColor={token.colorPrimary}
+      />
 
       <Typography.Title level={5} style={{ marginTop: 32 }}>
         {t('sections.masterData')}

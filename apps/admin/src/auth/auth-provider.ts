@@ -1,14 +1,17 @@
 import type { AuthProvider } from '@refinedev/core';
+import { roleStore } from './role-store';
 import { tokenStore } from './token-store';
 
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+
+export type Role = 'ADMIN' | 'MODERATOR' | 'USER';
 
 // MILESTONE_3.md §2.1: admin-site login is allowed for ADMIN and MODERATOR
 // only. Nothing on the backend rejects a plain USER's OAuth login (it's a
 // shared Google flow with apps/public), so the gate has to live here -
 // every other admin endpoint already 403s a USER via @Roles, but the app
 // shell itself would otherwise still load for them.
-const ADMIN_SITE_ROLES = ['ADMIN', 'MODERATOR'];
+const ADMIN_SITE_ROLES: Role[] = ['ADMIN', 'MODERATOR'];
 
 async function fetchIdentityRole(token: string): Promise<string | null> {
   const res = await fetch(`${API_URL}/api/v1/auth/me`, {
@@ -34,6 +37,7 @@ export const authProvider: AuthProvider = {
       credentials: 'include',
     }).catch(() => undefined);
     tokenStore.set(null);
+    roleStore.set(null);
     return { success: true, redirectTo: '/login' };
   },
 
@@ -61,14 +65,16 @@ export const authProvider: AuthProvider = {
     }
 
     const role = await fetchIdentityRole(token);
-    if (!role || !ADMIN_SITE_ROLES.includes(role)) {
+    if (!role || !ADMIN_SITE_ROLES.includes(role as Role)) {
       tokenStore.set(null);
+      roleStore.set(null);
       return {
         authenticated: false,
         redirectTo: '/login',
         error: { name: 'Forbidden', message: 'This account is not permitted to access the admin site.' },
       };
     }
+    roleStore.set(role as Role);
     return { authenticated: true };
   },
 

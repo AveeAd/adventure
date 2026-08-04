@@ -7,6 +7,7 @@ import { ContributionsModule } from './contributions/contributions.module';
 import { GeodataModule } from './geodata/geodata.module';
 import { GuideProfilesModule } from './guide-profiles/guide-profiles.module';
 import { MasterDataModule } from './master-data/master-data.module';
+import { ModeratorApplicationsModule } from './moderator-applications/moderator-applications.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ReportsModule } from './reports/reports.module';
@@ -35,6 +36,7 @@ import { HealthController } from './health/health.controller';
     GuideProfilesModule,
     UploadsModule,
     TracksModule,
+    ModeratorApplicationsModule,
   ],
   controllers: [HealthController],
 })

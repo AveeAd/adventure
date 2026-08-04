@@ -5,7 +5,9 @@ import { ConfigProvider } from 'antd';
 import enUS from 'antd/locale/en_US';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import { accessControlProvider } from './auth/access-control-provider';
 import { authProvider } from './auth/auth-provider';
+import { useRole } from './auth/role-store';
 import { dataProvider } from './data-provider';
 import { usePrefersDark } from './hooks/usePrefersDark';
 import i18n from './lib/i18n';
@@ -51,7 +53,10 @@ import { UserList } from './resources/users/UserList';
 import { UserEdit } from './resources/users/UserEdit';
 import { ReviewQueuePage } from './pages/ReviewQueue';
 import { ReportsPage } from './pages/Reports';
+import { ModeratorApplicationsPage } from './pages/ModeratorApplications';
+import { SystemSettingsPage } from './pages/SystemSettings';
 import { AppTitle } from './components/AppTitle';
+import { RestrictedRoute } from './components/RestrictedRoute';
 import { darkTheme, lightTheme } from './theme';
 
 const masterDataResourceConfigs = [
@@ -66,6 +71,11 @@ const masterDataResourceConfigs = [
 function App() {
   const prefersDark = usePrefersDark();
   const { t } = useTranslation('resources');
+  // MILESTONE_3.md §2.1: keep the two admin-only resources out of the
+  // registered resource list (and therefore the Sider menu) entirely for
+  // moderators, rather than relying on accessControlProvider to hide a
+  // menu item after the fact.
+  const isAdmin = useRole() === 'ADMIN';
 
   return (
     <ConfigProvider theme={prefersDark ? darkTheme : lightTheme} locale={enUS}>
@@ -74,6 +84,7 @@ function App() {
           routerProvider={routerProvider}
           authProvider={authProvider}
           dataProvider={dataProvider}
+          accessControlProvider={accessControlProvider}
           i18nProvider={{
             translate: (key, options) => i18n.t(key, options) as string,
             changeLocale: (lang) => i18n.changeLanguage(lang),
@@ -182,6 +193,20 @@ function App() {
               edit: '/users/edit/:id',
               meta: { label: t('users.label') },
             },
+            ...(isAdmin
+              ? [
+                  {
+                    name: 'moderator-applications',
+                    list: '/moderator-applications',
+                    meta: { label: t('moderator-applications.label') },
+                  },
+                  {
+                    name: 'system-settings',
+                    list: '/system-settings',
+                    meta: { label: t('system-settings.label') },
+                  },
+                ]
+              : []),
           ]}
         >
           <Routes>
@@ -200,37 +225,123 @@ function App() {
 
               <Route path="/review-queue" element={<ReviewQueuePage />} />
               <Route path="/reports" element={<ReportsPage />} />
+              <Route
+                path="/moderator-applications"
+                element={
+                  <RestrictedRoute resource="moderator-applications" action="list">
+                    <ModeratorApplicationsPage />
+                  </RestrictedRoute>
+                }
+              />
+              <Route
+                path="/system-settings"
+                element={
+                  <RestrictedRoute resource="system-settings" action="list">
+                    <SystemSettingsPage />
+                  </RestrictedRoute>
+                }
+              />
 
               {masterDataResourceConfigs.map((config) => (
                 <Route key={config.resource} path={`/${config.resource}`}>
                   <Route index element={<MasterDataList config={config} />} />
-                  <Route path="create" element={<MasterDataCreate config={config} />} />
-                  <Route path="edit/:id" element={<MasterDataEdit config={config} />} />
+                  <Route
+                    path="create"
+                    element={
+                      <RestrictedRoute resource={config.resource} action="create">
+                        <MasterDataCreate config={config} />
+                      </RestrictedRoute>
+                    }
+                  />
+                  <Route
+                    path="edit/:id"
+                    element={
+                      <RestrictedRoute resource={config.resource} action="edit">
+                        <MasterDataEdit config={config} />
+                      </RestrictedRoute>
+                    }
+                  />
                 </Route>
               ))}
 
               <Route path="/countries">
                 <Route index element={<MasterDataList config={countryConfig} />} />
-                <Route path="create" element={<MasterDataCreate config={countryConfig} />} />
-                <Route path="edit/:id" element={<MasterDataEdit config={countryConfig} />} />
+                <Route
+                  path="create"
+                  element={
+                    <RestrictedRoute resource="countries" action="create">
+                      <MasterDataCreate config={countryConfig} />
+                    </RestrictedRoute>
+                  }
+                />
+                <Route
+                  path="edit/:id"
+                  element={
+                    <RestrictedRoute resource="countries" action="edit">
+                      <MasterDataEdit config={countryConfig} />
+                    </RestrictedRoute>
+                  }
+                />
               </Route>
 
               <Route path="/provinces">
                 <Route index element={<ProvinceList />} />
-                <Route path="create" element={<ProvinceCreate />} />
-                <Route path="edit/:id" element={<ProvinceEdit />} />
+                <Route
+                  path="create"
+                  element={
+                    <RestrictedRoute resource="provinces" action="create">
+                      <ProvinceCreate />
+                    </RestrictedRoute>
+                  }
+                />
+                <Route
+                  path="edit/:id"
+                  element={
+                    <RestrictedRoute resource="provinces" action="edit">
+                      <ProvinceEdit />
+                    </RestrictedRoute>
+                  }
+                />
               </Route>
 
               <Route path="/districts">
                 <Route index element={<DistrictList />} />
-                <Route path="create" element={<DistrictCreate />} />
-                <Route path="edit/:id" element={<DistrictEdit />} />
+                <Route
+                  path="create"
+                  element={
+                    <RestrictedRoute resource="districts" action="create">
+                      <DistrictCreate />
+                    </RestrictedRoute>
+                  }
+                />
+                <Route
+                  path="edit/:id"
+                  element={
+                    <RestrictedRoute resource="districts" action="edit">
+                      <DistrictEdit />
+                    </RestrictedRoute>
+                  }
+                />
               </Route>
 
               <Route path="/municipalities">
                 <Route index element={<MunicipalityList />} />
-                <Route path="create" element={<MunicipalityCreate />} />
-                <Route path="edit/:id" element={<MunicipalityEdit />} />
+                <Route
+                  path="create"
+                  element={
+                    <RestrictedRoute resource="municipalities" action="create">
+                      <MunicipalityCreate />
+                    </RestrictedRoute>
+                  }
+                />
+                <Route
+                  path="edit/:id"
+                  element={
+                    <RestrictedRoute resource="municipalities" action="edit">
+                      <MunicipalityEdit />
+                    </RestrictedRoute>
+                  }
+                />
               </Route>
 
               <Route path="/adventure-pages">
@@ -270,7 +381,14 @@ function App() {
 
               <Route path="/users">
                 <Route index element={<UserList />} />
-                <Route path="edit/:id" element={<UserEdit />} />
+                <Route
+                  path="edit/:id"
+                  element={
+                    <RestrictedRoute resource="users" action="edit">
+                      <UserEdit />
+                    </RestrictedRoute>
+                  }
+                />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

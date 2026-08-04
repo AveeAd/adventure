@@ -217,7 +217,37 @@
     "pendingCount": "{{count}} unapproved change(s)"
   },
   "verification": {
-    "updated": "Verification status updated"
+    "updated": "Verification status updated",
+    "adminOnly": "Restricted-district licence review is admin-only"
+  },
+  "moderator-applications": {
+    "label": "Moderator Applications",
+    "title": "Moderator applications",
+    "empty": "No applications.",
+    "notePlaceholder": "Review note (optional)",
+    "approve": "Approve",
+    "reject": "Reject",
+    "decided": "Application decided",
+    "decideError": "Failed to decide application",
+    "fields": {
+      "applicant": "Applicant",
+      "level": "Level",
+      "statement": "Statement",
+      "submitted": "Submitted"
+    },
+    "status": { "PENDING": "Pending", "APPROVED": "Approved", "REJECTED": "Rejected" }
+  },
+  "system-settings": {
+    "label": "System Settings",
+    "title": "System settings",
+    "save": "Save",
+    "saved": "Setting saved",
+    "saveError": "Failed to save setting",
+    "fields": {
+      "key": "Key",
+      "description": "Description",
+      "value": "Value"
+    }
   },
   "approval": {
     "status": { "PENDING": "Pending", "APPROVED": "Approved", "REJECTED": "Declined" },

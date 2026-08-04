@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as AccountGuideProfileRouteImport } from './routes/account/guide-profile'
 import { Route as AdventuresNewRouteImport } from './routes/adventures/new'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
@@ -45,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountGuideProfileRoute = AccountGuideProfileRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
+  '/account/': typeof AccountIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
+  '/account': typeof AccountIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/reports': typeof ReportsIndexRoute
   '/review-queue': typeof ReviewQueueIndexRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
+  '/account/': typeof AccountIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/guides/$id'
     | '/users/$id'
+    | '/account/'
     | '/guides/'
     | '/reports/'
     | '/review-queue/'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/guides/$id'
     | '/users/$id'
+    | '/account'
     | '/guides'
     | '/reports'
     | '/review-queue'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/guides/$id'
     | '/users/$id'
+    | '/account/'
     | '/guides/'
     | '/reports/'
     | '/review-queue/'
@@ -368,6 +380,7 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   GuidesIdRoute: typeof GuidesIdRoute
   UsersIdRoute: typeof UsersIdRoute
+  AccountIndexRoute: typeof AccountIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
   ReviewQueueIndexRoute: typeof ReviewQueueIndexRoute
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/': {
+      id: '/account/'
+      path: '/account'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AccountIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/guide-profile': {
@@ -592,6 +612,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   GuidesIdRoute: GuidesIdRoute,
   UsersIdRoute: UsersIdRoute,
+  AccountIndexRoute: AccountIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,
   ReviewQueueIndexRoute: ReviewQueueIndexRoute,

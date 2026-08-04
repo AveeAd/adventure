@@ -17,5 +17,9 @@
     "signInTo": "Sign in to {{appName}}",
     "subtitle": "Admin console for managing master data.",
     "signInWithGoogle": "Sign in with Google"
+  },
+  "accessControl": {
+    "title": "Not authorized",
+    "subtitle": "This action is restricted to admins."
   }
 }

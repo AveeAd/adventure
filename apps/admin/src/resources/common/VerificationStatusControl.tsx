@@ -1,5 +1,5 @@
-import { useCustomMutation, useInvalidate } from '@refinedev/core';
-import { Button, Select, Space, message } from 'antd';
+import { useCan, useCustomMutation, useInvalidate } from '@refinedev/core';
+import { Button, Select, Space, Typography, message } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -18,6 +18,11 @@ export const VerificationStatusControl = ({
   const { mutate, mutation } = useCustomMutation();
   const invalidate = useInvalidate();
   const { t } = useTranslation(['resources', 'common']);
+  // MILESTONE_3.md §2.1: only guide-profiles' verification-status endpoint
+  // is admin-only (the restricted-district licence gate) - trails/spots/
+  // pages allow moderators, so this is a no-op there (accessControlProvider
+  // only restricts the 'guide-profiles' + 'verify' pair).
+  const { data: access } = useCan({ resource, action: 'verify' });
 
   useEffect(() => setValue(status), [status]);
 
@@ -36,6 +41,15 @@ export const VerificationStatusControl = ({
       },
     );
   };
+
+  if (access?.can === false) {
+    return (
+      <Space>
+        <Select value={value} disabled style={{ width: 220 }} options={options.map((option) => ({ value: option, label: option.replaceAll('_', ' ') }))} />
+        <Typography.Text type="secondary">{t('verification.adminOnly')}</Typography.Text>
+      </Space>
+    );
+  }
 
   return (
     <Space>

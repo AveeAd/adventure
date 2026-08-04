@@ -96,6 +96,21 @@
     "BACKFILL": "Historical contribution",
     "ADMIN_ADJUSTMENT": "Admin adjustment"
   },
+  "account": {
+    "pageTitle": "Your account",
+    "heading": "Your account",
+    "viewPublicProfile": "View your public profile",
+    "editGuideProfile": "Edit your guide profile",
+    "alreadyStaff": "You already have admin-site access ({{role}}).",
+    "moderatorHeading": "Apply for moderation",
+    "moderatorLevelGate": "Reach guide level {{level}} to apply for moderation.",
+    "moderatorStatementHint": "Tell us why you'd be a good moderator - what you've contributed, and how you'd handle the review queue.",
+    "applying": "Submitting...",
+    "applyForModeration": "Submit application",
+    "applicationPending": "Your moderator application is pending review.",
+    "applicationRejected": "Your last moderator application wasn't approved. You can apply again below.",
+    "applicationError": "Failed to submit application"
+  },
   "login": {
     "pageTitle": "Sign in",
     "heading": "Sign in to Adventure Nepal",

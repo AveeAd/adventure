@@ -1,5 +1,5 @@
 import { HeadContent, Link, Scripts, createRootRoute } from '@tanstack/react-router'
-import { ClipboardCheck, Flag, FilePlus, LogOut, Menu, Mountain, UserRound, X } from 'lucide-react'
+import { ClipboardCheck, Flag, FilePlus, LogOut, Menu, Mountain, Settings, UserRound, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -221,6 +221,9 @@ function AccountMenu({
         <Link to="/adventures/new" className={navLinkClass}>
           <FilePlus className="h-4 w-4" /> {t('nav.contribute')}
         </Link>
+        <Link to="/account" className={navLinkClass}>
+          <Settings className="h-4 w-4" /> {t('nav.account')}
+        </Link>
         <Link to="/account/guide-profile" className={navLinkClass}>
           <UserRound className="h-4 w-4" /> {t('nav.guideProfile')}
         </Link>
@@ -268,6 +271,13 @@ function AccountMenu({
             className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
           >
             <FilePlus className="h-4 w-4" /> {t('nav.contribute')}
+          </Link>
+          <Link
+            to="/account"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-stone-700 hover:bg-stone-50 dark:text-stone-200 dark:hover:bg-stone-800"
+          >
+            <Settings className="h-4 w-4" /> {t('nav.account')}
           </Link>
           <Link
             to="/account/guide-profile"
