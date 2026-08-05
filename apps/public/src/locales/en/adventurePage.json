@@ -184,7 +184,13 @@
   "trailsAndSpots": {
     "heading": "Trails & spots",
     "noneYet": "No one has mapped a trail or spot here yet. Be the first explorer.",
-    "trailFallback": "Trail"
+    "trailFallback": "Trail",
+    "traits": {
+      "expertOnly": "Expert Only",
+      "hiddenGem": "Hidden Gem",
+      "familyFriendly": "Family Friendly",
+      "petFriendly": "Pet Friendly"
+    }
   },
   "seeAlso": {
     "heading": "See also",

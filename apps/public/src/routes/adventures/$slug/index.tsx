@@ -37,10 +37,10 @@ interface AdventurePageDetail {
   maxAltitudeMeters: number | null;
   verificationStatus: string;
   activityType: { name: string } | null;
-  difficultyLevel: { name: string } | null;
+  difficultyLevel: { name: string; slug: string } | null;
   districts: { district: { name: string } }[];
   seasons: { season: { name: string } }[];
-  tags: { tag: { id: string; name: string } }[];
+  tags: { tag: { id: string; name: string; slug: string } }[];
   relatedPages: { id: string; title: string; slug: string; summary: string | null }[];
   currentRevision: { content: string; createdAt: string; version: number } | null;
   approvedRevision: { content: string; createdAt: string; version: number } | null;
@@ -202,7 +202,14 @@ function AdventurePageView() {
 
         <GallerySection pageId={page.id} initialMedia={page.media} contributeMode={contributeMode} />
 
-        <TrailsAndSpotsSection slug={slug} trails={trails} spots={spots} contributeMode={contributeMode} />
+        <TrailsAndSpotsSection
+          slug={slug}
+          trails={trails}
+          spots={spots}
+          contributeMode={contributeMode}
+          difficultyLevel={page.difficultyLevel}
+          tags={page.tags}
+        />
 
         <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} contributeMode={contributeMode} />
 
@@ -659,16 +666,56 @@ function Lightbox({
   );
 }
 
+const EXPERT_DIFFICULTY_SLUGS = new Set(['strenuous', 'extreme']);
+
+const TRAIT_TAG_SLUGS: Record<string, { labelKey: string; tone: 'success' | 'neutral' }> = {
+  'hidden-gem': { labelKey: 'trailsAndSpots.traits.hiddenGem', tone: 'success' },
+  'family-friendly': { labelKey: 'trailsAndSpots.traits.familyFriendly', tone: 'success' },
+  'pet-friendly': { labelKey: 'trailsAndSpots.traits.petFriendly', tone: 'success' },
+};
+
+function TraitBadges({
+  difficultyLevel,
+  tags,
+  t,
+}: {
+  difficultyLevel: { slug: string } | null;
+  tags: { tag: { id: string; slug: string } }[];
+  t: (key: string) => string;
+}) {
+  return (
+    <>
+      {difficultyLevel && EXPERT_DIFFICULTY_SLUGS.has(difficultyLevel.slug) && (
+        <Badge tone="warning">{t('trailsAndSpots.traits.expertOnly')}</Badge>
+      )}
+      {tags
+        .filter(({ tag }) => TRAIT_TAG_SLUGS[tag.slug])
+        .map(({ tag }) => {
+          const trait = TRAIT_TAG_SLUGS[tag.slug];
+          return (
+            <Badge key={tag.id} tone={trait.tone}>
+              {t(trait.labelKey)}
+            </Badge>
+          );
+        })}
+    </>
+  );
+}
+
 function TrailsAndSpotsSection({
   slug,
   trails,
   spots,
   contributeMode,
+  difficultyLevel,
+  tags,
 }: {
   slug: string;
   trails: MapTrail[];
   spots: MapSpot[];
   contributeMode: boolean;
+  difficultyLevel: { name: string; slug: string } | null;
+  tags: { tag: { id: string; name: string; slug: string } }[];
 }) {
   const { t } = useTranslation(['adventurePage', 'common']);
 
@@ -714,6 +761,7 @@ function TrailsAndSpotsSection({
                         {!!trail.pendingRevisionCount && (
                           <Badge tone="warning">{t('approval.pendingChanges', { count: trail.pendingRevisionCount })}</Badge>
                         )}
+                        <TraitBadges difficultyLevel={difficultyLevel} tags={tags} t={t} />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -752,6 +800,7 @@ function TrailsAndSpotsSection({
                       {!!spot.pendingRevisionCount && (
                         <Badge tone="warning">{t('approval.pendingChanges', { count: spot.pendingRevisionCount })}</Badge>
                       )}
+                      <TraitBadges difficultyLevel={difficultyLevel} tags={tags} t={t} />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

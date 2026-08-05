@@ -101,6 +101,8 @@ async function seedTags() {
     'Hot Springs',
     'High Altitude',
     'Budget-Friendly',
+    'Hidden Gem',
+    'Pet-Friendly',
   ];
   for (const [i, name] of tags.entries()) {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

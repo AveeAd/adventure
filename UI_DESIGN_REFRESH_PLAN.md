@@ -4,7 +4,7 @@
 
 **Defers**: any palette, typography, or dark-mode change (explicitly rejected in SUMMARY.md §8, not re-opened here); any `apps/admin` UI work (map-as-hero and badges are public-site concepts — admin stays read + moderate per CLAUDE.md's existing admin-scope decision, revisit only if a phase below finds an admin-side gap).
 
-**Numbering note**: this continues the phase sequence from CLAUDE.md/SUMMARY.md (Milestone 1: Phases 1–18, Milestone 2 folded in, Milestone 3: Phases 19–25). Phases 26–27 are **built**; Phases 28–29 are not yet built — no phase here is claimed done until its own commit lands and this doc is updated to say so, following the repo's own rule that a phase is only "built" once the code is in.
+**Numbering note**: this continues the phase sequence from CLAUDE.md/SUMMARY.md (Milestone 1: Phases 1–18, Milestone 2 folded in, Milestone 3: Phases 19–25). Phases 26–28 are **built**; Phase 29 is not yet built — no phase here is claimed done until its own commit lands and this doc is updated to say so, following the repo's own rule that a phase is only "built" once the code is in.
 
 ---
 
@@ -49,6 +49,8 @@ The brief's fuller list — permits, water sources, camping, hazards — is also
 
 One adjacent thing surfaced but explicitly **not** in scope for this audit's comparison list: restricted-area legal permit status (e.g. Manaslu requiring a licensed agency) exists only as free-form prose in page content/summary today, not as a structured flag anywhere — `District` has no `isRestricted` column, and licensing is modeled entirely on the guide side (`GuideProfile.licenseNumber`, `PENDING_LICENSE_REVIEW`), a deliberate separate axis per CLAUDE.md. This is a genuine gap against the *legal-constraint* concept from IDEA.md, but it's a different concept than the trail-side "permits/water/camping/hazards" facts this phase's scope named — flagging it here rather than scope-creeping into it, in case a future phase wants to pick it up.
 
+## Phase 28 — Trail/spot trait badges (built)
+
 **Scope**: define and surface a small set of trail/spot trait badges (candidates from the brief: Verified, Hidden Gem, Family Friendly, Pet Friendly, Expert Only) on trail/spot cards, reusing the existing `Badge`/`StatusBadge` components (`apps/public/src/components/`).
 
 **Why third**: depends on Phase 27's finding (a badge like "Expert Only" may overlap with an existing `difficulty` field surfaced there — don't duplicate it as a separate badge if Phase 27 already put it in the infobox). Needs its own data-source decision before any UI work, unlike Phases 26/28 which are presentation-only.
@@ -62,6 +64,8 @@ One adjacent thing surfaced but explicitly **not** in scope for this audit's com
 **Explicitly deferred**: any admin UI to manage badge assignment beyond what the existing edit/approval flow already covers; badge-based filtering/search (a plausible follow-on, not in scope here).
 
 **Open decisions before starting**: the vocabulary-and-source decision in task 1 above must be resolved (with the user) before writing code — this phase should not proceed straight from plan to implementation without that checkpoint.
+
+**Outcome**: vocabulary-and-source decision resolved with the user: all five candidate traits ship (Verified, Expert Only, Hidden Gem, Family Friendly, Pet Friendly), and traits without a direct Trail/Spot data source reuse the existing tag system — but a codebase check during implementation found `Tag`/`AdventurePageTag` only relate to `AdventurePage`, not `Trail`/`Spot`, and there's no `Trail.difficulty` field either (difficulty is page-level). Rather than add new schema/UI (which would contradict this phase's presentation-only framing), a second user checkpoint confirmed deriving these traits from the *parent* `AdventurePage` already loaded on the adventure-detail route: **Expert Only** from `AdventurePage.difficultyLevel.slug` (`strenuous`/`extreme`), **Hidden Gem**/**Family Friendly**/**Pet Friendly** from `AdventurePage.tags` matched by slug. **Verified** needed no new work — `StatusBadge` already renders each trail/spot's own `verificationStatus` on its card. Badges render via a new `TraitBadges` component in `apps/public/src/routes/adventures/$slug/index.tsx`, added to both the trail and spot card lists in `TrailsAndSpotsSection`; two new tags (`Hidden Gem`, `Pet-Friendly`) were added to `apps/api/prisma/scripts/seed-master-data.ts`'s tag seed list (`Family-Friendly` already existed). Verified in-browser against real data (`manaslu-circuit-trek`, `Strenuous` difficulty → Expert Only badge renders on both its trail and spot). No admin UI or new schema, per scope.
 
 ---
 
