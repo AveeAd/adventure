@@ -11,6 +11,6 @@
   "allSpecialties": "All specialties",
   "allRegions": "All regions",
   "allLanguages": "All languages",
-  "noGuidesMatchFilters": "No guides match those filters.",
+  "noGuidesMatchFilters": "No guides match those filters. Try widening your search.",
   "rateRange": "{{currency}} {{min}}–{{max}} {{rateUnit}}"
 }

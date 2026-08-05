@@ -321,6 +321,31 @@ No mobile app code exists or is planned; this is pure future-readiness so the wo
 - Whether the "others-only" earning rule literally applies to `GEO_UPDATE` (this spec assumes yes; upstream PLANNING.md was ambiguous).
 - Point value for an upheld report against a page revision wasn't specified upstream (this spec reverses the original award).
 - Whether demotion below level 10 invalidates already-cast votes (this spec: no).
+
+## 8. UI design refresh — cherry-picked ideas (design direction, not yet implemented)
+
+An external AI-generated design brief pitched a "National Geographic × Strava × Wikipedia" identity — a distinct forest-green/river-blue/trail-orange palette, no dark mode by default, Swiss-grid/bento layout, map-as-hero, contributor identity cards, a trait-badge vocabulary, subtle topographic texture, Apple-style motion. Reviewed against the actual `apps/public`/`apps/admin` codebase rather than adopted wholesale.
+
+**Locked decision**: cherry-pick the structural/content ideas, keep the existing visual system. Explicitly **not** adopting the brief's palette or its no-dark-mode stance — CLAUDE.md's locked pine-green/terracotta palette (`apps/public/src/styles.css` `@theme` block, mirrored manually in `apps/admin/src/theme.ts`) and `prefers-color-scheme`-driven dark mode stay as-is, unchanged by this round.
+
+**Already satisfies the brief — no work needed** (confirmed by a codebase survey, not assumed from the brief):
+- Palette itself already reads as "modern explorer," not tour-agency: pine-green primary (`#2f6b4f` at 600) + terracotta accent (`#c1633c` at 500) on Tailwind's stone neutrals.
+- Contributor identity already exists: `apps/public/src/routes/users/$id.tsx` renders `LevelProgressBar`, a 4-up `StatCard` grid, and a contribution-breakdown card — the "Wikipedia meets GitHub" idea from the brief is already built here, not just a suggestion.
+- Subtle topographic texture already exists: `apps/public/src/components/TopoLines.tsx`, a decorative `aria-hidden` SVG contour graphic.
+- Icon set already matches: `lucide-react` is the icon dependency in both apps.
+- Cards are already soft/rounded: `Card` = `rounded-xl border shadow-sm`, `Button` = `rounded-lg`, `Badge` = pill `rounded-full` (`apps/public/src/components/`).
+
+**Real gaps identified against the brief** (surveyed, not yet built — ordered by the size of the change, not by priority; build order was left to be decided per-task, not locked here):
+1. **Map isn't the hero.** On adventure pages (e.g. `apps/public/src/routes/adventures/$slug/index.tsx`) the map sits stacked in a single-column flow above a plain trail list — no persistent sidebar+map split on desktop, no bottom-sheet pattern on mobile, the map scrolls out of view. This is a layout change to existing routes, not a style tweak, and the largest single item here.
+2. **No trait-badge vocabulary.** The `Badge`/`StatusBadge` components exist but there's no defined set of trail/spot traits (e.g. Verified, Hidden Gem, Family Friendly, Expert Only) surfaced on cards — would need both a vocabulary decision (which traits, derived vs. manually tagged, whether it needs a schema field or reuses tags) and the UI application.
+3. **Empty-state copy tone unchecked.** `EmptyState` exists as a component; whether its current copy reads as generic ("No data") vs. the brief's voice ("Be the first explorer") wasn't audited — a copy pass, not a structural change.
+4. **Wiki-page anatomy unaudited.** Whether adventure pages already surface Quick Facts/permits/water-sources/hazards as a structured block vs. loose prose in the revision content wasn't checked against IDEA.md's infobox concept — needs a look before deciding if it's a gap at all.
+
+**Explicitly not adopted from the brief, beyond the palette**: the brief's Swiss-grid/bento layout system and "premium explorer, not tour company" copy register are treated as inspiration for the map-as-hero and card work above, not a wholesale redesign — no separate design-system rewrite is planned.
+
+**Open decisions**: which of the four gaps gets built first (deferred to whenever the next design task is scoped); whether the badge vocabulary needs new schema (a tag reuse vs. a dedicated field) or is presentation-only over existing data; whether `apps/admin`'s AntD surfaces get any of this (map-as-hero and badges are public-site-only concepts per the brief; admin stays "read + moderate," per CLAUDE.md's existing admin-scope decision).
+
+**Phased build plan**: see `UI_DESIGN_REFRESH_PLAN.md` — Phase 26 (empty-state copy, **built**) → Phase 27 (wiki-page anatomy audit) → Phase 28 (trait-badge vocabulary) → Phase 29 (map-as-hero layout). Phases 27–29 not built yet; that doc is the phase-by-phase spec, this section stays the rationale/survey record.
 - Whether media approval should batch with its parent page revision instead of per-image voting.
 - Whether moderators should eventually be allowed to edit master data.
 - Backfill fairness: pre-Milestone-3 content is treated as retroactively approved and paid accordingly, even though approval didn't exist when it was made.
