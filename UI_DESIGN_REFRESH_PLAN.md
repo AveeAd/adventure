@@ -4,7 +4,7 @@
 
 **Defers**: any palette, typography, or dark-mode change (explicitly rejected in SUMMARY.md §8, not re-opened here); any `apps/admin` UI work (map-as-hero and badges are public-site concepts — admin stays read + moderate per CLAUDE.md's existing admin-scope decision, revisit only if a phase below finds an admin-side gap).
 
-**Numbering note**: this continues the phase sequence from CLAUDE.md/SUMMARY.md (Milestone 1: Phases 1–18, Milestone 2 folded in, Milestone 3: Phases 19–25). Phase 26 is **built**; Phases 27–29 are not yet built — no phase here is claimed done until its own commit lands and this doc is updated to say so, following the repo's own rule that a phase is only "built" once the code is in.
+**Numbering note**: this continues the phase sequence from CLAUDE.md/SUMMARY.md (Milestone 1: Phases 1–18, Milestone 2 folded in, Milestone 3: Phases 19–25). Phases 26–27 are **built**; Phases 28–29 are not yet built — no phase here is claimed done until its own commit lands and this doc is updated to say so, following the repo's own rule that a phase is only "built" once the code is in.
 
 ---
 
@@ -27,7 +27,7 @@
 
 ---
 
-## Phase 27 — Wiki-page anatomy audit
+## Phase 27 — Wiki-page anatomy audit (built)
 
 **Scope**: check whether adventure pages already surface a structured Quick-Facts-style block (difficulty, best season, permits, water sources, camping, hazards) versus burying it in free-form revision prose. IDEA.md's original "infobox" concept implies structure; confirm what actually renders today on `apps/public/src/routes/adventures/$slug/index.tsx` before deciding whether this is a real gap or already satisfied by existing `AdventurePage`/`TrailRevision` fields.
 
@@ -43,9 +43,11 @@
 
 **Open decisions before starting**: none — audit first, decide after.
 
----
+**Outcome: already structured, no work needed.** `apps/public/src/routes/adventures/$slug/index.tsx` renders a Quick-Facts `Card` grid (`InfoItem` components, not prose) directly under the header, reading `AdventurePage.durationMinDays`/`durationMaxDays`, `maxAltitudeMeters`, `districts` (region), and `seasons` (best season) — plus `activityType` and `difficultyLevel` as badges just above it. That's IDEA.md's full original infobox list, already a distinct structured block, not buried in revision prose.
 
-## Phase 28 — Trait-badge vocabulary
+The brief's fuller list — permits, water sources, camping, hazards — is also already structured, just at a different granularity than a page-level infobox line: they're `Spot`s with a `SpotType` (`seed-master-data.ts`: Campsite, Water Source, Danger Zone, Checkpoint/Permit Office), geolocated on `LazyAdventureMap` and listed with a `spotTypeName` badge in `TrailsAndSpotsSection`. This is arguably better than a flat infobox fact — "water source at km 3" carries location, a page-level "Water: yes" line wouldn't — so no change is proposed to duplicate it as an infobox field.
+
+One adjacent thing surfaced but explicitly **not** in scope for this audit's comparison list: restricted-area legal permit status (e.g. Manaslu requiring a licensed agency) exists only as free-form prose in page content/summary today, not as a structured flag anywhere — `District` has no `isRestricted` column, and licensing is modeled entirely on the guide side (`GuideProfile.licenseNumber`, `PENDING_LICENSE_REVIEW`), a deliberate separate axis per CLAUDE.md. This is a genuine gap against the *legal-constraint* concept from IDEA.md, but it's a different concept than the trail-side "permits/water/camping/hazards" facts this phase's scope named — flagging it here rather than scope-creeping into it, in case a future phase wants to pick it up.
 
 **Scope**: define and surface a small set of trail/spot trait badges (candidates from the brief: Verified, Hidden Gem, Family Friendly, Pet Friendly, Expert Only) on trail/spot cards, reusing the existing `Badge`/`StatusBadge` components (`apps/public/src/components/`).
 
