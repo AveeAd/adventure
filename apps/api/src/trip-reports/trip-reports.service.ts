@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ContributionReason, ContributionTargetType, NotificationType, Role } from '@prisma/client';
+import { ContributionReason, ContributionTargetType, NotificationType, Prisma, Role } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { ContributionsService } from '../contributions/contributions.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -7,6 +7,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AddTripReportMediaDto } from './dto/add-trip-report-media.dto';
 import { CreateTripReportDto } from './dto/create-trip-report.dto';
 import { UpdateTripReportDto } from './dto/update-trip-report.dto';
+
+type PrismaTransaction = Prisma.TransactionClient;
 
 @Injectable()
 export class TripReportsService {
@@ -55,6 +57,7 @@ export class TripReportsService {
       where: { id },
       include: {
         media: { orderBy: { sortOrder: 'asc' } },
+        activityTracks: { where: { isActive: true }, orderBy: { startedAt: 'asc' } },
         _count: { select: { kudos: true, comments: true } },
       },
     });
@@ -73,18 +76,24 @@ export class TripReportsService {
   }
 
   async create(pageId: string, authorId: string, dto: CreateTripReportDto) {
-    const report = await this.prisma.tripReport.create({
-      data: {
-        adventurePageId: pageId,
-        authorId,
-        title: dto.title,
-        description: dto.description,
-        content: dto.content,
-        dateCompleted: new Date(dto.dateCompleted),
-        durationDays: dto.durationDays,
-        actualCostAmount: dto.actualCostAmount,
-        currency: dto.currency,
-      },
+    const report = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.tripReport.create({
+        data: {
+          adventurePageId: pageId,
+          authorId,
+          title: dto.title,
+          description: dto.description,
+          content: dto.content,
+          dateCompleted: new Date(dto.dateCompleted),
+          durationDays: dto.durationDays,
+          actualCostAmount: dto.actualCostAmount,
+          currency: dto.currency,
+        },
+      });
+      if (dto.activityTrackIds?.length) {
+        await this.attachTracks(tx, created.id, authorId, dto.activityTrackIds);
+      }
+      return created;
     });
 
     // MILESTONE_3.md §3.2: stories earn points on publish, never gated.
@@ -100,17 +109,62 @@ export class TripReportsService {
 
   async update(id: string, currentUser: AuthenticatedUser, dto: UpdateTripReportDto) {
     await this.ensureOwnerOrAdmin(id, currentUser);
-    return this.prisma.tripReport.update({
-      where: { id },
-      data: {
-        title: dto.title,
-        description: dto.description,
-        content: dto.content,
-        dateCompleted: dto.dateCompleted ? new Date(dto.dateCompleted) : undefined,
-        durationDays: dto.durationDays,
-        actualCostAmount: dto.actualCostAmount,
-        currency: dto.currency,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.tripReport.update({
+        where: { id },
+        data: {
+          title: dto.title,
+          description: dto.description,
+          content: dto.content,
+          dateCompleted: dto.dateCompleted ? new Date(dto.dateCompleted) : undefined,
+          durationDays: dto.durationDays,
+          actualCostAmount: dto.actualCostAmount,
+          currency: dto.currency,
+        },
+      });
+
+      if (dto.activityTrackIds !== undefined) {
+        const currentlyAttached = await tx.activityTrack.findMany({
+          where: { tripReportId: id },
+          select: { id: true },
+        });
+        const currentIds = new Set(currentlyAttached.map((t) => t.id));
+        const nextIds = new Set(dto.activityTrackIds);
+        const toDetach = [...currentIds].filter((trackId) => !nextIds.has(trackId));
+        const toAttach = [...nextIds].filter((trackId) => !currentIds.has(trackId));
+
+        if (toDetach.length) {
+          await tx.activityTrack.updateMany({
+            where: { id: { in: toDetach } },
+            data: { tripReportId: null },
+          });
+        }
+        if (toAttach.length) {
+          await this.attachTracks(tx, id, updated.authorId, toAttach);
+        }
+      }
+
+      return updated;
+    });
+  }
+
+  // Sets tripReportId on the given tracks, after confirming every one of
+  // them belongs to `ownerId` - a user can only attach their own recordings,
+  // even when an admin is the one editing the report.
+  private async attachTracks(tx: PrismaTransaction, tripReportId: string, ownerId: string, trackIds: string[]) {
+    const tracks = await tx.activityTrack.findMany({
+      where: { id: { in: trackIds } },
+      select: { id: true, userId: true },
+    });
+    if (tracks.length !== trackIds.length) {
+      throw new NotFoundException('One or more activity tracks not found');
+    }
+    if (tracks.some((track) => track.userId !== ownerId)) {
+      throw new ForbiddenException('You can only attach your own activity tracks');
+    }
+    await tx.activityTrack.updateMany({
+      where: { id: { in: trackIds } },
+      data: { tripReportId },
     });
   }
 

@@ -29,6 +29,7 @@ model User {
   pageConfirmations  PageConfirmation[]
   uploadedMedia      Media[]
   adventurePageLikes AdventurePageLike[]
+  adventurePageVisits AdventurePageVisit[]
 
   createdTrails      Trail[] @relation("TrailCreatedBy")
   lastEditedTrails   Trail[] @relation("TrailLastEditedBy")
@@ -272,6 +273,7 @@ model AdventurePage {
   seasons   AdventurePageSeason[]
   media     Media[]
   likes     AdventurePageLike[]
+  visits    AdventurePageVisit[]
   trails    Trail[]
   spots     Spot[]
   tripReports TripReport[]
@@ -448,6 +450,22 @@ model AdventurePageLike {
 
   @@unique([adventurePageId, userId])
   @@map("adventure_page_likes")
+}
+
+// Per-user "Been Here" marker - distinct from both Like (opinion) and View
+// (anonymous, undeduped) - deduped per user with a timestamp so a future
+// trending/"recently most visited" query can use it. See ai/REVISION.md.
+model AdventurePageVisit {
+  id              String   @id @default(uuid())
+  adventurePageId String
+  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visitedAt       DateTime @default(now())
+
+  @@unique([adventurePageId, userId])
+  @@index([adventurePageId, visitedAt])
+  @@map("adventure_page_visits")
 }
 
 enum GeoVerificationStatus {

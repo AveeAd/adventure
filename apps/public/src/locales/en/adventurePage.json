@@ -146,7 +146,9 @@
     "summaryPlaceholder": "e.g. Perfect weather, no crowds, best trip yet",
     "yourStory": "Your story",
     "yourStoryHint": "The full story - markdown supported",
-    "yourStoryPlaceholder": "Tell it however long it needs to be..."
+    "yourStoryPlaceholder": "Tell it however long it needs to be...",
+    "attachTracks": "Attach recorded tracks",
+    "attachTracksHint": "Pick from your own recorded activity tracks"
   },
   "contribute": {
     "done": "Done",
@@ -159,6 +161,12 @@
     "countSuffix": "({{count}})",
     "likesCount": "{{count}} likes"
   },
+  "visit": {
+    "beenHere": "Been Here",
+    "markVisited": "Mark Visited",
+    "countSuffix": "({{count}})",
+    "visitedCount": "{{count}} been here"
+  },
   "gallery": {
     "heading": "Photos",
     "addPhoto": "Add photo",
@@ -166,7 +174,12 @@
     "photo": "Photo",
     "caption": "Caption (optional)",
     "altText": "Alt text (optional)",
-    "deletePhoto": "Delete photo"
+    "deletePhoto": "Delete photo",
+    "viewPhoto": "View photo",
+    "close": "Close",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "counter": "{{current}} / {{total}}"
   },
   "trailsAndSpots": {
     "heading": "Trails & spots",

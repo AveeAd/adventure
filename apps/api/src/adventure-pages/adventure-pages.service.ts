@@ -155,7 +155,7 @@ export class AdventurePagesService {
             },
           },
         },
-        _count: { select: { likes: true } },
+        _count: { select: { likes: true, visits: true } },
       },
     });
     if (!page) {
@@ -186,6 +186,12 @@ export class AdventurePagesService {
         }))
       : false;
 
+    const visitedByMe = currentUserId
+      ? !!(await this.prisma.adventurePageVisit.findUnique({
+          where: { adventurePageId_userId: { adventurePageId: id, userId: currentUserId } },
+        }))
+      : false;
+
     const { _count, relatedTo, ...rest } = page;
     return {
       ...rest,
@@ -194,6 +200,8 @@ export class AdventurePagesService {
       contributorIds: contributorRows.map((row) => row.editorId),
       likeCount: _count.likes,
       likedByMe,
+      visitCount: _count.visits,
+      visitedByMe,
       relatedPages: relatedTo.map((r) => r.relatedPage),
     };
   }
@@ -744,6 +752,26 @@ export class AdventurePagesService {
   private async likeCount(pageId: string) {
     const count = await this.prisma.adventurePageLike.count({ where: { adventurePageId: pageId } });
     return { likeCount: count };
+  }
+
+  async markVisited(pageId: string, userId: string) {
+    await this.ensureExists(pageId);
+    await this.prisma.adventurePageVisit.upsert({
+      where: { adventurePageId_userId: { adventurePageId: pageId, userId } },
+      create: { adventurePageId: pageId, userId },
+      update: {},
+    });
+    return this.visitCount(pageId);
+  }
+
+  async unmarkVisited(pageId: string, userId: string) {
+    await this.prisma.adventurePageVisit.deleteMany({ where: { adventurePageId: pageId, userId } });
+    return this.visitCount(pageId);
+  }
+
+  private async visitCount(pageId: string) {
+    const count = await this.prisma.adventurePageVisit.count({ where: { adventurePageId: pageId } });
+    return { visitCount: count };
   }
 
   private async ensureExists(id: string) {

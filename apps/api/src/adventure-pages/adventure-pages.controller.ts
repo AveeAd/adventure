@@ -133,6 +133,16 @@ export class AdventurePagesController {
     return this.adventurePagesService.unlike(id, user.userId);
   }
 
+  @Post(':id/visits')
+  markVisited(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.adventurePagesService.markVisited(id, user.userId);
+  }
+
+  @Delete(':id/visits')
+  unmarkVisited(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.adventurePagesService.unmarkVisited(id, user.userId);
+  }
+
   // Unauthenticated on purpose - anonymous visitors' views count toward
   // "trending" same as signed-in ones (see recordView's comment on why this
   // isn't logged inside the route loader itself).

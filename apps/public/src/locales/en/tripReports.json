@@ -14,8 +14,13 @@
   "replyPlaceholder": "Write a reply...",
   "postReply": "Post reply",
   "cancel": "Cancel",
+  "dateCompleted": "Date completed",
+  "durationDays": "Duration (days)",
+  "actualCost": "Actual cost",
+  "currency": "Currency",
   "errors": {
     "failedToUpdateKudos": "Failed to update kudos",
-    "failedToPostComment": "Failed to post comment"
+    "failedToPostComment": "Failed to post comment",
+    "failedToSaveStory": "Failed to save story"
   }
 }

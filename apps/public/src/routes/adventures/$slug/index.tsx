@@ -1,9 +1,9 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { AlertTriangle, Calendar, Clock, Hammer, Heart, ImagePlus, MapPin, MountainSnow, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { AlertTriangle, Calendar, ChevronLeft, ChevronRight, Clock, Footprints, Hammer, Heart, ImagePlus, MapPin, MountainSnow, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../lib/auth/api';
-import { authDelete, authPost, authUpload } from '../../../lib/auth/auth-fetch';
+import { authDelete, authFetch, authPost, authUpload } from '../../../lib/auth/auth-fetch';
 import { checkAuth, fetchCurrentUser, type CurrentUser } from '../../../lib/auth/session';
 import { formatDate } from '../../../lib/format';
 import { Badge, StatusBadge } from '../../../components/Badge';
@@ -15,6 +15,7 @@ import { Textarea, Input, Field, Select } from '../../../components/FormField';
 import { MarkdownContent } from '../../../components/MarkdownContent';
 import { ReportButton } from '../../../components/ReportButton';
 import { LazyAdventureMap } from '../../../components/LazyAdventureMap';
+import { MultiSelectChips, selectedChipValues } from '../../../components/MultiSelectChips';
 import type { MapSpot, MapTrail } from '../../../components/AdventureMap';
 import { ElevationProfile } from '../../../components/ElevationProfile';
 
@@ -48,6 +49,8 @@ interface AdventurePageDetail {
   contributorIds: string[];
   likeCount: number;
   likedByMe: boolean;
+  visitCount: number;
+  visitedByMe: boolean;
   media: MediaItem[];
 }
 
@@ -250,6 +253,7 @@ function AdventurePageView() {
         <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-6 dark:border-stone-800">
           <div className="flex flex-wrap items-center gap-2">
             <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
+            <VisitButton pageId={page.id} initialVisitCount={page.visitCount} initialVisited={page.visitedByMe} />
             {signedIn && !storyFormOpen && !storyShared && (
               <Button variant="accent" size="sm" onClick={() => setStoryFormOpen(true)}>
                 {t('stories.tellYourStory')}
@@ -348,6 +352,54 @@ function LikeButton({
   );
 }
 
+function VisitButton({
+  pageId,
+  initialVisitCount,
+  initialVisited,
+}: {
+  pageId: string;
+  initialVisitCount: number;
+  initialVisited: boolean;
+}) {
+  const { t } = useTranslation('adventurePage');
+  const [visitCount, setVisitCount] = useState(initialVisitCount);
+  const [signedIn, setSignedIn] = useState(false);
+  const [visited, setVisited] = useState(initialVisited);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    checkAuth().then(setSignedIn);
+  }, []);
+
+  async function toggleVisit() {
+    setBusy(true);
+    try {
+      if (visited) {
+        await authDelete(`/adventure-pages/${pageId}/visits`);
+        setVisitCount((count) => count - 1);
+        setVisited(false);
+      } else {
+        await authPost(`/adventure-pages/${pageId}/visits`);
+        setVisitCount((count) => count + 1);
+        setVisited(true);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return signedIn ? (
+    <Button variant={visited ? 'accent' : 'secondary'} size="sm" onClick={toggleVisit} disabled={busy}>
+      <Footprints className="h-4 w-4" />
+      {visited ? t('visit.beenHere') : t('visit.markVisited')} {t('visit.countSuffix', { count: visitCount })}
+    </Button>
+  ) : (
+    <span className="flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
+      <Footprints className="h-4 w-4" /> {t('visit.visitedCount', { count: visitCount })}
+    </span>
+  );
+}
+
 function GallerySection({
   pageId,
   initialMedia,
@@ -365,6 +417,7 @@ function GallerySection({
   const [altText, setAltText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -438,18 +491,28 @@ function GallerySection({
         </div>
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-          {media.map((item) => (
+          {media.map((item, index) => (
             <figure key={item.id} className="group relative">
               <div className="relative overflow-hidden rounded-lg">
-                <img
-                  src={item.url}
-                  alt={item.altText ?? ''}
-                  className="h-32 w-full rounded-lg object-cover sm:h-36"
-                />
+                <button
+                  type="button"
+                  onClick={() => setLightboxIndex(index)}
+                  className="block w-full cursor-zoom-in"
+                  aria-label={t('gallery.viewPhoto')}
+                >
+                  <img
+                    src={item.url}
+                    alt={item.altText ?? ''}
+                    className="h-32 w-full rounded-lg object-cover sm:h-36"
+                  />
+                </button>
                 {canDelete(item) && (
                   <button
                     type="button"
-                    onClick={() => handleDelete(item.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(item.id);
+                    }}
                     className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
                     aria-label={t('gallery.deletePhoto')}
                   >
@@ -466,6 +529,15 @@ function GallerySection({
             </figure>
           ))}
         </div>
+      )}
+
+      {lightboxIndex !== null && (
+        <Lightbox
+          media={media}
+          index={lightboxIndex}
+          onIndexChange={setLightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+        />
       )}
 
       {open && (
@@ -499,6 +571,91 @@ function GallerySection({
         </Card>
       )}
     </section>
+  );
+}
+
+function Lightbox({
+  media,
+  index,
+  onIndexChange,
+  onClose,
+}: {
+  media: MediaItem[];
+  index: number;
+  onIndexChange: (index: number) => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation('adventurePage');
+  const item = media[index];
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') onClose();
+      if (event.key === 'ArrowLeft') onIndexChange((index - 1 + media.length) % media.length);
+      if (event.key === 'ArrowRight') onIndexChange((index + 1) % media.length);
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [index, media.length, onIndexChange, onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-black/90 p-4"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+        aria-label={t('gallery.close')}
+      >
+        <X className="h-5 w-5" />
+      </button>
+
+      {media.length > 1 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onIndexChange((index - 1 + media.length) % media.length);
+          }}
+          className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 sm:left-4"
+          aria-label={t('gallery.previous')}
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      )}
+
+      <img
+        src={item.url}
+        alt={item.altText ?? ''}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[80vh] max-w-full rounded-lg object-contain"
+      />
+
+      {media.length > 1 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onIndexChange((index + 1) % media.length);
+          }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 sm:right-4"
+          aria-label={t('gallery.next')}
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
+      )}
+
+      <div
+        className="mt-4 flex w-full max-w-lg flex-col items-center gap-1 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {item.caption && <p className="text-sm text-white">{item.caption}</p>}
+        <span className="text-xs text-white/60">{t('gallery.counter', { current: index + 1, total: media.length })}</span>
+        <ReportButton targetType="MEDIA" targetId={item.id} />
+      </div>
+    </div>
   );
 }
 
@@ -719,6 +876,13 @@ function SeeAlsoSection({
   );
 }
 
+interface MyTrackOption {
+  id: string;
+  name: string | null;
+  distanceMeters: number | null;
+  startedAt: string;
+}
+
 function StoryForm({
   pageId,
   onDone,
@@ -731,6 +895,14 @@ function StoryForm({
   const { t } = useTranslation(['adventurePage', 'common']);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [myTracks, setMyTracks] = useState<MyTrackOption[]>([]);
+
+  useEffect(() => {
+    authFetch('/me/activity-tracks')
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setMyTracks)
+      .catch(() => setMyTracks([]));
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -746,6 +918,7 @@ function StoryForm({
         durationDays: formData.get('durationDays') ? Number(formData.get('durationDays')) : undefined,
         actualCostAmount: formData.get('actualCostAmount') ? Number(formData.get('actualCostAmount')) : undefined,
         currency: formData.get('actualCostAmount') ? formData.get('currency') : undefined,
+        activityTrackIds: selectedChipValues(event.currentTarget, 'activityTrackIds'),
       });
       onDone();
     } catch (err) {
@@ -787,6 +960,11 @@ function StoryForm({
         <Field label={t('stories.yourStory')} hint={t('stories.yourStoryHint')}>
           <Textarea name="content" rows={14} className="font-mono text-sm" placeholder={t('stories.yourStoryPlaceholder')} />
         </Field>
+        {myTracks.length > 0 && (
+          <Field label={t('stories.attachTracks')} hint={t('stories.attachTracksHint')}>
+            <MultiSelectChips name="activityTrackIds" options={myTracks.map(trackOption)} />
+          </Field>
+        )}
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex gap-2">
           <Button type="submit" variant="accent" disabled={submitting}>
@@ -799,4 +977,10 @@ function StoryForm({
       </form>
     </Card>
   );
+}
+
+function trackOption(track: MyTrackOption): { id: string; name: string } {
+  const distanceKm = track.distanceMeters ? `${(track.distanceMeters / 1000).toFixed(1)}km` : null;
+  const label = [track.name ?? formatDate(track.startedAt), distanceKm].filter(Boolean).join(' · ');
+  return { id: track.id, name: label };
 }

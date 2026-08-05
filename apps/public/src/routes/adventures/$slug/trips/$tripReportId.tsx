@@ -1,18 +1,26 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { ArrowLeft, Heart } from 'lucide-react';
+import { ArrowLeft, Heart, Pencil } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
-import { authDelete, authPost } from '../../../../lib/auth/auth-fetch';
-import { checkAuth } from '../../../../lib/auth/session';
+import { authDelete, authFetch, authPatch, authPost } from '../../../../lib/auth/auth-fetch';
+import { checkAuth, fetchCurrentUser } from '../../../../lib/auth/session';
 import { formatCurrency, formatDate, formatDateTime } from '../../../../lib/format';
 import { Avatar } from '../../../../components/Avatar';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
-import { Textarea } from '../../../../components/FormField';
+import { Textarea, Input, Field, Select } from '../../../../components/FormField';
 import { MarkdownContent } from '../../../../components/MarkdownContent';
+import { MultiSelectChips, selectedChipValues } from '../../../../components/MultiSelectChips';
 import { ReportButton } from '../../../../components/ReportButton';
+
+interface AttachedTrack {
+  id: string;
+  name: string | null;
+  distanceMeters: number | null;
+  startedAt: string;
+}
 
 interface TripReportDetail {
   id: string;
@@ -27,6 +35,7 @@ interface TripReportDetail {
   kudosCount: number;
   commentCount: number;
   kudosByMe: boolean;
+  activityTracks: AttachedTrack[];
 }
 
 interface CommentItem {
@@ -65,12 +74,15 @@ export const Route = createFileRoute('/adventures/$slug/trips/$tripReportId')({
 });
 
 function TripReportPage() {
-  const { slug, report, comments: initialComments } = Route.useLoaderData();
-  const { t } = useTranslation('tripReports');
+  const { slug, report: loadedReport, comments: initialComments } = Route.useLoaderData();
+  const { t } = useTranslation(['tripReports', 'common']);
+  const [report, setReport] = useState(loadedReport);
   const [comments, setComments] = useState(initialComments);
   const [kudosCount, setKudosCount] = useState(report.kudosCount);
   const [kudosGiven, setKudosGiven] = useState(report.kudosByMe);
   const [signedIn, setSignedIn] = useState(false);
+  const [isAuthor, setIsAuthor] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -78,7 +90,8 @@ function TripReportPage() {
 
   useEffect(() => {
     checkAuth().then(setSignedIn);
-  }, []);
+    fetchCurrentUser().then((user) => setIsAuthor(!!user && user.userId === report.authorId));
+  }, [report.authorId]);
 
   function insertComment(comment: CommentItem) {
     if (!comment.parentCommentId) {
@@ -161,29 +174,61 @@ function TripReportPage() {
         ) : null}
       </div>
 
-      {report.description && (
-        <p className="mt-4 whitespace-pre-wrap text-lg text-stone-700 dark:text-stone-300">{report.description}</p>
-      )}
+      {editing ? (
+        <EditStoryForm
+          report={report}
+          onDone={(updated) => {
+            setReport(updated);
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
+        />
+      ) : (
+        <>
+          {report.description && (
+            <p className="mt-4 whitespace-pre-wrap text-lg text-stone-700 dark:text-stone-300">{report.description}</p>
+          )}
 
-      {report.content && (
-        <div className="mt-4">
-          <MarkdownContent content={report.content} />
-        </div>
-      )}
+          {report.content && (
+            <div className="mt-4">
+              <MarkdownContent content={report.content} />
+            </div>
+          )}
 
-      <div className="mt-4">
-        {signedIn ? (
-          <Button variant={kudosGiven ? 'accent' : 'secondary'} size="sm" onClick={toggleKudos}>
-            <Heart className="h-4 w-4" fill={kudosGiven ? 'currentColor' : 'none'} />
-            {kudosGiven ? t('kudosGiven') : t('giveKudos')} ({kudosCount})
-          </Button>
-        ) : (
-          <span className="flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
-            <Heart className="h-4 w-4" /> {t('kudosCount', { count: kudosCount })}
-          </span>
-        )}
-        <ReportButton targetType="TRIP_REPORT" targetId={report.id} />
-      </div>
+          {report.activityTracks.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {report.activityTracks.map((track) => (
+                <span
+                  key={track.id}
+                  className="rounded-full border border-stone-300 px-3 py-1 text-sm text-stone-700 dark:border-stone-700 dark:text-stone-300"
+                >
+                  {track.name ?? formatDate(track.startedAt)}
+                  {track.distanceMeters ? ` · ${(track.distanceMeters / 1000).toFixed(1)}km` : null}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {signedIn ? (
+              <Button variant={kudosGiven ? 'accent' : 'secondary'} size="sm" onClick={toggleKudos}>
+                <Heart className="h-4 w-4" fill={kudosGiven ? 'currentColor' : 'none'} />
+                {kudosGiven ? t('kudosGiven') : t('giveKudos')} ({kudosCount})
+              </Button>
+            ) : (
+              <span className="flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
+                <Heart className="h-4 w-4" /> {t('kudosCount', { count: kudosCount })}
+              </span>
+            )}
+            {isAuthor && (
+              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                <Pencil className="h-3.5 w-3.5" /> {t('common:actions.edit')}
+              </Button>
+            )}
+            <ReportButton targetType="TRIP_REPORT" targetId={report.id} />
+          </div>
+        </>
+      )}
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">
@@ -313,5 +358,133 @@ function CommentThread({
         </ul>
       )}
     </li>
+  );
+}
+
+interface MyTrackOption {
+  id: string;
+  name: string | null;
+  distanceMeters: number | null;
+  startedAt: string;
+}
+
+function trackOption(track: MyTrackOption): { id: string; name: string } {
+  const distanceKm = track.distanceMeters ? `${(track.distanceMeters / 1000).toFixed(1)}km` : null;
+  const label = [track.name ?? formatDate(track.startedAt), distanceKm].filter(Boolean).join(' · ');
+  return { id: track.id, name: label };
+}
+
+function EditStoryForm({
+  report,
+  onDone,
+  onCancel,
+}: {
+  report: TripReportDetail;
+  onDone: (updated: TripReportDetail) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation(['tripReports', 'common']);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [myTracks, setMyTracks] = useState<MyTrackOption[]>([]);
+
+  useEffect(() => {
+    authFetch('/me/activity-tracks')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((tracks: MyTrackOption[]) => {
+        // The author's own tracks plus any already attached (in case one was
+        // attached by an admin editing on the author's behalf).
+        const known = new Map(tracks.map((track) => [track.id, track]));
+        for (const attached of report.activityTracks) {
+          if (!known.has(attached.id)) {
+            known.set(attached.id, attached);
+          }
+        }
+        setMyTracks([...known.values()]);
+      })
+      .catch(() => setMyTracks(report.activityTracks));
+  }, [report.activityTracks]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    const formData = new FormData(event.currentTarget);
+    try {
+      const trackIds = selectedChipValues(event.currentTarget, 'activityTrackIds');
+      const updated = await authPatch<Partial<TripReportDetail>>(`/trip-reports/${report.id}`, {
+        title: formData.get('title') || undefined,
+        description: formData.get('description') || undefined,
+        content: formData.get('content') || undefined,
+        dateCompleted: formData.get('dateCompleted'),
+        durationDays: formData.get('durationDays') ? Number(formData.get('durationDays')) : undefined,
+        actualCostAmount: formData.get('actualCostAmount') ? Number(formData.get('actualCostAmount')) : undefined,
+        currency: formData.get('actualCostAmount') ? formData.get('currency') : undefined,
+        activityTrackIds: trackIds,
+      });
+      onDone({
+        ...report,
+        ...updated,
+        activityTracks: myTracks.filter((track) => trackIds.includes(track.id)),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.failedToSaveStory'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Card className="mt-6 w-full p-6">
+      <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">{t('common:actions.edit')}</h2>
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-5">
+        <Field label={t('fields.title', { ns: 'adventurePage' })}>
+          <Input name="title" defaultValue={report.title ?? ''} />
+        </Field>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Field label={t('dateCompleted')}>
+            <Input name="dateCompleted" type="date" required defaultValue={report.dateCompleted.slice(0, 10)} />
+          </Field>
+          <Field label={t('durationDays')}>
+            <Input name="durationDays" type="number" min={0} defaultValue={report.durationDays ?? ''} />
+          </Field>
+          <Field label={t('actualCost')}>
+            <Input name="actualCostAmount" type="number" min={0} defaultValue={report.actualCostAmount ?? ''} />
+          </Field>
+          <Field label={t('currency')}>
+            <Select name="currency" defaultValue={report.currency}>
+              <option value="NPR">NPR</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="INR">INR</option>
+            </Select>
+          </Field>
+        </div>
+        <Field label={t('fields.summary', { ns: 'adventurePage' })}>
+          <Textarea name="description" rows={2} defaultValue={report.description ?? ''} />
+        </Field>
+        <Field label={t('stories.yourStory', { ns: 'adventurePage' })}>
+          <Textarea name="content" rows={14} className="font-mono text-sm" defaultValue={report.content ?? ''} />
+        </Field>
+        {myTracks.length > 0 && (
+          <Field label={t('stories.attachTracks', { ns: 'adventurePage' })} hint={t('stories.attachTracksHint', { ns: 'adventurePage' })}>
+            <MultiSelectChips
+              name="activityTrackIds"
+              options={myTracks.map(trackOption)}
+              defaultValue={report.activityTracks.map((track) => track.id)}
+            />
+          </Field>
+        )}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        <div className="flex gap-2">
+          <Button type="submit" variant="accent" disabled={submitting}>
+            {submitting ? t('common:actions.saving') : t('common:actions.save')}
+          </Button>
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            {t('common:actions.cancel')}
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }
