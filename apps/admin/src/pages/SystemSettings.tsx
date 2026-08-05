@@ -32,7 +32,7 @@ function sectionOf(key: string): string {
 // this page never needs to branch on the viewer's role.
 export function SystemSettingsPage() {
   const { t } = useTranslation('resources');
-  const { result, query, refetch } = useCustom<{ data: SystemSettingRow[] } | SystemSettingRow[]>({
+  const { result, query } = useCustom<{ data: SystemSettingRow[] } | SystemSettingRow[]>({
     url: '/settings',
     method: 'get',
   });
@@ -46,7 +46,7 @@ export function SystemSettingsPage() {
     {
       title: t('system-settings.fields.value'),
       width: 360,
-      render: (_: unknown, row: SystemSettingRow) => <SettingValueEditor row={row} onSaved={() => refetch()} />,
+      render: (_: unknown, row: SystemSettingRow) => <SettingValueEditor row={row} onSaved={() => query.refetch()} />,
     },
   ];
 

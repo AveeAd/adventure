@@ -47,7 +47,7 @@ export function ReportsPage() {
   const { t } = useTranslation('resources');
   const [status, setStatus] = useState<ReportStatus>('PENDING');
 
-  const { result, query, refetch } = useCustom<{ data: ContentReportRow[] }>({
+  const { result, query } = useCustom<{ data: ContentReportRow[] }>({
     url: '/reports',
     method: 'get',
     config: { query: { status, pageSize: 100 } },
@@ -109,7 +109,7 @@ export function ReportsPage() {
               title: '',
               render: (_, row) =>
                 row.status === 'PENDING' ? (
-                  <ResolveControls reportId={row.id} onResolved={() => refetch()} />
+                  <ResolveControls reportId={row.id} onResolved={() => query.refetch()} />
                 ) : (
                   <Tag color={row.status === 'UPHELD' ? 'red' : 'default'}>{t(`reports.status.${row.status}`)}</Tag>
                 ),

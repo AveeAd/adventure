@@ -23,7 +23,7 @@ export function ModeratorApplicationsPage() {
   const { t } = useTranslation('resources');
   const [status, setStatus] = useState<ApplicationStatus>('PENDING');
 
-  const { result, query, refetch } = useCustom<{ data: ModeratorApplicationRow[] }>({
+  const { result, query } = useCustom<{ data: ModeratorApplicationRow[] }>({
     url: '/moderator-applications',
     method: 'get',
     config: { query: { status, pageSize: 100 } },
@@ -72,7 +72,7 @@ export function ModeratorApplicationsPage() {
               title: '',
               render: (_, row) =>
                 row.status === 'PENDING' ? (
-                  <DecideControls applicationId={row.id} onDecided={() => refetch()} />
+                  <DecideControls applicationId={row.id} onDecided={() => query.refetch()} />
                 ) : (
                   <Tag color={row.status === 'APPROVED' ? 'green' : 'default'}>
                     {t(`moderator-applications.status.${row.status}`)}
