@@ -4,7 +4,7 @@
 
 **Defers**: any palette, typography, or dark-mode change (explicitly rejected in SUMMARY.md §8, not re-opened here); any `apps/admin` UI work (map-as-hero and badges are public-site concepts — admin stays read + moderate per CLAUDE.md's existing admin-scope decision, revisit only if a phase below finds an admin-side gap).
 
-**Numbering note**: this continues the phase sequence from CLAUDE.md/SUMMARY.md (Milestone 1: Phases 1–18, Milestone 2 folded in, Milestone 3: Phases 19–25). Phases 26–28 are **built**; Phase 29 is not yet built — no phase here is claimed done until its own commit lands and this doc is updated to say so, following the repo's own rule that a phase is only "built" once the code is in.
+**Numbering note**: this continues the phase sequence from CLAUDE.md/SUMMARY.md (Milestone 1: Phases 1–18, Milestone 2 folded in, Milestone 3: Phases 19–25). Phases 26–29 are **built** — this closes out the UI design-refresh round; no phase here is claimed done until its own commit lands and this doc is updated to say so, following the repo's own rule that a phase is only "built" once the code is in.
 
 ---
 
@@ -69,7 +69,7 @@ One adjacent thing surfaced but explicitly **not** in scope for this audit's com
 
 ---
 
-## Phase 29 — Map-as-hero layout
+## Phase 29 — Map-as-hero layout (built)
 
 **Scope**: rework the adventure-page layout (and any other route where a map currently sits stacked in a single-column flow, e.g. trail/spot detail views) so the map is a persistent element — desktop: sidebar/content-panel + map split, map never scrolls out of view; mobile: bottom-sheet pattern over a full-bleed map. Built on `LazyAdventureMap`/`AdventureMap` (`apps/public/src/components/`), no new mapping library — still Leaflet, per CLAUDE.md's locked decision.
 
@@ -84,6 +84,10 @@ One adjacent thing surfaced but explicitly **not** in scope for this audit's com
 **Explicitly deferred**: any change to `apps/admin`'s map usage; any new map interaction feature (clustering, filters-on-map) — layout only.
 
 **Open decisions before starting**: which routes beyond the adventure-page detail view get the treatment in v1 vs. later — pick after Phase 29's first prototype is reviewed, not upfront.
+
+**Outcome**: two design calls were confirmed with the user before implementation — desktop gets a *bounded* hero split section (quick-facts + trail/spot list left panel, map filling the same height on the right), not a page-wide sticky map, so gallery/revision content/trip reports/action bar/story form stay an unchanged single-column flow below it; mobile gets a tap-to-toggle two-state sheet (peek/expanded) over the map rather than a hand-rolled draggable multi-snap-point sheet, since no drag/gesture library exists in this codebase.
+
+Implementation: a single Leaflet map instance is shared across both breakpoints via CSS Grid + `order-*` utilities (`apps/public/src/components/MapHeroLayout.tsx`, new) rather than mounting two parallel maps — `grid-cols-1 lg:grid-cols-[18rem_1fr] lg:h-[32rem]`, sidebar `order-2 lg:order-1`, map `order-1 lg:order-2`. This needed `AdventureMap.tsx`/`LazyAdventureMap.tsx` to accept `height: number | 'full'` (so the map fills its grid cell instead of a hardcoded px value) and a `window` `resize`-triggered `invalidateSize()` alongside the existing fullscreen-toggle one, so the Leaflet canvas redraws correctly when the grid reflows across the `lg:` breakpoint. The standalone Quick-Facts card was folded into the new sidebar (its quick-facts gate was decoupled from trail/spot presence — those are page-level facts, unrelated to whether any trails/spots exist — so they now always render; only the trail/spot list itself falls back to `EmptyState`), and the whole section moved from after the photo gallery to immediately after the title/tags/pending-banner, ahead of the gallery — the actual "hero" positioning. Verified in-browser at both viewport ranges against `manaslu-circuit-trek` real data: desktop split-pane, mobile peek/expand toggle, and the pre-existing fullscreen toggle all confirmed working; the `EmptyState` no-trail/spot path was verified by code review only (no seeded page currently has zero trails/spots to test live). No admin change, no new mapping/gesture library, per scope.
 
 ---
 

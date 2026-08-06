@@ -15,6 +15,7 @@ import { Textarea, Input, Field, Select } from '../../../components/FormField';
 import { MarkdownContent } from '../../../components/MarkdownContent';
 import { ReportButton } from '../../../components/ReportButton';
 import { LazyAdventureMap } from '../../../components/LazyAdventureMap';
+import { MapHeroLayout } from '../../../components/MapHeroLayout';
 import { MultiSelectChips, selectedChipValues } from '../../../components/MultiSelectChips';
 import type { MapSpot, MapTrail } from '../../../components/AdventureMap';
 import { ElevationProfile } from '../../../components/ElevationProfile';
@@ -168,40 +169,6 @@ function AdventurePageView() {
           </Link>
         )}
 
-        <Card className="mt-6 grid grid-cols-2 gap-4 p-5 sm:grid-cols-4">
-          {(page.durationMinDays || page.durationMaxDays) && (
-            <InfoItem
-              icon={<Clock className="h-4 w-4" />}
-              label={t('info.duration')}
-              value={t('info.durationValue', { min: page.durationMinDays, max: page.durationMaxDays })}
-            />
-          )}
-          {page.maxAltitudeMeters && (
-            <InfoItem
-              icon={<MountainSnow className="h-4 w-4" />}
-              label={t('info.maxAltitude')}
-              value={t('info.altitudeValue', { altitude: page.maxAltitudeMeters })}
-            />
-          )}
-          {page.districts.length > 0 && (
-            <InfoItem
-              icon={<MapPin className="h-4 w-4" />}
-              label={t('info.districts')}
-              value={page.districts.map((d) => d.district.name).join(', ')}
-            />
-          )}
-          {page.seasons.length > 0 && (
-            <InfoItem
-              icon={<Calendar className="h-4 w-4" />}
-              label={t('info.bestSeasons')}
-              value={page.seasons.map((s) => s.season.name).join(', ')}
-            />
-          )}
-          <InfoItem icon={<Users className="h-4 w-4" />} label={t('info.contributors')} value={page.contributorIds.length} />
-        </Card>
-
-        <GallerySection pageId={page.id} initialMedia={page.media} contributeMode={contributeMode} />
-
         <TrailsAndSpotsSection
           slug={slug}
           trails={trails}
@@ -209,7 +176,10 @@ function AdventurePageView() {
           contributeMode={contributeMode}
           difficultyLevel={page.difficultyLevel}
           tags={page.tags}
+          page={page}
         />
+
+        <GallerySection pageId={page.id} initialMedia={page.media} contributeMode={contributeMode} />
 
         <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} contributeMode={contributeMode} />
 
@@ -709,6 +679,7 @@ function TrailsAndSpotsSection({
   contributeMode,
   difficultyLevel,
   tags,
+  page,
 }: {
   slug: string;
   trails: MapTrail[];
@@ -716,39 +687,69 @@ function TrailsAndSpotsSection({
   contributeMode: boolean;
   difficultyLevel: { name: string; slug: string } | null;
   tags: { tag: { id: string; name: string; slug: string } }[];
+  page: AdventurePageDetail;
 }) {
   const { t } = useTranslation(['adventurePage', 'common']);
 
-  return (
-    <section className="mt-10">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('trailsAndSpots.heading')}</h2>
-        {contributeMode && (
-          <div className="flex gap-2">
-            <Link to="/adventures/$slug/trails/new" params={{ slug }}>
-              <Button variant="secondary" size="sm">
-                <Plus className="h-3.5 w-3.5" /> {trails.length > 0 ? t('actions.updateTrail') : t('actions.addTrail')}
-              </Button>
-            </Link>
-            <Link to="/adventures/$slug/spots/new" params={{ slug }}>
-              <Button variant="secondary" size="sm">
-                <Plus className="h-3.5 w-3.5" /> {t('actions.addSpot')}
-              </Button>
-            </Link>
-          </div>
+  const sidebar = (
+    <div className="flex flex-col gap-4 p-4">
+      <div className="grid grid-cols-2 gap-4">
+        {(page.durationMinDays || page.durationMaxDays) && (
+          <InfoItem
+            icon={<Clock className="h-4 w-4" />}
+            label={t('info.duration')}
+            value={t('info.durationValue', { min: page.durationMinDays, max: page.durationMaxDays })}
+          />
         )}
+        {page.maxAltitudeMeters && (
+          <InfoItem
+            icon={<MountainSnow className="h-4 w-4" />}
+            label={t('info.maxAltitude')}
+            value={t('info.altitudeValue', { altitude: page.maxAltitudeMeters })}
+          />
+        )}
+        {page.districts.length > 0 && (
+          <InfoItem
+            icon={<MapPin className="h-4 w-4" />}
+            label={t('info.districts')}
+            value={page.districts.map((d) => d.district.name).join(', ')}
+          />
+        )}
+        {page.seasons.length > 0 && (
+          <InfoItem
+            icon={<Calendar className="h-4 w-4" />}
+            label={t('info.bestSeasons')}
+            value={page.seasons.map((s) => s.season.name).join(', ')}
+          />
+        )}
+        <InfoItem icon={<Users className="h-4 w-4" />} label={t('info.contributors')} value={page.contributorIds.length} />
       </div>
 
-      {trails.length === 0 && spots.length === 0 ? (
-        <div className="mt-3">
-          <EmptyState icon={<MapPin className="h-8 w-8" />}>{t('trailsAndSpots.noneYet')}</EmptyState>
+      <div className="border-t border-stone-200 pt-4 dark:border-stone-800">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">{t('trailsAndSpots.heading')}</h2>
+          {contributeMode && (
+            <div className="flex gap-2">
+              <Link to="/adventures/$slug/trails/new" params={{ slug }}>
+                <Button variant="secondary" size="sm">
+                  <Plus className="h-3.5 w-3.5" /> {trails.length > 0 ? t('actions.updateTrail') : t('actions.addTrail')}
+                </Button>
+              </Link>
+              <Link to="/adventures/$slug/spots/new" params={{ slug }}>
+                <Button variant="secondary" size="sm">
+                  <Plus className="h-3.5 w-3.5" /> {t('actions.addSpot')}
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
-      ) : (
-        <>
-          <div className="mt-4">
-            <LazyAdventureMap trails={trails} spots={spots} zoom={12} />
+
+        {trails.length === 0 && spots.length === 0 ? (
+          <div className="mt-3">
+            <EmptyState icon={<MapPin className="h-8 w-8" />}>{t('trailsAndSpots.noneYet')}</EmptyState>
           </div>
-          <ul className="mt-4 flex flex-col gap-2">
+        ) : (
+          <ul className="mt-3 flex flex-col gap-2">
             {trails.map((trail) => (
               <li key={trail.id}>
                 <Card className="p-4">
@@ -817,9 +818,18 @@ function TrailsAndSpotsSection({
               </li>
             ))}
           </ul>
-        </>
-      )}
-    </section>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <MapHeroLayout
+      sidebar={sidebar}
+      map={<LazyAdventureMap trails={trails} spots={spots} zoom={12} height="full" />}
+      expandLabel={t('trailsAndSpots.showMore')}
+      collapseLabel={t('trailsAndSpots.showLess')}
+    />
   );
 }
 

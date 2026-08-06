@@ -190,7 +190,9 @@
       "hiddenGem": "Hidden Gem",
       "familyFriendly": "Family Friendly",
       "petFriendly": "Pet Friendly"
-    }
+    },
+    "showMore": "Show more",
+    "showLess": "Show less"
   },
   "seeAlso": {
     "heading": "See also",
