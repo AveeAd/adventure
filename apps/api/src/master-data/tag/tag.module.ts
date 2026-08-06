@@ -8,6 +8,7 @@ const TagController = createCrudController({
   delegate: (prisma) => prisma.tag,
   createDto: CreateTagDto,
   updateDto: UpdateTagDto,
+  autoSlug: { from: 'name' },
 });
 
 @Module({

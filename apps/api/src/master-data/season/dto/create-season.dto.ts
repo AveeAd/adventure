@@ -5,10 +5,6 @@ export class CreateSeasonDto {
   @MinLength(1)
   name: string;
 
-  @IsString()
-  @MinLength(1)
-  slug: string;
-
   @IsOptional()
   @IsString()
   description?: string;

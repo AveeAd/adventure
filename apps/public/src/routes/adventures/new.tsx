@@ -72,7 +72,6 @@ function NewAdventurePage() {
     try {
       const page = await authPost<{ slug: string }>('/adventure-pages', {
         title: formData.get('title'),
-        slug: formData.get('slug'),
         summary: formData.get('summary') || undefined,
         activityTypeId: formData.get('activityTypeId'),
         difficultyLevelId: formData.get('difficultyLevelId') || undefined,
@@ -102,9 +101,6 @@ function NewAdventurePage() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <Field label={t('fields.title')}>
             <Input name="title" required />
-          </Field>
-          <Field label={t('fields.slug')} hint={t('fields.slugHint')}>
-            <Input name="slug" required pattern="[a-z0-9-]+" />
           </Field>
           <Field label={t('fields.summary')}>
             <Textarea name="summary" rows={2} />

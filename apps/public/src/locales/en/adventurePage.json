@@ -8,8 +8,6 @@
   "addSpotTitle": "Add a spot to {{title}}",
   "fields": {
     "title": "Title",
-    "slug": "Slug",
-    "slugHint": "Used in the page URL, e.g. annapurna-base-camp",
     "summary": "Summary",
     "activityType": "Activity type",
     "difficultyLevel": "Difficulty level",

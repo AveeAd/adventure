@@ -13,10 +13,6 @@ export class CreateAdventurePageDto {
   @MinLength(1)
   title: string;
 
-  @IsString()
-  @MinLength(1)
-  slug: string;
-
   @IsOptional()
   @IsString()
   summary?: string;
