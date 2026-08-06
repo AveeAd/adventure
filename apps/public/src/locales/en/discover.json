@@ -10,10 +10,10 @@
   "spotsMarked": "Spots marked",
   "trailRoutesConfirmed": "Trail routes, confirmed by contributors",
   "pointsOfInterest": "Points of interest along the way",
-  "noAdventurePages": "No adventure pages yet.",
+  "noAdventurePages": "No adventure pages yet. Be the first explorer to add one.",
   "trendingDestinations": "Trending destinations",
   "durationDays": "{{min}}-{{max}} days",
   "upToAltitude": "up to {{altitude}}m",
   "searching": "Searching...",
-  "noResultsFor": "No results for “{{query}}”."
+  "noResultsFor": "Nothing matches “{{query}}” yet. Try another trail, spot, or region."
 }

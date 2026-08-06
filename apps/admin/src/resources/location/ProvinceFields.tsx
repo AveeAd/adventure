@@ -18,9 +18,6 @@ export const ProvinceFields = () => {
       <Form.Item label={t('fields.name')} name="name" rules={[{ required: true }]}>
         <Input />
       </Form.Item>
-      <Form.Item label={t('fields.slug')} name="slug" rules={[{ required: true }]}>
-        <Input />
-      </Form.Item>
     </>
   );
 };

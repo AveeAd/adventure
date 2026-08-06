@@ -30,7 +30,7 @@
   "activityTracks": {
     "listTitle": "Your activity tracks",
     "uploadTrack": "Upload a track",
-    "noneYet": "No tracks yet. Upload a GPX, KML, KMZ, or GeoJSON file from your phone or GPS watch.",
+    "noneYet": "No tracks logged yet. Upload a GPX, KML, KMZ, or GeoJSON file from your phone or GPS watch to add your first.",
     "untitledTrack": "Untitled track",
     "public": "Public",
     "private": "Private",

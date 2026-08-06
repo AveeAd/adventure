@@ -6,10 +6,10 @@ import type { MapSpot, MapTrail } from './AdventureMap';
 // the import itself to the client via React.lazy, not just the render
 const AdventureMap = lazy(() => import('./AdventureMap'));
 
-function MapPlaceholder({ height = 320 }: { height?: number }) {
+function MapPlaceholder({ height = 320 }: { height?: number | 'full' }) {
   return (
     <div
-      style={{ height }}
+      style={{ height: height === 'full' ? '100%' : height }}
       className="flex items-center justify-center rounded-xl border border-stone-200 bg-stone-50 text-sm text-stone-400 dark:border-stone-800 dark:bg-stone-900"
     >
       Loading map...
@@ -17,7 +17,7 @@ function MapPlaceholder({ height = 320 }: { height?: number }) {
   );
 }
 
-export function LazyAdventureMap(props: { trails: MapTrail[]; spots: MapSpot[]; height?: number; zoom?: number }) {
+export function LazyAdventureMap(props: { trails: MapTrail[]; spots: MapSpot[]; height?: number | 'full'; zoom?: number }) {
   return (
     <ClientOnly fallback={<MapPlaceholder height={props.height} />}>
       <Suspense fallback={<MapPlaceholder height={props.height} />}>

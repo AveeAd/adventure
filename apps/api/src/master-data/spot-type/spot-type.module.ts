@@ -8,6 +8,7 @@ const SpotTypeController = createCrudController({
   delegate: (prisma) => prisma.spotType,
   createDto: CreateSpotTypeDto,
   updateDto: UpdateSpotTypeDto,
+  autoSlug: { from: 'name' },
 });
 
 @Module({

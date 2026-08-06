@@ -8,6 +8,8 @@ const MunicipalityController = createCrudController({
   delegate: (prisma) => prisma.municipality,
   createDto: CreateMunicipalityDto,
   updateDto: UpdateMunicipalityDto,
+  // slug is unique per-district (@@unique([districtId, slug])), not globally
+  autoSlug: { from: 'name', scope: (dto) => ({ districtId: dto.districtId }) },
 });
 
 @Module({

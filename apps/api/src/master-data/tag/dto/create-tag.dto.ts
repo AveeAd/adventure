@@ -5,10 +5,6 @@ export class CreateTagDto {
   @MinLength(1)
   name: string;
 
-  @IsString()
-  @MinLength(1)
-  slug: string;
-
   @IsOptional()
   @IsInt()
   sortOrder?: number;

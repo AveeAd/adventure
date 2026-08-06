@@ -16,6 +16,15 @@ export interface CrudControllerOptions<TEntity extends CrudEntity> {
   // per-module extension point - e.g. ActivityType's cycle-prevention check,
   // which the generic service has no reason to know about
   beforeUpdate?: (id: string, dto: object, prisma: PrismaService) => Promise<void>;
+  // opts a resource with a `slug` column out of ever accepting one from the
+  // client - createDto/updateDto must not declare a `slug` field. `from`
+  // names the dto field the slug is derived from (always `name` today);
+  // `scope` narrows uniqueness for compound-unique slugs (e.g. District's
+  // `[provinceId, slug]`) - omit for globally-unique slug columns.
+  autoSlug?: {
+    from: string;
+    scope?: (dto: Record<string, unknown>) => Record<string, unknown>;
+  };
 }
 
 export function createCrudController<TEntity extends CrudEntity>(
@@ -53,6 +62,12 @@ export function createCrudController<TEntity extends CrudEntity>(
     @Post()
     async create(@Body() body: Record<string, unknown>) {
       const dto = await validateDto(options.createDto, body);
+      if (options.autoSlug) {
+        const source = (dto as Record<string, unknown>)[options.autoSlug.from];
+        const scope = options.autoSlug.scope?.(dto as Record<string, unknown>) ?? {};
+        const slug = await this.service.generateUniqueSlug(String(source ?? ''), scope);
+        return this.service.create({ ...dto, slug });
+      }
       return this.service.create(dto);
     }
 

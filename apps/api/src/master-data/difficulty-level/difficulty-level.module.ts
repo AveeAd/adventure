@@ -8,6 +8,7 @@ const DifficultyLevelController = createCrudController({
   delegate: (prisma) => prisma.difficultyLevel,
   createDto: CreateDifficultyLevelDto,
   updateDto: UpdateDifficultyLevelDto,
+  autoSlug: { from: 'name' },
 });
 
 @Module({

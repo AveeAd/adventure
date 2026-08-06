@@ -8,6 +8,8 @@ const ProvinceController = createCrudController({
   delegate: (prisma) => prisma.province,
   createDto: CreateProvinceDto,
   updateDto: UpdateProvinceDto,
+  // slug is unique per-country (@@unique([countryId, slug])), not globally
+  autoSlug: { from: 'name', scope: (dto) => ({ countryId: dto.countryId }) },
 });
 
 @Module({

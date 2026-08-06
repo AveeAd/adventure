@@ -73,6 +73,15 @@ function InvalidateSizeOnChange({ dependency }: { dependency: unknown }) {
     return () => window.clearTimeout(id);
   }, [map, dependency]);
 
+  // same reasoning as above, but for a height="full" map whose container is
+  // reflowed by a CSS breakpoint (e.g. MapHeroLayout's mobile/desktop grid
+  // switch) rather than by a dependency this component knows about
+  useEffect(() => {
+    const onResize = () => map.invalidateSize();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [map]);
+
   return null;
 }
 
@@ -105,7 +114,7 @@ export function AdventureMap({
 }: {
   trails: MapTrail[];
   spots: MapSpot[];
-  height?: number;
+  height?: number | 'full';
   zoom?: number;
 }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -121,7 +130,7 @@ export function AdventureMap({
 
   return (
     <div
-      style={isFullscreen ? undefined : { height }}
+      style={isFullscreen ? undefined : { height: height === 'full' ? '100%' : height }}
       className={
         isFullscreen
           ? 'fixed inset-0 z-[1000]'

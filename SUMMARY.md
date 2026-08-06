@@ -72,6 +72,7 @@ Global conventions (see CLAUDE.md for the summary): UUIDv4 string ids, `createdA
 - **AdventurePageDistrict**, **AdventurePageSeason** — plain many-to-many joins (Cascade from page, Restrict to lookup). `AdventurePageDistrict` gained `source` (`MANUAL`/`DERIVED`, Phase 17) and timestamps (previously missing entirely — a standing convention violation, fixed in the same migration).
 - **Media** — url/caption/altText/sortOrder, uploadedById (Restrict). Uploads go through `POST /uploads/images` (local disk under `UPLOAD_DIR`, not S3), decoupled from this table; content can also just paste a URL directly into Markdown with no `Media` row.
 - **AdventurePageLike** — deliberately **not** revision-scoped, never reset on edit (casual appreciation, not a trust claim). `Cascade` both sides.
+- **AdventurePageVisit** (post-Milestone-3) — "Been Here" marker, distinct from both Like (opinion) and an anonymous pageview: deduped per user (`@@unique([adventurePageId, userId])`), timestamped `visitedAt` so a future trending/"recently most visited" query can use it — that query isn't built yet, only the write path and button. See `ai/REVISION.md`.
 - **Tag** (Phase 13) — curated master data (generic CRUD like ActivityType), not free-typed, to avoid spam/duplicate tags. **AdventurePageTag** joins it. Tags settable only at page-creation time in the public UI today — a known gap.
 - **RelatedAdventurePage** (Phase 13) — symmetric self-join; suggesting A→B inserts both `(A,B)` and `(B,A)` in one transaction; no moderation queue (named spam-vector risk).
 
@@ -280,7 +281,7 @@ No mobile app code exists or is planned; this is pure future-readiness so the wo
 - Whether `ActivityTrack` gets its own kudos/comments or stays scoped to its parent `TripReport` — leaning toward the latter, left open.
 - Whether promoting a track to a trail requires moderator approval (resolved as built: no, it's a normal peer-editable wiki edit like any other).
 - Whether a `FOLLOWERS` visibility tier is worth adding once/if a follow graph exists — not designed.
-- Not built this round: `GET /adventure-pages/:slug/offline-bundle` endpoint, the `propose-trail-update` public UI picker (API endpoint works, no trail-picker component), a preview diff before track promotion, `TripReport`'s "attach a day's track" picker.
+- Not built this round: `GET /adventure-pages/:slug/offline-bundle` endpoint, the `propose-trail-update` public UI picker (API endpoint works, no trail-picker component), a preview diff before track promotion. `TripReport`'s "attach a day's track" picker was closed later, post-Milestone-3 (see §7's "Post-Milestone-3 additions").
 
 **i18n**
 - Which second locale ships first, and machine vs. human translation — the original blocker, deliberately still open (this round only removed the technical prerequisite).
@@ -308,11 +309,45 @@ No mobile app code exists or is planned; this is pure future-readiness so the wo
 **Deployment**
 - No zero-downtime rollout — acceptable at current traffic, revisit if that changes.
 
+**Post-Milestone-3 additions** (`ai/REVISION.md` milestone 1/2 check-in, closed out; plus unrelated ops/admin polish)
+- `AdventurePageVisit` ("Been Here") shipped alongside `AdventurePageLike` — deduped per user (`@@unique([adventurePageId, userId])`), timestamped (`visitedAt`) so a trending/"recently most visited" query is possible later, but that query itself **isn't built yet** — only the write path (`POST`/`DELETE /adventure-pages/:id/visits`) and the button exist.
+- Stories (`TripReport`) can now attach the author's own `ActivityTrack`s at create and edit time (`activityTrackIds`, ownership-checked, reconciled via transaction on edit) — this closes ACTIVITY_TRACKS.md's previously-open "TripReport's attach-a-day's-track picker" gap. Story editing (not just creation) is also new — the API always supported it via `ensureOwnerOrAdmin`, but there was no UI form until now.
+- Photo lightbox on the adventure page gallery reuses the existing `ReportButton`/`MEDIA` target type — no new report-target work needed.
+- App name/tagline ("Adventure Nepal" placeholder) moved from hardcoded strings into `SystemSetting` (`app.*` keys, public-flagged) with a new unauthenticated `GET /settings/public` — the project name is still genuinely undecided; this just makes renaming a config change instead of a code change. Admin's System Settings table now groups by category (Approval & Moderation / Contribution Points / App Branding) and the sidebar nav grew a Content/People/Configuration grouping (`GroupedSider`).
+- An ops CLI (`cli/adventure-cli.sh`) wraps docker-compose lifecycle, seed scripts, and `prisma migrate deploy` for local/prod ops — not part of the deploy pipeline itself (GitHub Actions still SSHes and rebuilds directly), just an interactive convenience wrapper for operators. Originally a Go+bubbletea TUI; rewritten as a plain bash script so it runs on any box with `bash`/`docker`/`npm` and needs no compiler available.
+
 **Milestone 3 (approval/moderation)**
 - Reject threshold mirrors approve threshold — no auto-expiry for stuck pending items.
 - Whether the "others-only" earning rule literally applies to `GEO_UPDATE` (this spec assumes yes; upstream PLANNING.md was ambiguous).
 - Point value for an upheld report against a page revision wasn't specified upstream (this spec reverses the original award).
 - Whether demotion below level 10 invalidates already-cast votes (this spec: no).
+
+## 8. UI design refresh — cherry-picked ideas (design direction, not yet implemented)
+
+An external AI-generated design brief pitched a "National Geographic × Strava × Wikipedia" identity — a distinct forest-green/river-blue/trail-orange palette, no dark mode by default, Swiss-grid/bento layout, map-as-hero, contributor identity cards, a trait-badge vocabulary, subtle topographic texture, Apple-style motion. Reviewed against the actual `apps/public`/`apps/admin` codebase rather than adopted wholesale.
+
+**Locked decision**: cherry-pick the structural/content ideas, keep the existing visual system. Explicitly **not** adopting the brief's palette or its no-dark-mode stance — CLAUDE.md's locked pine-green/terracotta palette (`apps/public/src/styles.css` `@theme` block, mirrored manually in `apps/admin/src/theme.ts`) and `prefers-color-scheme`-driven dark mode stay as-is, unchanged by this round.
+
+**Already satisfies the brief — no work needed** (confirmed by a codebase survey, not assumed from the brief):
+- Palette itself already reads as "modern explorer," not tour-agency: pine-green primary (`#2f6b4f` at 600) + terracotta accent (`#c1633c` at 500) on Tailwind's stone neutrals.
+- Contributor identity already exists: `apps/public/src/routes/users/$id.tsx` renders `LevelProgressBar`, a 4-up `StatCard` grid, and a contribution-breakdown card — the "Wikipedia meets GitHub" idea from the brief is already built here, not just a suggestion.
+- Subtle topographic texture already exists: `apps/public/src/components/TopoLines.tsx`, a decorative `aria-hidden` SVG contour graphic.
+- Icon set already matches: `lucide-react` is the icon dependency in both apps.
+- Cards are already soft/rounded: `Card` = `rounded-xl border shadow-sm`, `Button` = `rounded-lg`, `Badge` = pill `rounded-full` (`apps/public/src/components/`).
+- Empty-state copy tone: audited and rewritten (Phase 26, built) — `EmptyState` call sites on public content routes now use the brief's exploration voice; moderation-queue and curatorial strings deliberately stayed neutral. See `UI_DESIGN_REFRESH_PLAN.md` Phase 26.
+- Wiki-page anatomy: audited (Phase 27, built) — the adventure-page route already renders a structured Quick-Facts `Card` block (duration, max altitude, region/districts, best season) plus difficulty/activity-type badges, satisfying IDEA.md's infobox list. The brief's fuller list (permits, water sources, camping, hazards) is also already structured, just as geolocated `Spot`s with a `SpotType` (Campsite, Water Source, Danger Zone, Checkpoint/Permit Office) rather than page-level infobox lines. No work needed. See `UI_DESIGN_REFRESH_PLAN.md` Phase 27 for the full finding, including one adjacent-but-out-of-scope gap it surfaced (restricted-area legal permit status has no structured flag anywhere, only free-form prose).
+- Trait-badge vocabulary (Phase 28, built) — Verified, Expert Only, Hidden Gem, Family Friendly, Pet Friendly now render on trail/spot cards. Verified reuses `StatusBadge` on the trail/spot's own `verificationStatus`, already correct per-entity data. The other four don't have a Trail/Spot-level source in schema (`Tag`/`AdventurePageTag` only relate to `AdventurePage`; there's no `Trail.difficulty`), so — after a second user checkpoint — they're derived from the parent `AdventurePage`'s `difficultyLevel`/`tags`, already loaded on the adventure-detail route, rather than adding new schema/UI. See `UI_DESIGN_REFRESH_PLAN.md` Phase 28 for the full outcome.
+- Map-as-hero layout (Phase 29, built) — the adventure-page detail route's map is now a persistent hero element: desktop gets a bounded split section (quick-facts + trail/spot list left panel, map filling the same height on the right) positioned right after the title/tags, ahead of the photo gallery; mobile gets a full-bleed map with a tap-to-toggle peek/expanded sheet beneath it. A single Leaflet instance is shared across both breakpoints via CSS Grid reflow (new `apps/public/src/components/MapHeroLayout.tsx`), not two parallel maps. See `UI_DESIGN_REFRESH_PLAN.md` Phase 29 for the full outcome, including the two design calls confirmed with the user (bounded split vs. page-wide sticky map; tap-to-toggle sheet vs. a hand-rolled draggable one) before implementation.
+
+**Real gaps identified against the brief** (surveyed; both items now built — item 2 as Phase 28, item 1 as Phase 29):
+1. ~~**Map isn't the hero.**~~ Built, Phase 29 — see below.
+2. ~~**No trait-badge vocabulary.**~~ Built, Phase 28 — see below.
+
+**Explicitly not adopted from the brief, beyond the palette**: the brief's Swiss-grid/bento layout system and "premium explorer, not tour company" copy register are treated as inspiration for the map-as-hero and card work above, not a wholesale redesign — no separate design-system rewrite is planned.
+
+**Open decisions**: whether `apps/admin`'s AntD surfaces get any of this (map-as-hero and badges are public-site-only concepts per the brief; admin stays "read + moderate," per CLAUDE.md's existing admin-scope decision) — deferred, revisit only if a future phase finds an admin-side gap.
+
+**Phased build plan**: see `UI_DESIGN_REFRESH_PLAN.md` — Phase 26 (empty-state copy, **built**) → Phase 27 (wiki-page anatomy audit, **built**, no gap found) → Phase 28 (trait-badge vocabulary, **built**) → Phase 29 (map-as-hero layout, **built**). This closes out the UI design-refresh round; that doc is the phase-by-phase spec, this section stays the rationale/survey record.
 - Whether media approval should batch with its parent page revision instead of per-image voting.
 - Whether moderators should eventually be allowed to edit master data.
 - Backfill fairness: pre-Milestone-3 content is treated as retroactively approved and paid accordingly, even though approval didn't exist when it was made.

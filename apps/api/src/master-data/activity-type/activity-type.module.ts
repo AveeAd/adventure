@@ -28,6 +28,7 @@ const ActivityTypeController = createCrudController({
   delegate: (prisma) => prisma.activityType,
   createDto: CreateActivityTypeDto,
   updateDto: UpdateActivityTypeDto,
+  autoSlug: { from: 'name' },
   beforeUpdate: async (id, dto, prisma) => {
     const parentId = (dto as UpdateActivityTypeDto).parentId;
     if (typeof parentId === 'string') {

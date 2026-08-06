@@ -8,6 +8,7 @@ const SeasonController = createCrudController({
   delegate: (prisma) => prisma.season,
   createDto: CreateSeasonDto,
   updateDto: UpdateSeasonDto,
+  autoSlug: { from: 'name' },
 });
 
 @Module({

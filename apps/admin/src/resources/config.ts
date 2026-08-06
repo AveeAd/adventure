@@ -33,7 +33,6 @@ export const activityTypeConfig: MasterDataResourceConfig = {
   label: 'Activity Types',
   fields: [
     { kind: 'text', name: 'name', label: 'Name', required: true },
-    { kind: 'text', name: 'slug', label: 'Slug', required: true },
     { kind: 'text', name: 'description', label: 'Description' },
     { kind: 'number', name: 'sortOrder', label: 'Sort order' },
     { kind: 'self-select', name: 'parentId', label: 'Parent activity type', optionLabel: 'name' },
@@ -46,7 +45,6 @@ export const difficultyLevelConfig: MasterDataResourceConfig = {
   label: 'Difficulty Levels',
   fields: [
     { kind: 'text', name: 'name', label: 'Name', required: true },
-    { kind: 'text', name: 'slug', label: 'Slug', required: true },
     { kind: 'text', name: 'description', label: 'Description' },
     { kind: 'number', name: 'sortOrder', label: 'Sort order' },
   ],
@@ -58,7 +56,6 @@ export const seasonConfig: MasterDataResourceConfig = {
   label: 'Seasons',
   fields: [
     { kind: 'text', name: 'name', label: 'Name', required: true },
-    { kind: 'text', name: 'slug', label: 'Slug', required: true },
     { kind: 'text', name: 'description', label: 'Description' },
     { kind: 'number', name: 'sortOrder', label: 'Sort order' },
   ],
@@ -91,7 +88,6 @@ export const spotTypeConfig: MasterDataResourceConfig = {
   label: 'Spot Types',
   fields: [
     { kind: 'text', name: 'name', label: 'Name', required: true },
-    { kind: 'text', name: 'slug', label: 'Slug', required: true },
     { kind: 'text', name: 'description', label: 'Description' },
     { kind: 'number', name: 'sortOrder', label: 'Sort order' },
   ],
@@ -103,7 +99,6 @@ export const tagConfig: MasterDataResourceConfig = {
   label: 'Tags',
   fields: [
     { kind: 'text', name: 'name', label: 'Name', required: true },
-    { kind: 'text', name: 'slug', label: 'Slug', required: true },
     { kind: 'number', name: 'sortOrder', label: 'Sort order' },
   ],
   listColumns: ['name', 'slug', 'sortOrder', 'isActive'],

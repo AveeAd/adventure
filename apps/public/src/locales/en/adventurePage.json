@@ -8,8 +8,6 @@
   "addSpotTitle": "Add a spot to {{title}}",
   "fields": {
     "title": "Title",
-    "slug": "Slug",
-    "slugHint": "Used in the page URL, e.g. annapurna-base-camp",
     "summary": "Summary",
     "activityType": "Activity type",
     "difficultyLevel": "Difficulty level",
@@ -130,7 +128,7 @@
   "stories": {
     "heading": "Stories",
     "findTripGroup": "Find a trip group →",
-    "noneShared": "No stories shared yet.",
+    "noneShared": "No one has shared a story from here yet. Be the first.",
     "fallbackTitle": "Story",
     "durationSuffix": " · {{days}} days",
     "tellYourStory": "Tell your story",
@@ -170,7 +168,7 @@
   "gallery": {
     "heading": "Photos",
     "addPhoto": "Add photo",
-    "noPhotosYet": "No photos yet.",
+    "noPhotosYet": "No photos yet. Be the first to show what this place looks like.",
     "photo": "Photo",
     "caption": "Caption (optional)",
     "altText": "Alt text (optional)",
@@ -183,13 +181,21 @@
   },
   "trailsAndSpots": {
     "heading": "Trails & spots",
-    "noneYet": "No trails or spots mapped yet.",
-    "trailFallback": "Trail"
+    "noneYet": "No one has mapped a trail or spot here yet. Be the first explorer.",
+    "trailFallback": "Trail",
+    "traits": {
+      "expertOnly": "Expert Only",
+      "hiddenGem": "Hidden Gem",
+      "familyFriendly": "Family Friendly",
+      "petFriendly": "Pet Friendly"
+    },
+    "showMore": "Show more",
+    "showLess": "Show less"
   },
   "seeAlso": {
     "heading": "See also",
     "addRelatedPage": "Add related page",
-    "noneYet": "No related pages yet.",
+    "noneYet": "Nothing linked here yet.",
     "pageSlug": "Page slug"
   }
 }

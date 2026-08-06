@@ -7,6 +7,7 @@ import { ContributionsService } from '../contributions/contributions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
+import { slugify } from '../common/slugify';
 import { UploadsService } from '../uploads/uploads.service';
 import { AddMediaDto } from './dto/add-media.dto';
 import { CastVoteDto } from './dto/cast-vote.dto';
@@ -206,12 +207,30 @@ export class AdventurePagesService {
     };
   }
 
+  // Slugs are server-generated from the title, never user-supplied - a
+  // contributor has no way to know which slugs are already taken, so asking
+  // them to pick one is just a validation error waiting to happen.
+  private async generateUniqueSlug(title: string): Promise<string> {
+    const base = slugify(title) || 'page';
+    const existing = await this.prisma.adventurePage.findMany({
+      where: { slug: { startsWith: base } },
+      select: { slug: true },
+    });
+    const taken = new Set(existing.map((p) => p.slug));
+    if (!taken.has(base)) return base;
+    for (let i = 2; ; i++) {
+      const candidate = `${base}-${i}`;
+      if (!taken.has(candidate)) return candidate;
+    }
+  }
+
   async create(authorId: string, dto: CreateAdventurePageDto) {
+    const slug = await this.generateUniqueSlug(dto.title);
     const result = await this.prisma.$transaction(async (tx) => {
       const page = await tx.adventurePage.create({
         data: {
           title: dto.title,
-          slug: dto.slug,
+          slug,
           summary: dto.summary,
           activityTypeId: dto.activityTypeId,
           difficultyLevelId: dto.difficultyLevelId,

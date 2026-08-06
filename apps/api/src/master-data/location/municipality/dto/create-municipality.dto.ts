@@ -9,10 +9,6 @@ export class CreateMunicipalityDto {
   @MinLength(1)
   name: string;
 
-  @IsString()
-  @MinLength(1)
-  slug: string;
-
   @IsEnum(MunicipalityType)
   type: MunicipalityType;
 }
