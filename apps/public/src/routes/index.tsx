@@ -49,7 +49,7 @@ export const Route = createFileRoute('/')({
       maxLat: String(NEPAL_BBOX.maxLat),
     });
     const [pagesRes, trailsRes, spotsRes] = await Promise.all([
-      fetch(apiUrl('/adventure-pages?pageSize=50&sort=trending')),
+      fetch(apiUrl('/adventure-pages?pageSize=15&sort=trending')),
       fetch(apiUrl(`/trails/bbox?${bboxParams}`)),
       fetch(apiUrl(`/spots/bbox?${bboxParams}`)),
     ]);
