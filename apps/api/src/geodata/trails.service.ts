@@ -146,44 +146,70 @@ export class TrailsService {
       });
     }
 
-    const id = randomUUID();
-    const revisionId = randomUUID();
-    const now = new Date();
-    const geojson = JSON.stringify(dto.geometry);
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`
-        INSERT INTO trails (
-          id, "adventurePageId", name, geometry, "distanceMeters", source,
-          "verificationStatus", "isActive", "createdById", "lastEditedById",
-          "createdAt", "updatedAt"
-        )
-        VALUES (
-          ${id}, ${pageId}, ${dto.name ?? null},
-          ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
-          COALESCE(${dto.distanceMeters ?? null}, ST_Length(ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326)::geography)::int),
-          ${source}::"TrailSource",
-          'UNVERIFIED', true, ${userId}, ${userId}, ${now}, ${now}
-        )
-      `;
-
-      await tx.$executeRaw`
-        INSERT INTO trail_revisions (
-          id, "trailId", version, geometry, name, "distanceMeters",
-          "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
-        )
-        SELECT ${revisionId}, id, 1, geometry, name, "distanceMeters",
-               NULL, false, ${userId}, ${now}
-        FROM trails WHERE id = ${id}
-      `;
-
-      await deriveDistrictTags(tx, 'trails', id, pageId);
-    });
+    const id = await this.prisma.$transaction((tx) => this.insertTrail(tx, pageId, userId, dto, source));
 
     // MILESTONE_3.md §3.2: points are awarded on approval, not on submit -
     // v1 sits PENDING like any other revision, GEO_CREATE moves to
     // applyApproval().
     return this.get(id);
+  }
+
+  // Exposed so AdventurePagesService.create() can create a page's initial
+  // trail inside the *same* transaction as the page + revision themselves
+  // (single-request adventure creation - see the combined-create flow),
+  // instead of a second independent transaction after the page commits.
+  // Only valid for a brand-new page, so it skips create()'s
+  // findActiveTrailId/update-instead branch entirely.
+  createInTransaction(
+    tx: Prisma.TransactionClient,
+    pageId: string,
+    userId: string,
+    dto: CreateTrailDto,
+    source: 'DRAWN' | 'RECORDED_ACTIVITY' = 'DRAWN',
+  ): Promise<string> {
+    return this.insertTrail(tx, pageId, userId, dto, source);
+  }
+
+  private async insertTrail(
+    tx: Prisma.TransactionClient,
+    pageId: string,
+    userId: string,
+    dto: CreateTrailDto,
+    source: 'DRAWN' | 'RECORDED_ACTIVITY',
+  ): Promise<string> {
+    const id = randomUUID();
+    const revisionId = randomUUID();
+    const now = new Date();
+    const geojson = JSON.stringify(dto.geometry);
+
+    await tx.$executeRaw`
+      INSERT INTO trails (
+        id, "adventurePageId", name, geometry, "distanceMeters", source,
+        "verificationStatus", "isActive", "createdById", "lastEditedById",
+        "createdAt", "updatedAt"
+      )
+      VALUES (
+        ${id}, ${pageId}, ${dto.name ?? null},
+        ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+        COALESCE(${dto.distanceMeters ?? null}, ST_Length(ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326)::geography)::int),
+        ${source}::"TrailSource",
+        'UNVERIFIED', true, ${userId}, ${userId}, ${now}, ${now}
+      )
+    `;
+
+    await tx.$executeRaw`
+      INSERT INTO trail_revisions (
+        id, "trailId", version, geometry, name, "distanceMeters",
+        "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
+      )
+      SELECT ${revisionId}, id, 1, geometry, name, "distanceMeters",
+             NULL, false, ${userId}, ${now}
+      FROM trails WHERE id = ${id}
+    `;
+
+    await deriveDistrictTags(tx, 'trails', id, pageId);
+
+    return id;
   }
 
   // MILESTONE_3.md §5.2: the significant refactor. Under the approval gate
