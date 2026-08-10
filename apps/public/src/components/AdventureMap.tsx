@@ -4,7 +4,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { useEffect, useState } from 'react';
-import { GeoJSON, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { Circle, CircleMarker, GeoJSON, MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 
 // react-leaflet's bundled default marker icon URLs break under Vite - point
 // them at the actual bundled asset URLs instead (a well-known Leaflet+bundler gotcha)
@@ -106,6 +106,69 @@ function FullscreenToggle({ isFullscreen, onToggle }: { isFullscreen: boolean; o
   );
 }
 
+function LocateButton({ topOffset }: { topOffset: number }) {
+  const [position, setPosition] = useState<[number, number] | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [error, setError] = useState(false);
+
+  const map = useMapEvents({
+    locationfound(event) {
+      setPosition([event.latlng.lat, event.latlng.lng]);
+      setAccuracy(event.accuracy);
+      setLocating(false);
+      map.flyTo(event.latlng, Math.max(map.getZoom(), 14));
+    },
+    locationerror() {
+      setLocating(false);
+      setError(true);
+    },
+  });
+
+  function handleClick() {
+    setError(false);
+    setLocating(true);
+    map.locate({ setView: false, enableHighAccuracy: true });
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        aria-label="Show my location"
+        title={error ? "Couldn't get your location" : 'Show my location'}
+        style={{ top: topOffset }}
+        className="absolute right-2 z-[1000] rounded-lg border border-stone-200 bg-white/90 p-2 text-stone-600 shadow-sm hover:bg-white disabled:opacity-60 dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300 dark:hover:bg-stone-900"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`}
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path strokeLinecap="round" d="M12 2v3M12 19v3M22 12h-3M5 12H2" />
+        </svg>
+      </button>
+      {position && (
+        <>
+          {accuracy && <Circle center={position} radius={accuracy} pathOptions={{ color: '#2563eb', fillOpacity: 0.1, weight: 1 }} />}
+          <CircleMarker
+            center={position}
+            radius={7}
+            pathOptions={{ color: '#ffffff', weight: 2, fillColor: '#2563eb', fillOpacity: 1 }}
+          >
+            <Popup>You are here</Popup>
+          </CircleMarker>
+        </>
+      )}
+    </>
+  );
+}
+
 export function AdventureMap({
   trails,
   spots,
@@ -177,6 +240,7 @@ export function AdventureMap({
         ))}
         <FitBounds trails={trails} spots={spots} />
         <InvalidateSizeOnChange dependency={isFullscreen} />
+        <LocateButton topOffset={44} />
       </MapContainer>
     </div>
   );
