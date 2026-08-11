@@ -4,10 +4,12 @@ import { diffLines } from 'diff';
 import { deriveVerificationStatus, isApprovalEligible, resolveVoteOutcome } from '../approvals/approval-rules.util';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { ContributionsService } from '../contributions/contributions.service';
+import { slugify } from '../common/slugify';
+import { SpotsService } from '../geodata/spots.service';
+import { TrailsService } from '../geodata/trails.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SettingsService } from '../settings/settings.service';
-import { slugify } from '../common/slugify';
 import { UploadsService } from '../uploads/uploads.service';
 import { AddMediaDto } from './dto/add-media.dto';
 import { CastVoteDto } from './dto/cast-vote.dto';
@@ -23,6 +25,8 @@ export class AdventurePagesService {
     private readonly uploads: UploadsService,
     private readonly contributions: ContributionsService,
     private readonly settings: SettingsService,
+    private readonly trails: TrailsService,
+    private readonly spots: SpotsService,
   ) {}
 
   async list(page = 1, pageSize = 20, sort: 'recent' | 'popular' | 'trending' = 'recent') {
@@ -224,6 +228,10 @@ export class AdventurePagesService {
     }
   }
 
+  // dto.trail/dto.spots (optional) let the public "create adventure" form
+  // submit the page plus its initial trail and spots as one request - all
+  // created in this same transaction, so a contributor never ends up with a
+  // page but no trail/spots because a later, separate request failed.
   async create(authorId: string, dto: CreateAdventurePageDto) {
     const slug = await this.generateUniqueSlug(dto.title);
     const result = await this.prisma.$transaction(async (tx) => {
@@ -256,13 +264,24 @@ export class AdventurePagesService {
         },
       });
 
-      return { ...page, currentRevision: revision };
+      const trailId = dto.trail ? await this.trails.createInTransaction(tx, page.id, authorId, dto.trail) : null;
+      const spotIds = dto.spots
+        ? await Promise.all(dto.spots.map((spotDto) => this.spots.createInTransaction(tx, page.id, authorId, spotDto)))
+        : [];
+
+      return { ...page, currentRevision: revision, trailId, spotIds };
     });
+
+    const { trailId, spotIds, ...page } = result;
+    const [trail, spots] = await Promise.all([
+      trailId ? this.trails.get(trailId) : null,
+      Promise.all(spotIds.map((id) => this.spots.get(id))),
+    ]);
 
     // MILESTONE_3.md §3.2: points are awarded on approval, not on submit -
     // v1 sits PENDING like any other revision (§5.2), the PAGE_CREATE award
     // moves to applyApproval().
-    return result;
+    return { ...page, trail, spots };
   }
 
   async updateMetadata(id: string, dto: UpdateAdventurePageMetadataDto) {

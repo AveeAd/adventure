@@ -139,7 +139,7 @@ function AdventurePageView() {
         )}
       </div>
 
-      <Container>
+      <Container size="wide">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">{page.title}</h1>
           {page.summary && <p className="mt-1 text-stone-600 dark:text-stone-300">{page.summary}</p>}

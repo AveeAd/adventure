@@ -105,43 +105,55 @@ export class SpotsService {
   // Insert creates a version:1 SpotRevision in the same transaction,
   // mirroring TrailsService.create().
   async create(pageId: string, userId: string, dto: CreateSpotDto): Promise<SpotRow> {
-    const id = randomUUID();
-    const revisionId = randomUUID();
-    const now = new Date();
-    const geojson = JSON.stringify(dto.geometry);
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`
-        INSERT INTO spots (
-          id, "adventurePageId", "spotTypeId", name, description, geometry,
-          "elevationMeters", "verificationStatus", "isActive",
-          "createdById", "lastEditedById", "createdAt", "updatedAt"
-        )
-        VALUES (
-          ${id}, ${pageId}, ${dto.spotTypeId}, ${dto.name}, ${dto.description ?? null},
-          ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
-          ${dto.elevationMeters ?? null},
-          'UNVERIFIED', true, ${userId}, ${userId}, ${now}, ${now}
-        )
-      `;
-
-      await tx.$executeRaw`
-        INSERT INTO spot_revisions (
-          id, "spotId", version, geometry, "spotTypeId", name, description,
-          "elevationMeters", "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
-        )
-        SELECT ${revisionId}, id, 1, geometry, "spotTypeId", name, description,
-               "elevationMeters", NULL, false, ${userId}, ${now}
-        FROM spots WHERE id = ${id}
-      `;
-
-      await deriveDistrictTags(tx, 'spots', id, pageId);
-    });
+    const id = await this.prisma.$transaction((tx) => this.insertSpot(tx, pageId, userId, dto));
 
     // MILESTONE_3.md §3.2: points are awarded on approval, not on submit -
     // v1 sits PENDING like any other revision, GEO_CREATE moves to
     // applyApproval().
     return this.get(id);
+  }
+
+  // Exposed so AdventurePagesService.create() can create a page's initial
+  // spots inside the *same* transaction as the page + revision themselves
+  // (single-request adventure creation - see the combined-create flow),
+  // instead of a separate transaction per spot after the page commits.
+  createInTransaction(tx: Prisma.TransactionClient, pageId: string, userId: string, dto: CreateSpotDto): Promise<string> {
+    return this.insertSpot(tx, pageId, userId, dto);
+  }
+
+  private async insertSpot(tx: Prisma.TransactionClient, pageId: string, userId: string, dto: CreateSpotDto): Promise<string> {
+    const id = randomUUID();
+    const revisionId = randomUUID();
+    const now = new Date();
+    const geojson = JSON.stringify(dto.geometry);
+
+    await tx.$executeRaw`
+      INSERT INTO spots (
+        id, "adventurePageId", "spotTypeId", name, description, geometry,
+        "elevationMeters", "verificationStatus", "isActive",
+        "createdById", "lastEditedById", "createdAt", "updatedAt"
+      )
+      VALUES (
+        ${id}, ${pageId}, ${dto.spotTypeId}, ${dto.name}, ${dto.description ?? null},
+        ST_SetSRID(ST_GeomFromGeoJSON(${geojson}), 4326),
+        ${dto.elevationMeters ?? null},
+        'UNVERIFIED', true, ${userId}, ${userId}, ${now}, ${now}
+      )
+    `;
+
+    await tx.$executeRaw`
+      INSERT INTO spot_revisions (
+        id, "spotId", version, geometry, "spotTypeId", name, description,
+        "elevationMeters", "editSummary", "isSafetyCriticalEdit", "editorId", "createdAt"
+      )
+      SELECT ${revisionId}, id, 1, geometry, "spotTypeId", name, description,
+             "elevationMeters", NULL, false, ${userId}, ${now}
+      FROM spots WHERE id = ${id}
+    `;
+
+    await deriveDistrictTags(tx, 'spots', id, pageId);
+
+    return id;
   }
 
   // MILESTONE_3.md §5.2 - see TrailsService.update()'s comment for the full
