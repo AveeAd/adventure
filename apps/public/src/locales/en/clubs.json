@@ -13,6 +13,11 @@
   "sortActive": "Recently active",
   "members": "Members ({{count}})",
   "owner": "Owner",
+  "moderator": "Moderator",
+  "makeModerator": "Make moderator",
+  "removeMember": "Remove",
+  "banMember": "Ban",
+  "confirmBan": "Ban this member? They won't be able to rejoin.",
   "joinClub": "Join club",
   "leaveClub": "Leave club",
   "requestToJoin": "Request to join",
@@ -56,6 +61,9 @@
     "failedToDecide": "Failed to update request",
     "failedToCreate": "Failed to create club",
     "failedToSave": "Failed to save changes",
-    "failedToDeactivate": "Failed to deactivate club"
+    "failedToDeactivate": "Failed to deactivate club",
+    "failedToRemove": "Failed to remove member",
+    "failedToBan": "Failed to ban member",
+    "failedToPromote": "Failed to promote member"
   }
 }

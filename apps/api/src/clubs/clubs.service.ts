@@ -323,6 +323,75 @@ export class ClubsService {
     }));
   }
 
+  // Owner or site staff may act on a MODERATOR (or another MEMBER); a club
+  // MODERATOR may only act on a plain MEMBER - never the owner or a fellow
+  // moderator. Shared by removeMember() and banMember().
+  private assertCanActOnTarget(tier: 'STAFF' | 'OWNER' | 'MODERATOR', targetRole: ClubRole) {
+    if (targetRole === ClubRole.OWNER) {
+      throw new ForbiddenException("The club owner can't be removed or banned");
+    }
+    if (targetRole === ClubRole.MODERATOR && tier === 'MODERATOR') {
+      throw new ForbiddenException('Only the owner or a site admin/moderator can act on a club moderator');
+    }
+  }
+
+  async removeMember(id: string, targetUserId: string, currentUser: AuthenticatedUser) {
+    await this.ensureExists(id);
+    const tier = await this.getActingTier(id, currentUser);
+    if (!tier) {
+      throw new ForbiddenException('Only the owner, a club moderator, or a site admin/moderator can do this');
+    }
+    const target = await this.prisma.clubMember.findUnique({
+      where: { clubId_userId: { clubId: id, userId: targetUserId } },
+    });
+    if (!target || target.status !== ClubMembershipStatus.APPROVED) {
+      throw new NotFoundException('This user is not a member of this club');
+    }
+    this.assertCanActOnTarget(tier, target.role);
+    await this.prisma.clubMember.delete({ where: { id: target.id } });
+    return { success: true };
+  }
+
+  // Bans keep the row (status BANNED) rather than deleting it, so join() and
+  // requestToJoin() - which both already reject on any existing row - keep
+  // a banned user out without needing a separate check.
+  async banMember(id: string, targetUserId: string, currentUser: AuthenticatedUser) {
+    await this.ensureExists(id);
+    const tier = await this.getActingTier(id, currentUser);
+    if (!tier) {
+      throw new ForbiddenException('Only the owner, a club moderator, or a site admin/moderator can do this');
+    }
+    const target = await this.prisma.clubMember.findUnique({
+      where: { clubId_userId: { clubId: id, userId: targetUserId } },
+    });
+    if (!target || target.status !== ClubMembershipStatus.APPROVED) {
+      throw new NotFoundException('This user is not a member of this club');
+    }
+    this.assertCanActOnTarget(tier, target.role);
+    await this.prisma.clubMember.update({
+      where: { id: target.id },
+      data: { status: ClubMembershipStatus.BANNED, role: ClubRole.MEMBER },
+    });
+    return { success: true };
+  }
+
+  // Owner or site staff only - promoting a moderator is a step up in trust,
+  // unlike removing/banning a plain member, which a moderator can do too.
+  async promoteToModerator(id: string, targetUserId: string, currentUser: AuthenticatedUser) {
+    await this.ensureOwnerOrSiteModerator(id, currentUser);
+    const target = await this.prisma.clubMember.findUnique({
+      where: { clubId_userId: { clubId: id, userId: targetUserId } },
+    });
+    if (!target || target.status !== ClubMembershipStatus.APPROVED) {
+      throw new NotFoundException('This user is not a member of this club');
+    }
+    if (target.role !== ClubRole.MEMBER) {
+      throw new ConflictException('This member is already an owner or moderator');
+    }
+    await this.prisma.clubMember.update({ where: { id: target.id }, data: { role: ClubRole.MODERATOR } });
+    return { success: true };
+  }
+
   async isMember(clubId: string, userId: string): Promise<boolean> {
     const membership = await this.prisma.clubMember.findUnique({
       where: { clubId_userId: { clubId, userId } },
@@ -347,6 +416,21 @@ export class ClubsService {
       return true;
     }
     return this.isMember(clubId, currentUser.userId);
+  }
+
+  private async getActingTier(id: string, currentUser: AuthenticatedUser): Promise<'STAFF' | 'OWNER' | 'MODERATOR' | null> {
+    if (currentUser.role === Role.ADMIN || currentUser.role === Role.MODERATOR) {
+      return 'STAFF';
+    }
+    const membership = await this.prisma.clubMember.findUnique({
+      where: { clubId_userId: { clubId: id, userId: currentUser.userId } },
+    });
+    if (!membership || membership.status !== ClubMembershipStatus.APPROVED) {
+      return null;
+    }
+    if (membership.role === ClubRole.OWNER) return 'OWNER';
+    if (membership.role === ClubRole.MODERATOR) return 'MODERATOR';
+    return null;
   }
 
   private async ensureOwnerOrSiteModerator(id: string, currentUser: AuthenticatedUser) {

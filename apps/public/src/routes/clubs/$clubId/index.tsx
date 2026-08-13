@@ -1,5 +1,5 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { Check, Heart, Settings, Users, UserMinus, UserPlus, X } from 'lucide-react';
+import { Ban, Check, Heart, Settings, ShieldPlus, Users, UserMinus, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../lib/auth/api';
@@ -16,8 +16,8 @@ import { EmptyState } from '../../../components/EmptyState';
 interface ClubMember {
   id: string;
   userId: string;
-  role: 'OWNER' | 'MEMBER';
-  status: 'PENDING' | 'APPROVED' | 'DECLINED';
+  role: 'OWNER' | 'MODERATOR' | 'MEMBER';
+  status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'BANNED';
   user: { id: string; email: string };
 }
 
@@ -97,8 +97,18 @@ function ClubDetailPage() {
       ? ({ role: club.viewerMembership.role, status: club.viewerMembership.status } as Pick<ClubMember, 'role' | 'status'>)
       : undefined;
   const isOwner = membership?.role === 'OWNER' && membership.status === 'APPROVED';
+  const isClubModerator = membership?.role === 'MODERATOR' && membership.status === 'APPROVED';
   const isApprovedMember = membership?.status === 'APPROVED';
-  const canManage = isOwner || siteRole === 'ADMIN' || siteRole === 'MODERATOR';
+  const isSiteStaff = siteRole === 'ADMIN' || siteRole === 'MODERATOR';
+  const canManage = isOwner || isSiteStaff;
+  const canManageMembers = isOwner || isClubModerator || isSiteStaff;
+
+  function canActOn(target: ClubMember): boolean {
+    if (target.userId === currentUserId) return false;
+    if (target.role === 'OWNER') return false;
+    if (target.role === 'MODERATOR') return isOwner || isSiteStaff;
+    return canManageMembers;
+  }
 
   useEffect(() => {
     if (!isOwner) {
@@ -159,6 +169,46 @@ function ClubDetailPage() {
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.failedToDecide'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeMember(userId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await authDelete(`/clubs/${club.id}/members/${userId}`);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.failedToRemove'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function banMember(userId: string) {
+    if (!window.confirm(t('confirmBan'))) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await authPost(`/clubs/${club.id}/members/${userId}/ban`);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.failedToBan'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function promoteToModerator(userId: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await authPost(`/clubs/${club.id}/members/${userId}/promote`);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('errors.failedToPromote'));
     } finally {
       setBusy(false);
     }
@@ -293,10 +343,37 @@ function ClubDetailPage() {
             <Card className="mt-3 p-5">
               <ul className="flex flex-col gap-2">
                 {club.members?.map((member) => (
-                  <li key={member.id} className="flex items-center gap-2">
-                    <Avatar label={member.user.email} size="sm" />
-                    <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.email}</span>
-                    {member.role === 'OWNER' && <span className="text-xs text-stone-500 dark:text-stone-400">{t('owner')}</span>}
+                  <li key={member.id} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Avatar label={member.user.email} size="sm" />
+                      <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.email}</span>
+                      {member.role === 'OWNER' && (
+                        <span className="text-xs text-stone-500 dark:text-stone-400">{t('owner')}</span>
+                      )}
+                      {member.role === 'MODERATOR' && (
+                        <span className="text-xs text-stone-500 dark:text-stone-400">{t('moderator')}</span>
+                      )}
+                    </div>
+                    {canActOn(member) && (
+                      <div className="flex gap-2">
+                        {(isOwner || isSiteStaff) && member.role === 'MEMBER' && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => promoteToModerator(member.userId)}
+                            disabled={busy}
+                          >
+                            <ShieldPlus className="h-3.5 w-3.5" /> {t('makeModerator')}
+                          </Button>
+                        )}
+                        <Button variant="secondary" size="sm" onClick={() => removeMember(member.userId)} disabled={busy}>
+                          <UserMinus className="h-3.5 w-3.5" /> {t('removeMember')}
+                        </Button>
+                        <Button variant="danger" size="sm" onClick={() => banMember(member.userId)} disabled={busy}>
+                          <Ban className="h-3.5 w-3.5" /> {t('banMember')}
+                        </Button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

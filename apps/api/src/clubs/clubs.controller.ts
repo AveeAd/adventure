@@ -70,6 +70,21 @@ export class ClubsController {
     return this.clubsService.leave(id, user.userId);
   }
 
+  @Delete(':id/members/:userId')
+  removeMember(@Param('id') id: string, @Param('userId') userId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.clubsService.removeMember(id, userId, user);
+  }
+
+  @Post(':id/members/:userId/ban')
+  banMember(@Param('id') id: string, @Param('userId') userId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.clubsService.banMember(id, userId, user);
+  }
+
+  @Post(':id/members/:userId/promote')
+  promoteToModerator(@Param('id') id: string, @Param('userId') userId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.clubsService.promoteToModerator(id, userId, user);
+  }
+
   @Post(':id/join-requests')
   requestToJoin(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.clubsService.requestToJoin(id, user.userId);

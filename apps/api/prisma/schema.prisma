@@ -858,19 +858,27 @@ enum ClubVisibility {
   PRIVATE
 }
 
+// MODERATOR is club-scoped, promoted by the OWNER (or a site ADMIN/
+// MODERATOR) from an existing MEMBER - distinct from the site-wide
+// Role.MODERATOR, the same way GuideVerificationStatus is distinct from
+// PageVerificationStatus despite the similar name.
 enum ClubRole {
   OWNER
+  MODERATOR
   MEMBER
 }
 
 // PENDING doubles as a private club's join request - there's no separate
 // request table, since a request and a membership are the same relationship
 // at different lifecycle stages (unlike ModeratorApplication, which is
-// genuinely distinct from the User.role it eventually sets).
+// genuinely distinct from the User.role it eventually sets). BANNED blocks
+// both join() and requestToJoin() the same way any other existing row does,
+// so no extra guard was needed there - see clubs.service.ts.
 enum ClubMembershipStatus {
   PENDING
   APPROVED
   DECLINED
+  BANNED
 }
 
 // Freestanding persistent community, distinct from TripGroup - no
