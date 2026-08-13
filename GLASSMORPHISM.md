@@ -184,6 +184,8 @@ Every `backdrop-blur-*` utility on a `.glass-*` element was bumped one Tailwind 
 
 Verified in-browser, both light and dark mode, on the landing page: scrolled page content is now clearly visible and blurred through both header pills and the search bar — a stronger, more legible "looking through glass" effect than before the tuning — with text and icons still fully legible against it.
 
+Per an immediate same-session follow-up, `--glass-shadow` was also raised (both modes) — `0 8px 32px` → `0 16px 48px`, and its alpha increased (light `0.12`→`0.2`, dark `0.45`→`0.55`) — so every glass surface reads as more visibly lifted/elevated off the page, not just more transparent and blurred. `--glass-highlight` (the inset top-edge glow) was left as-is; only the ambient drop shadow changed. Re-verified in-browser on the header's brand pill in both modes: a clearly visible, softer, larger shadow under the pill in both light and dark.
+
 ---
 
 ## Performance budget (applies from Phase 31 onward)
