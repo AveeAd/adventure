@@ -32,7 +32,7 @@ function ClubsListPage() {
   const { t } = useTranslation('clubs');
 
   return (
-    <Container>
+    <Container size="wide">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{t('listTitle')}</h1>
         <Link to="/clubs/new">

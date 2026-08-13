@@ -84,7 +84,11 @@ export class ClubsService {
   async get(id: string, currentUser?: ViewerContext) {
     const club = await this.prisma.club.findUnique({
       where: { id },
-      include: { ...APPROVED_MEMBER_INCLUDE, _count: { select: { members: true } } },
+      include: {
+        ...APPROVED_MEMBER_INCLUDE,
+        _count: { select: { members: true } },
+        createdBy: { select: { id: true, email: true } },
+      },
     });
     if (!club || !club.isActive) {
       throw new NotFoundException(`Club ${id} not found`);

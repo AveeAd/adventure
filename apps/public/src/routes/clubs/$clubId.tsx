@@ -153,7 +153,7 @@ function ClubDetailPage() {
   }
 
   return (
-    <Container>
+    <Container size="wide">
       <Link
         to="/clubs"
         className="text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"

@@ -31,7 +31,7 @@ export const ClubShow = () => {
     >
       {record && (
         <>
-          <Descriptions bordered column={2} size="small">
+          <Descriptions bordered column={3} size="small">
             <Descriptions.Item label={t('clubs.fields.name')}>{record.name}</Descriptions.Item>
             <Descriptions.Item label={t('clubs.fields.visibility')}>
               <Tag color={record.visibility === 'PUBLIC' ? 'green' : 'default'}>{record.visibility}</Tag>

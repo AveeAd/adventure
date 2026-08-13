@@ -24,7 +24,7 @@ function NewClubPage() {
 
   if (authStatus === 'checking') {
     return (
-      <Container>
+      <Container size="wide">
         <p className="text-stone-500 dark:text-stone-400">{t('common:actions.checkingSignIn')}</p>
       </Container>
     );
@@ -50,7 +50,7 @@ function NewClubPage() {
   }
 
   return (
-    <Container>
+    <Container size="wide">
       <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{t('newTitle')}</h1>
       <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('newSubheading')}</p>
 
