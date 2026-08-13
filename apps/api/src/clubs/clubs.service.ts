@@ -84,7 +84,17 @@ export class ClubsService {
   async listMine(userId: string) {
     const memberships = await this.prisma.clubMember.findMany({
       where: { userId, status: ClubMembershipStatus.APPROVED, club: { isActive: true } },
-      include: { club: { select: { id: true, name: true } } },
+      include: {
+        club: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            visibility: true,
+            _count: { select: { members: true } },
+          },
+        },
+      },
       orderBy: { joinedAt: 'asc' },
     });
     return memberships.map((m) => m.club);

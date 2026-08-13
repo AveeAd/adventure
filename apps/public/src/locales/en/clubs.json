@@ -1,8 +1,12 @@
 {
   "listTitle": "Clubs",
   "subheading": "Find a persistent community to plan and share with.",
+  "tabJoin": "Join clubs",
+  "tabMine": "My clubs",
   "noneYet": "No clubs yet — be the first to start one.",
   "noneMatch": "No clubs match your search.",
+  "mineNoneYet": "You haven't joined any clubs yet.",
+  "mineSignInPrompt": "Sign in to see the clubs you've joined.",
   "searchPlaceholder": "Search clubs...",
   "sortPopular": "Most members",
   "sortNewest": "Newest",
