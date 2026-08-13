@@ -222,6 +222,12 @@ Verified in-browser in both light and dark mode: the "Sign in" button and the ma
 
 Verified in-browser at real rendered size (not a magnified crop) in both light and dark mode: the border now reads as a genuinely glowing line with a soft graduated bloom around it, closer to an actual lit neon sign than either of the two previous attempts (flat single-blur glow in Phase 38, double thin ring in Phase 39).
 
+**Two small follow-ups landed in the same session**:
+1. *Shape*: the header's "Sign in" button (`AuthStatus` in `apps/public/src/routes/__root.tsx`) is `rounded-lg` from the shared `Button` component's base class, while the pill it sits inside (Phase 35) is `rounded-full` — asked to match. Rather than change `Button`'s base radius (used across the whole public site, well beyond this one nav usage), the call site alone got `className="!rounded-full"` — Tailwind's `!` important modifier, needed because same-specificity utility classes resolve by source order in the compiled stylesheet, not by their position in the JSX string, so appending `rounded-full` without `!` wouldn't reliably beat the base `rounded-lg`.
+2. *Fill*: "inner background should be glassy" — the three neon variants' ad hoc `bg-{color}-500/15`/`dark:bg-{color}-400/10` fill was swapped for the shared `.glass-2` class, so the button's fill now uses the exact same frosted-glass tokens as cards/header pills instead of a bespoke tint, while the colored border + layered glow stay per-variant. This resurfaced the cascade-priority issue Phase 30 first documented: `.glass-2`'s plain-CSS `box-shadow` (highlight + ambient shadow) sits in a higher-priority layer than Tailwind's `@layer utilities`, so it was silently overriding the neon glow's `shadow-[...]` utility. Fixed by marking the glow (and its hover/disabled states) `!shadow-[...]` so it wins over `.glass-2`'s own shadow instead of being replaced by it.
+
+Re-verified in-browser in both light and dark mode: the "Sign in" button is now a full pill matching its container, with a genuinely frosted (not flat-tinted) fill and the layered glow still fully intact.
+
 ---
 
 ## Performance budget (applies from Phase 31 onward)

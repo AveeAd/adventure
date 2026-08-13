@@ -166,7 +166,9 @@ function AuthStatus({ stacked = false }: { stacked?: boolean }) {
   if (!user) {
     return (
       <Link to="/login">
-        <Button size="sm">{t('nav.signIn')}</Button>
+        <Button size="sm" className="!rounded-full">
+          {t('nav.signIn')}
+        </Button>
       </Link>
     )
   }
