@@ -8,9 +8,7 @@ import { Badge, StatusBadge } from '../components/Badge';
 import { Card } from '../components/Card';
 import { Container } from '../components/Container';
 import { EmptyState } from '../components/EmptyState';
-import { GradientMesh } from '../components/GradientMesh';
 import { LazyAdventureMap } from '../components/LazyAdventureMap';
-import { TopoLines } from '../components/TopoLines';
 import type { MapSpot, MapTrail } from '../components/AdventureMap';
 
 interface SearchResult {
@@ -135,9 +133,7 @@ function DiscoverPage() {
 
   return (
     <>
-      <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-stone-200 bg-gradient-to-b from-primary-50 to-stone-50 dark:border-stone-800 dark:from-primary-950/40 dark:to-stone-950">
-        <GradientMesh />
-        <TopoLines className="absolute inset-x-0 top-0 h-full w-full text-primary-600/25 dark:text-primary-400/15" />
+      <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-stone-200 dark:border-stone-800">
         <Container size="wide" className="relative">
           <div
             className="animate-fade-up flex items-center gap-2 text-primary-700 dark:text-primary-400"

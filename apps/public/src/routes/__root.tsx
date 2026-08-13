@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import appCss from '../styles.css?url'
 import { Button } from '../components/Button'
+import { GradientMesh } from '../components/GradientMesh'
 import { NotificationBell } from '../components/NotificationBell'
 import { fetchCurrentUser, logout, type CurrentUser } from '../lib/auth/session'
 import { useApprovalEligibility } from '../lib/auth/eligibility'
@@ -84,6 +85,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="flex min-h-screen flex-col">
+        <GradientMesh />
         <header className="glass-1 sticky top-0 z-10 border-b border-[color:var(--glass-border)] backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
             <Link to="/" className="flex items-center gap-2 text-primary-800 dark:text-primary-300">

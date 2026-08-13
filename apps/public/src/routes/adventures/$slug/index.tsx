@@ -12,7 +12,6 @@ import { Card } from '../../../components/Card';
 import { Container } from '../../../components/Container';
 import { EmptyState } from '../../../components/EmptyState';
 import { Textarea, Input, Field, Select } from '../../../components/FormField';
-import { GradientMesh } from '../../../components/GradientMesh';
 import { MarkdownContent } from '../../../components/MarkdownContent';
 import { ReportButton } from '../../../components/ReportButton';
 import { LazyAdventureMap } from '../../../components/LazyAdventureMap';
@@ -141,47 +140,44 @@ function AdventurePageView() {
       </div>
 
       <Container size="wide">
-        <div className="relative">
-          <GradientMesh className="-z-10" />
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">{page.title}</h1>
-            {page.summary && <p className="mt-1 text-stone-600 dark:text-stone-300">{page.summary}</p>}
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <StatusBadge status={page.verificationStatus} />
-            {!page.approvedRevisionId && <Badge tone="warning">{t('approval.unapprovedBadge')}</Badge>}
-            {page.activityType && <Badge tone="neutral">{page.activityType.name}</Badge>}
-            {page.difficultyLevel && <Badge tone="neutral">{page.difficultyLevel.name}</Badge>}
-            {page.tags.map(({ tag }) => (
-              <Badge key={tag.id} tone="neutral">
-                #{tag.name}
-              </Badge>
-            ))}
-            <ReportButton targetType="ADVENTURE_PAGE" targetId={page.id} />
-          </div>
-
-          {page.pendingRevisionCount > 0 && page.currentRevision && (
-            <Link
-              to="/adventures/$slug/history/$version"
-              params={{ slug, version: String(page.currentRevision.version) }}
-              className="mt-3 flex w-fit items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50"
-            >
-              <AlertTriangle className="h-4 w-4" />
-              {t('approval.pendingChanges', { count: page.pendingRevisionCount })}
-            </Link>
-          )}
-
-          <TrailsAndSpotsSection
-            slug={slug}
-            trails={trails}
-            spots={spots}
-            contributeMode={contributeMode}
-            difficultyLevel={page.difficultyLevel}
-            tags={page.tags}
-            page={page}
-          />
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">{page.title}</h1>
+          {page.summary && <p className="mt-1 text-stone-600 dark:text-stone-300">{page.summary}</p>}
         </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <StatusBadge status={page.verificationStatus} />
+          {!page.approvedRevisionId && <Badge tone="warning">{t('approval.unapprovedBadge')}</Badge>}
+          {page.activityType && <Badge tone="neutral">{page.activityType.name}</Badge>}
+          {page.difficultyLevel && <Badge tone="neutral">{page.difficultyLevel.name}</Badge>}
+          {page.tags.map(({ tag }) => (
+            <Badge key={tag.id} tone="neutral">
+              #{tag.name}
+            </Badge>
+          ))}
+          <ReportButton targetType="ADVENTURE_PAGE" targetId={page.id} />
+        </div>
+
+        {page.pendingRevisionCount > 0 && page.currentRevision && (
+          <Link
+            to="/adventures/$slug/history/$version"
+            params={{ slug, version: String(page.currentRevision.version) }}
+            className="mt-3 flex w-fit items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300 dark:hover:bg-amber-900/50"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            {t('approval.pendingChanges', { count: page.pendingRevisionCount })}
+          </Link>
+        )}
+
+        <TrailsAndSpotsSection
+          slug={slug}
+          trails={trails}
+          spots={spots}
+          contributeMode={contributeMode}
+          difficultyLevel={page.difficultyLevel}
+          tags={page.tags}
+          page={page}
+        />
 
         <GallerySection pageId={page.id} initialMedia={page.media} contributeMode={contributeMode} />
 
