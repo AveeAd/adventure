@@ -28,6 +28,12 @@
   "visibilityPrivateShort": "Private",
   "newTitle": "Start a club",
   "newSubheading": "You'll be the owner. Choose whether anyone can join instantly or must request to join.",
+  "manageClub": "Manage club",
+  "notAuthorizedToManage": "Only the club owner or a site admin/moderator can manage this club.",
+  "dangerZone": "Danger zone",
+  "deactivateHint": "Deactivating hides this club from listings. Trip reports tagged with it are kept.",
+  "deactivateClub": "Deactivate club",
+  "confirmDeactivate": "Deactivate this club? It will disappear from listings.",
   "fields": {
     "name": "Name",
     "namePlaceholder": "e.g. Kathmandu Hikers Club",
@@ -35,17 +41,21 @@
     "optional": "Optional",
     "visibility": "Visibility",
     "visibilityPublic": "Public — anyone can join instantly",
-    "visibilityPrivate": "Private — join requests need approval"
+    "visibilityPrivate": "Private — join requests need approval",
+    "coverImageUrl": "Cover image URL"
   },
   "actions": {
     "creating": "Creating...",
-    "startClubButton": "Start club"
+    "startClubButton": "Start club",
+    "saveChanges": "Save changes"
   },
   "errors": {
     "failedToJoin": "Failed to join",
     "failedToLeave": "Failed to leave",
     "failedToRequest": "Failed to send join request",
     "failedToDecide": "Failed to update request",
-    "failedToCreate": "Failed to create club"
+    "failedToCreate": "Failed to create club",
+    "failedToSave": "Failed to save changes",
+    "failedToDeactivate": "Failed to deactivate club"
   }
 }

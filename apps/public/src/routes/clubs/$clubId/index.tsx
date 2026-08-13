@@ -1,17 +1,17 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { Check, Heart, Users, UserMinus, UserPlus, X } from 'lucide-react';
+import { Check, Heart, Settings, Users, UserMinus, UserPlus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { apiUrl } from '../../lib/auth/api';
-import { authDelete, authFetch, authPatch, authPost } from '../../lib/auth/auth-fetch';
-import { fetchCurrentUser } from '../../lib/auth/session';
-import { formatDate } from '../../lib/format';
-import { Avatar } from '../../components/Avatar';
-import { Badge } from '../../components/Badge';
-import { Button } from '../../components/Button';
-import { Card } from '../../components/Card';
-import { Container } from '../../components/Container';
-import { EmptyState } from '../../components/EmptyState';
+import { apiUrl } from '../../../lib/auth/api';
+import { authDelete, authFetch, authPatch, authPost } from '../../../lib/auth/auth-fetch';
+import { fetchCurrentUser } from '../../../lib/auth/session';
+import { formatDate } from '../../../lib/format';
+import { Avatar } from '../../../components/Avatar';
+import { Badge } from '../../../components/Badge';
+import { Button } from '../../../components/Button';
+import { Card } from '../../../components/Card';
+import { Container } from '../../../components/Container';
+import { EmptyState } from '../../../components/EmptyState';
 
 interface ClubMember {
   id: string;
@@ -44,7 +44,7 @@ interface ClubTripReport {
   adventurePage: { title: string; slug: string };
 }
 
-export const Route = createFileRoute('/clubs/$clubId')({
+export const Route = createFileRoute('/clubs/$clubId/')({
   loader: async ({ params }) => {
     const clubRes = await fetch(apiUrl(`/clubs/${params.clubId}`));
     if (clubRes.status === 404) {
@@ -71,6 +71,7 @@ function ClubDetailPage() {
   const { t } = useTranslation('clubs');
   const [club, setClub] = useState(initialClub);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [siteRole, setSiteRole] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<ClubMember[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +85,7 @@ function ClubDetailPage() {
   useEffect(() => {
     fetchCurrentUser().then((user) => {
       setCurrentUserId(user?.userId ?? null);
+      setSiteRole(user?.role ?? null);
       if (user) refresh();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -96,6 +98,7 @@ function ClubDetailPage() {
       : undefined;
   const isOwner = membership?.role === 'OWNER' && membership.status === 'APPROVED';
   const isApprovedMember = membership?.status === 'APPROVED';
+  const canManage = isOwner || siteRole === 'ADMIN' || siteRole === 'MODERATOR';
 
   useEffect(() => {
     if (!isOwner) {
@@ -173,11 +176,24 @@ function ClubDetailPage() {
         />
 
         <div className="absolute inset-x-0 bottom-10 mx-auto w-full max-w-5xl px-4 pb-5 sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-md">
-              <Users className="h-7 w-7" />
-            </span>
-            <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-sm">{club.name}</h1>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-md">
+                <Users className="h-7 w-7" />
+              </span>
+              <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-sm">{club.name}</h1>
+            </div>
+            {canManage && (
+              <Link
+                to="/clubs/$clubId/edit"
+                params={{ clubId: club.id }}
+                aria-label={t('manageClub')}
+                title={t('manageClub')}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+              >
+                <Settings className="h-5 w-5" />
+              </Link>
+            )}
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <Badge tone={club.visibility === 'PUBLIC' ? 'success' : 'neutral'} glass>

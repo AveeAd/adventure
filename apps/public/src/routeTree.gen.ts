@@ -16,7 +16,6 @@ import { Route as AccountGuideProfileRouteImport } from './routes/account/guide-
 import { Route as AdventuresNewRouteImport } from './routes/adventures/new'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ClubsIndexRouteImport } from './routes/clubs/index'
-import { Route as ClubsClubIdRouteImport } from './routes/clubs/$clubId'
 import { Route as ClubsNewRouteImport } from './routes/clubs/new'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as GuidesIdRouteImport } from './routes/guides/$id'
@@ -25,6 +24,8 @@ import { Route as ReviewQueueIndexRouteImport } from './routes/review-queue/inde
 import { Route as UsersIdRouteImport } from './routes/users/$id'
 import { Route as AdventuresSlugIndexRouteImport } from './routes/adventures/$slug/index'
 import { Route as AdventuresSlugEditRouteImport } from './routes/adventures/$slug/edit'
+import { Route as ClubsClubIdIndexRouteImport } from './routes/clubs/$clubId/index'
+import { Route as ClubsClubIdEditRouteImport } from './routes/clubs/$clubId/edit'
 import { Route as MeActivityTracksIndexRouteImport } from './routes/me/activity-tracks/index'
 import { Route as MeActivityTracksTrackIdRouteImport } from './routes/me/activity-tracks/$trackId'
 import { Route as MeActivityTracksUploadRouteImport } from './routes/me/activity-tracks/upload'
@@ -76,11 +77,6 @@ const ClubsIndexRoute = ClubsIndexRouteImport.update({
   path: '/clubs/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ClubsClubIdRoute = ClubsClubIdRouteImport.update({
-  id: '/clubs/$clubId',
-  path: '/clubs/$clubId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ClubsNewRoute = ClubsNewRouteImport.update({
   id: '/clubs/new',
   path: '/clubs/new',
@@ -119,6 +115,16 @@ const AdventuresSlugIndexRoute = AdventuresSlugIndexRouteImport.update({
 const AdventuresSlugEditRoute = AdventuresSlugEditRouteImport.update({
   id: '/adventures/$slug/edit',
   path: '/adventures/$slug/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubsClubIdIndexRoute = ClubsClubIdIndexRouteImport.update({
+  id: '/clubs/$clubId/',
+  path: '/clubs/$clubId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubsClubIdEditRoute = ClubsClubIdEditRouteImport.update({
+  id: '/clubs/$clubId/edit',
+  path: '/clubs/$clubId/edit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeActivityTracksIndexRoute = MeActivityTracksIndexRouteImport.update({
@@ -212,7 +218,6 @@ export interface FileRoutesByFullPath {
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/clubs/$clubId': typeof ClubsClubIdRoute
   '/clubs/new': typeof ClubsNewRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
@@ -222,9 +227,11 @@ export interface FileRoutesByFullPath {
   '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
+  '/clubs/$clubId/edit': typeof ClubsClubIdEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
   '/me/activity-tracks/upload': typeof MeActivityTracksUploadRoute
   '/adventures/$slug/': typeof AdventuresSlugIndexRoute
+  '/clubs/$clubId/': typeof ClubsClubIdIndexRoute
   '/me/activity-tracks/': typeof MeActivityTracksIndexRoute
   '/adventures/$slug/groups/$groupId': typeof AdventuresSlugGroupsGroupIdRoute
   '/adventures/$slug/groups/new': typeof AdventuresSlugGroupsNewRoute
@@ -245,7 +252,6 @@ export interface FileRoutesByTo {
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/clubs/$clubId': typeof ClubsClubIdRoute
   '/clubs/new': typeof ClubsNewRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
@@ -255,9 +261,11 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsIndexRoute
   '/review-queue': typeof ReviewQueueIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
+  '/clubs/$clubId/edit': typeof ClubsClubIdEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
   '/me/activity-tracks/upload': typeof MeActivityTracksUploadRoute
   '/adventures/$slug': typeof AdventuresSlugIndexRoute
+  '/clubs/$clubId': typeof ClubsClubIdIndexRoute
   '/me/activity-tracks': typeof MeActivityTracksIndexRoute
   '/adventures/$slug/groups/$groupId': typeof AdventuresSlugGroupsGroupIdRoute
   '/adventures/$slug/groups/new': typeof AdventuresSlugGroupsNewRoute
@@ -279,7 +287,6 @@ export interface FileRoutesById {
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
-  '/clubs/$clubId': typeof ClubsClubIdRoute
   '/clubs/new': typeof ClubsNewRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
@@ -289,9 +296,11 @@ export interface FileRoutesById {
   '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
+  '/clubs/$clubId/edit': typeof ClubsClubIdEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
   '/me/activity-tracks/upload': typeof MeActivityTracksUploadRoute
   '/adventures/$slug/': typeof AdventuresSlugIndexRoute
+  '/clubs/$clubId/': typeof ClubsClubIdIndexRoute
   '/me/activity-tracks/': typeof MeActivityTracksIndexRoute
   '/adventures/$slug/groups/$groupId': typeof AdventuresSlugGroupsGroupIdRoute
   '/adventures/$slug/groups/new': typeof AdventuresSlugGroupsNewRoute
@@ -314,7 +323,6 @@ export interface FileRouteTypes {
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
-    | '/clubs/$clubId'
     | '/clubs/new'
     | '/guides/$id'
     | '/users/$id'
@@ -324,9 +332,11 @@ export interface FileRouteTypes {
     | '/reports/'
     | '/review-queue/'
     | '/adventures/$slug/edit'
+    | '/clubs/$clubId/edit'
     | '/me/activity-tracks/$trackId'
     | '/me/activity-tracks/upload'
     | '/adventures/$slug/'
+    | '/clubs/$clubId/'
     | '/me/activity-tracks/'
     | '/adventures/$slug/groups/$groupId'
     | '/adventures/$slug/groups/new'
@@ -347,7 +357,6 @@ export interface FileRouteTypes {
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
-    | '/clubs/$clubId'
     | '/clubs/new'
     | '/guides/$id'
     | '/users/$id'
@@ -357,9 +366,11 @@ export interface FileRouteTypes {
     | '/reports'
     | '/review-queue'
     | '/adventures/$slug/edit'
+    | '/clubs/$clubId/edit'
     | '/me/activity-tracks/$trackId'
     | '/me/activity-tracks/upload'
     | '/adventures/$slug'
+    | '/clubs/$clubId'
     | '/me/activity-tracks'
     | '/adventures/$slug/groups/$groupId'
     | '/adventures/$slug/groups/new'
@@ -380,7 +391,6 @@ export interface FileRouteTypes {
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
-    | '/clubs/$clubId'
     | '/clubs/new'
     | '/guides/$id'
     | '/users/$id'
@@ -390,9 +400,11 @@ export interface FileRouteTypes {
     | '/reports/'
     | '/review-queue/'
     | '/adventures/$slug/edit'
+    | '/clubs/$clubId/edit'
     | '/me/activity-tracks/$trackId'
     | '/me/activity-tracks/upload'
     | '/adventures/$slug/'
+    | '/clubs/$clubId/'
     | '/me/activity-tracks/'
     | '/adventures/$slug/groups/$groupId'
     | '/adventures/$slug/groups/new'
@@ -414,7 +426,6 @@ export interface RootRouteChildren {
   AccountGuideProfileRoute: typeof AccountGuideProfileRoute
   AdventuresNewRoute: typeof AdventuresNewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
-  ClubsClubIdRoute: typeof ClubsClubIdRoute
   ClubsNewRoute: typeof ClubsNewRoute
   GuidesIdRoute: typeof GuidesIdRoute
   UsersIdRoute: typeof UsersIdRoute
@@ -424,9 +435,11 @@ export interface RootRouteChildren {
   ReportsIndexRoute: typeof ReportsIndexRoute
   ReviewQueueIndexRoute: typeof ReviewQueueIndexRoute
   AdventuresSlugEditRoute: typeof AdventuresSlugEditRoute
+  ClubsClubIdEditRoute: typeof ClubsClubIdEditRoute
   MeActivityTracksTrackIdRoute: typeof MeActivityTracksTrackIdRoute
   MeActivityTracksUploadRoute: typeof MeActivityTracksUploadRoute
   AdventuresSlugIndexRoute: typeof AdventuresSlugIndexRoute
+  ClubsClubIdIndexRoute: typeof ClubsClubIdIndexRoute
   MeActivityTracksIndexRoute: typeof MeActivityTracksIndexRoute
   AdventuresSlugGroupsGroupIdRoute: typeof AdventuresSlugGroupsGroupIdRoute
   AdventuresSlugGroupsNewRoute: typeof AdventuresSlugGroupsNewRoute
@@ -493,13 +506,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClubsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/clubs/$clubId': {
-      id: '/clubs/$clubId'
-      path: '/clubs/$clubId'
-      fullPath: '/clubs/$clubId'
-      preLoaderRoute: typeof ClubsClubIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/clubs/new': {
       id: '/clubs/new'
       path: '/clubs/new'
@@ -554,6 +560,20 @@ declare module '@tanstack/react-router' {
       path: '/adventures/$slug/edit'
       fullPath: '/adventures/$slug/edit'
       preLoaderRoute: typeof AdventuresSlugEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubs/$clubId/': {
+      id: '/clubs/$clubId/'
+      path: '/clubs/$clubId'
+      fullPath: '/clubs/$clubId/'
+      preLoaderRoute: typeof ClubsClubIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubs/$clubId/edit': {
+      id: '/clubs/$clubId/edit'
+      path: '/clubs/$clubId/edit'
+      fullPath: '/clubs/$clubId/edit'
+      preLoaderRoute: typeof ClubsClubIdEditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/me/activity-tracks/': {
@@ -670,7 +690,6 @@ const rootRouteChildren: RootRouteChildren = {
   AccountGuideProfileRoute: AccountGuideProfileRoute,
   AdventuresNewRoute: AdventuresNewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
-  ClubsClubIdRoute: ClubsClubIdRoute,
   ClubsNewRoute: ClubsNewRoute,
   GuidesIdRoute: GuidesIdRoute,
   UsersIdRoute: UsersIdRoute,
@@ -680,9 +699,11 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsIndexRoute: ReportsIndexRoute,
   ReviewQueueIndexRoute: ReviewQueueIndexRoute,
   AdventuresSlugEditRoute: AdventuresSlugEditRoute,
+  ClubsClubIdEditRoute: ClubsClubIdEditRoute,
   MeActivityTracksTrackIdRoute: MeActivityTracksTrackIdRoute,
   MeActivityTracksUploadRoute: MeActivityTracksUploadRoute,
   AdventuresSlugIndexRoute: AdventuresSlugIndexRoute,
+  ClubsClubIdIndexRoute: ClubsClubIdIndexRoute,
   MeActivityTracksIndexRoute: MeActivityTracksIndexRoute,
   AdventuresSlugGroupsGroupIdRoute: AdventuresSlugGroupsGroupIdRoute,
   AdventuresSlugGroupsNewRoute: AdventuresSlugGroupsNewRoute,
