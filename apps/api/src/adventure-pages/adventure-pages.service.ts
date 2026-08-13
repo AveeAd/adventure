@@ -156,7 +156,23 @@ export class AdventurePagesService {
         relatedTo: {
           include: {
             relatedPage: {
-              select: { id: true, title: true, slug: true, summary: true },
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                summary: true,
+                verificationStatus: true,
+                durationMinDays: true,
+                durationMaxDays: true,
+                activityType: { select: { name: true } },
+                difficultyLevel: { select: { name: true } },
+                media: {
+                  where: { isActive: true },
+                  orderBy: { sortOrder: 'asc' },
+                  take: 1,
+                  select: { url: true, altText: true },
+                },
+              },
             },
           },
         },

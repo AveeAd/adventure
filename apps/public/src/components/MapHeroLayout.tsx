@@ -15,8 +15,9 @@ export function MapHeroLayout({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="mt-6 grid grid-cols-1 gap-4 lg:h-[32rem] lg:grid-cols-[18rem_1fr]">
-      <div className="order-2 flex flex-col overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800 lg:order-1 lg:overflow-y-auto">
+    <div className="mt-6 flex flex-col gap-4">
+      <div className="h-64 overflow-hidden rounded-xl border border-stone-200 sm:h-96 dark:border-stone-800">{map}</div>
+      <div className="flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white/10 backdrop-blur-lg dark:border-stone-800 dark:bg-stone-900/10">
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
@@ -32,7 +33,6 @@ export function MapHeroLayout({
           {sidebar}
         </div>
       </div>
-      <div className="order-1 h-64 lg:order-2 lg:h-full">{map}</div>
     </div>
   );
 }

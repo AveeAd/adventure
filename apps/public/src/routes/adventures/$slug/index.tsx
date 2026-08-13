@@ -1,11 +1,12 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { AlertTriangle, Calendar, ChevronLeft, ChevronRight, Clock, Footprints, Hammer, Heart, ImagePlus, MapPin, MountainSnow, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Calendar, ChevronLeft, ChevronRight, Clock, Footprints, Hammer, Heart, History, ImagePlus, MapPin, MountainSnow, Pencil, Plus, Trash2, Users, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authFetch, authPost, authUpload } from '../../../lib/auth/auth-fetch';
 import { checkAuth, fetchCurrentUser, type CurrentUser } from '../../../lib/auth/session';
 import { formatDate } from '../../../lib/format';
+import { Avatar } from '../../../components/Avatar';
 import { Badge, StatusBadge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -29,6 +30,19 @@ interface MediaItem {
   uploadedById: string;
 }
 
+interface RelatedPageSummary {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  verificationStatus: string;
+  durationMinDays: number | null;
+  durationMaxDays: number | null;
+  activityType: { name: string } | null;
+  difficultyLevel: { name: string } | null;
+  media: { url: string; altText: string | null }[];
+}
+
 interface AdventurePageDetail {
   id: string;
   title: string;
@@ -42,7 +56,7 @@ interface AdventurePageDetail {
   districts: { district: { name: string } }[];
   seasons: { season: { name: string } }[];
   tags: { tag: { id: string; name: string; slug: string } }[];
-  relatedPages: { id: string; title: string; slug: string; summary: string | null }[];
+  relatedPages: RelatedPageSummary[];
   currentRevision: { content: string; createdAt: string; version: number } | null;
   approvedRevision: { content: string; createdAt: string; version: number } | null;
   approvedRevisionId: string | null;
@@ -55,11 +69,17 @@ interface AdventurePageDetail {
   media: MediaItem[];
 }
 
+const STORIES_PAGE_SIZE = 5;
+
 interface TripReportSummary {
   id: string;
   title: string | null;
+  description: string | null;
+  authorId: string;
+  authorName: string;
   dateCompleted: string;
   durationDays: number | null;
+  kudosCount: number;
 }
 
 export const Route = createFileRoute('/adventures/$slug/')({
@@ -73,7 +93,7 @@ export const Route = createFileRoute('/adventures/$slug/')({
     }
     const page: AdventurePageDetail = await pageRes.json();
 
-    const tripReportsRes = await fetch(apiUrl(`/adventure-pages/${page.id}/trip-reports?pageSize=10`));
+    const tripReportsRes = await fetch(apiUrl(`/adventure-pages/${page.id}/trip-reports?pageSize=50`));
     const tripReportsBody: { data: TripReportSummary[] } = tripReportsRes.ok
       ? await tripReportsRes.json()
       : { data: [] };
@@ -124,6 +144,18 @@ function AdventurePageView() {
   const [contributeMode, setContributeMode] = useState(false);
   const [storyFormOpen, setStoryFormOpen] = useState(false);
   const [storyShared, setStoryShared] = useState(false);
+  const [visibleStoryCount, setVisibleStoryCount] = useState(STORIES_PAGE_SIZE);
+  const [storySort, setStorySort] = useState<'liked' | 'newest'>('liked');
+
+  const sortedTripReports = useMemo(() => {
+    const sorted = [...tripReports];
+    if (storySort === 'liked') {
+      sorted.sort((a, b) => b.kudosCount - a.kudosCount || +new Date(b.dateCompleted) - +new Date(a.dateCompleted));
+    } else {
+      sorted.sort((a, b) => +new Date(b.dateCompleted) - +new Date(a.dateCompleted));
+    }
+    return sorted;
+  }, [tripReports, storySort]);
 
   useEffect(() => {
     checkAuth().then(setSignedIn);
@@ -131,33 +163,46 @@ function AdventurePageView() {
 
   return (
     <>
-      <div className="flex h-56 items-center justify-center bg-gradient-to-br from-primary-100 to-accent-100 sm:h-72 dark:from-primary-950 dark:to-accent-950">
+      <div className="relative z-0 -mt-24 flex h-80 items-center justify-center overflow-hidden bg-gradient-to-br from-primary-100 to-accent-100 sm:-mt-28 sm:h-96 dark:from-primary-950 dark:to-accent-950">
         {page.media[0] ? (
           <img src={page.media[0].url} alt={page.media[0].altText ?? ''} className="h-full w-full object-cover" />
         ) : (
           <MountainSnow className="h-16 w-16 text-primary-500 dark:text-primary-400" />
         )}
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" aria-hidden="true" />
+
+        <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-5xl px-4 pb-5 sm:px-6">
+          <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-sm">{page.title}</h1>
+          {page.summary && <p className="mt-1 text-stone-100/90 drop-shadow-sm">{page.summary}</p>}
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <StatusBadge status={page.verificationStatus} glass />
+            {!page.approvedRevisionId && (
+              <Badge tone="warning" glass>
+                {t('approval.unapprovedBadge')}
+              </Badge>
+            )}
+            {page.activityType && (
+              <Badge tone="neutral" glass>
+                {page.activityType.name}
+              </Badge>
+            )}
+            {page.difficultyLevel && (
+              <Badge tone="neutral" glass>
+                {page.difficultyLevel.name}
+              </Badge>
+            )}
+            {page.tags.map(({ tag }) => (
+              <Badge key={tag.id} tone="neutral" glass>
+                #{tag.name}
+              </Badge>
+            ))}
+          </div>
+        </div>
       </div>
 
       <Container size="wide">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 dark:text-stone-50">{page.title}</h1>
-          {page.summary && <p className="mt-1 text-stone-600 dark:text-stone-300">{page.summary}</p>}
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <StatusBadge status={page.verificationStatus} />
-          {!page.approvedRevisionId && <Badge tone="warning">{t('approval.unapprovedBadge')}</Badge>}
-          {page.activityType && <Badge tone="neutral">{page.activityType.name}</Badge>}
-          {page.difficultyLevel && <Badge tone="neutral">{page.difficultyLevel.name}</Badge>}
-          {page.tags.map(({ tag }) => (
-            <Badge key={tag.id} tone="neutral">
-              #{tag.name}
-            </Badge>
-          ))}
-          <ReportButton targetType="ADVENTURE_PAGE" targetId={page.id} />
-        </div>
-
         {page.pendingRevisionCount > 0 && page.currentRevision && (
           <Link
             to="/adventures/$slug/history/$version"
@@ -169,6 +214,8 @@ function AdventurePageView() {
           </Link>
         )}
 
+        <GallerySection pageId={page.id} initialMedia={page.media} contributeMode={contributeMode} />
+
         <TrailsAndSpotsSection
           slug={slug}
           trails={trails}
@@ -179,66 +226,112 @@ function AdventurePageView() {
           page={page}
         />
 
-        <GallerySection pageId={page.id} initialMedia={page.media} contributeMode={contributeMode} />
-
-        <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} contributeMode={contributeMode} />
-
-        {(page.approvedRevision ?? page.currentRevision) && (
-          <div className="mt-6">
-            <MarkdownContent content={(page.approvedRevision ?? page.currentRevision)!.content} />
-          </div>
-        )}
-
         <section className="mt-10">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('stories.heading')}</h2>
-            <Link
-              to="/adventures/$slug/groups"
-              params={{ slug }}
-              className="text-sm text-primary-700 hover:underline dark:text-primary-400"
-            >
-              {t('stories.findTripGroup')}
-            </Link>
+            {tripReports.length > 0 && (
+              <div className="flex items-center gap-1">
+                <Button
+                  variant={storySort === 'liked' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    setStorySort('liked');
+                    setVisibleStoryCount(STORIES_PAGE_SIZE);
+                  }}
+                >
+                  {t('stories.sortMostLiked')}
+                </Button>
+                <Button
+                  variant={storySort === 'newest' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    setStorySort('newest');
+                    setVisibleStoryCount(STORIES_PAGE_SIZE);
+                  }}
+                >
+                  {t('stories.sortNewest')}
+                </Button>
+              </div>
+            )}
           </div>
           {tripReports.length === 0 ? (
             <div className="mt-3">
               <EmptyState>{t('stories.noneShared')}</EmptyState>
             </div>
           ) : (
-            <ul className="mt-3 flex flex-col gap-2">
-              {tripReports.map((report) => (
-                <li key={report.id}>
-                  <Card glass className="flex items-center justify-between p-4">
-                    <Link
-                      to="/adventures/$slug/trips/$tripReportId"
-                      params={{ slug, tripReportId: report.id }}
-                      className="font-medium text-primary-700 hover:underline dark:text-primary-400"
-                    >
-                      {report.title ?? t('stories.fallbackTitle')}
-                    </Link>
-                    <span className="text-sm text-stone-500 dark:text-stone-400">
-                      {formatDate(report.dateCompleted)}
-                      {report.durationDays ? t('stories.durationSuffix', { days: report.durationDays }) : null}
-                    </span>
-                  </Card>
-                </li>
-              ))}
-            </ul>
+            <>
+              <Card glass className="mt-3 divide-y divide-[color:var(--glass-border)] p-0">
+                {sortedTripReports.slice(0, visibleStoryCount).map((report) => (
+                  <div key={report.id} className="p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <Link
+                        to="/adventures/$slug/trips/$tripReportId"
+                        params={{ slug, tripReportId: report.id }}
+                        className="font-medium text-primary-700 hover:underline dark:text-primary-400"
+                      >
+                        {report.title ?? t('stories.fallbackTitle')}
+                      </Link>
+                      <span className="whitespace-nowrap text-sm text-stone-500 dark:text-stone-400">
+                        {formatDate(report.dateCompleted)}
+                        {report.durationDays ? t('stories.durationSuffix', { days: report.durationDays }) : null}
+                      </span>
+                    </div>
+
+                    {report.description && (
+                      <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">{report.description}</p>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <Link
+                        to="/users/$id"
+                        params={{ id: report.authorId }}
+                        className="flex items-center gap-2 text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"
+                      >
+                        <Avatar label={report.authorName} size="sm" />
+                        {report.authorName}
+                      </Link>
+                      <span className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
+                        <Heart className="h-3.5 w-3.5" /> {t('stories.kudosCount', { count: report.kudosCount })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+
+              {visibleStoryCount < tripReports.length && (
+                <div className="mt-3 flex justify-center">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setVisibleStoryCount((count) => count + STORIES_PAGE_SIZE)}
+                  >
+                    {t('stories.seeMore')}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </section>
+
+        <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} contributeMode={contributeMode} />
 
         <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-6 dark:border-stone-800">
           <div className="flex flex-wrap items-center gap-2">
             <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
             <VisitButton pageId={page.id} initialVisitCount={page.visitCount} initialVisited={page.visitedByMe} />
             {signedIn && !storyFormOpen && !storyShared && (
-              <Button variant="accent" size="sm" onClick={() => setStoryFormOpen(true)}>
+              <Button variant="secondary" size="sm" onClick={() => setStoryFormOpen(true)}>
                 {t('stories.tellYourStory')}
               </Button>
             )}
             {storyShared && (
               <p className="text-sm text-primary-700 dark:text-primary-400">{t('stories.shared')}</p>
             )}
+            <Link to="/adventures/$slug/groups" params={{ slug }}>
+              <Button variant="secondary" size="sm">
+                <Users className="h-3.5 w-3.5" /> {t('stories.findTripGroup')}
+              </Button>
+            </Link>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {signedIn && (
@@ -258,11 +351,16 @@ function AdventurePageView() {
                 </Button>
               </Link>
             )}
-            <Link to="/adventures/$slug/history" params={{ slug }}>
-              <Button variant="ghost" size="sm">
-                {t('common:actions.history')}
-              </Button>
+            <Link
+              to="/adventures/$slug/history"
+              params={{ slug }}
+              aria-label={t('common:actions.history')}
+              title={t('common:actions.history')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-200"
+            >
+              <History className="h-4 w-4" />
             </Link>
+            <ReportButton targetType="ADVENTURE_PAGE" targetId={page.id} />
           </div>
         </div>
 
@@ -502,7 +600,6 @@ function GallerySection({
                   {item.caption}
                 </figcaption>
               )}
-              <ReportButton targetType="MEDIA" targetId={item.id} />
             </figure>
           ))}
         </div>
@@ -580,14 +677,21 @@ function Lightbox({
       className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-black/90 p-4"
       onClick={onClose}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-        aria-label={t('gallery.close')}
-      >
-        <X className="h-5 w-5" />
-      </button>
+      <div className="absolute right-4 top-4 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+        <ReportButton
+          targetType="MEDIA"
+          targetId={item.id}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+        />
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+          aria-label={t('gallery.close')}
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </div>
 
       {media.length > 1 && (
         <button
@@ -630,7 +734,6 @@ function Lightbox({
       >
         {item.caption && <p className="text-sm text-white">{item.caption}</p>}
         <span className="text-xs text-white/60">{t('gallery.counter', { current: index + 1, total: media.length })}</span>
-        <ReportButton targetType="MEDIA" targetId={item.id} />
       </div>
     </div>
   );
@@ -693,7 +796,9 @@ function TrailsAndSpotsSection({
 
   const sidebar = (
     <div className="flex flex-col gap-4 p-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div>
+        <h2 className="mb-3 text-lg font-semibold text-stone-900 dark:text-stone-50">{t('info.heading')}</h2>
+        <div className="grid grid-cols-2 gap-4">
         {(page.durationMinDays || page.durationMaxDays) && (
           <InfoItem
             icon={<Clock className="h-4 w-4" />}
@@ -722,8 +827,15 @@ function TrailsAndSpotsSection({
             value={page.seasons.map((s) => s.season.name).join(', ')}
           />
         )}
-        <InfoItem icon={<Users className="h-4 w-4" />} label={t('info.contributors')} value={page.contributorIds.length} />
+          <InfoItem icon={<Users className="h-4 w-4" />} label={t('info.contributors')} value={page.contributorIds.length} />
+        </div>
       </div>
+
+      {(page.approvedRevision ?? page.currentRevision) && (
+        <div className="border-t border-stone-200 pt-4 dark:border-stone-800">
+          <MarkdownContent content={(page.approvedRevision ?? page.currentRevision)!.content} />
+        </div>
+      )}
 
       <div className="border-t border-stone-200 pt-4 dark:border-stone-800">
         <div className="flex items-center justify-between">
@@ -769,9 +881,11 @@ function TrailsAndSpotsSection({
                       <Link
                         to="/adventures/$slug/trails/$trailId/history"
                         params={{ slug, trailId: trail.id }}
-                        className="text-sm text-stone-500 hover:underline dark:text-stone-400"
+                        aria-label={t('common:actions.history')}
+                        title={t('common:actions.history')}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-200"
                       >
-                        {t('common:actions.history')}
+                        <History className="h-3.5 w-3.5" />
                       </Link>
                       <ReportButton targetType="TRAIL" targetId={trail.id} />
                     </div>
@@ -808,9 +922,11 @@ function TrailsAndSpotsSection({
                     <Link
                       to="/adventures/$slug/spots/$spotId/history"
                       params={{ slug, spotId: spot.id }}
-                      className="text-sm text-stone-500 hover:underline dark:text-stone-400"
+                      aria-label={t('common:actions.history')}
+                      title={t('common:actions.history')}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-200"
                     >
-                      {t('common:actions.history')}
+                      <History className="h-3.5 w-3.5" />
                     </Link>
                     <ReportButton targetType="SPOT" targetId={spot.id} />
                   </div>
@@ -824,12 +940,15 @@ function TrailsAndSpotsSection({
   );
 
   return (
-    <MapHeroLayout
-      sidebar={sidebar}
-      map={<LazyAdventureMap trails={trails} spots={spots} zoom={12} height="full" />}
-      expandLabel={t('trailsAndSpots.showMore')}
-      collapseLabel={t('trailsAndSpots.showLess')}
-    />
+    <section className="mt-10">
+      <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('trailsAndSpots.mapHeading')}</h2>
+      <MapHeroLayout
+        sidebar={sidebar}
+        map={<LazyAdventureMap trails={trails} spots={spots} zoom={12} height="full" />}
+        expandLabel={t('trailsAndSpots.showMore')}
+        collapseLabel={t('trailsAndSpots.showLess')}
+      />
+    </section>
   );
 }
 
@@ -839,7 +958,7 @@ function SeeAlsoSection({
   contributeMode,
 }: {
   pageId: string;
-  relatedPages: { id: string; title: string; slug: string; summary: string | null }[];
+  relatedPages: RelatedPageSummary[];
   contributeMode: boolean;
 }) {
   const { t } = useTranslation(['adventurePage', 'common']);
@@ -858,7 +977,7 @@ function SeeAlsoSection({
       if (!lookupRes.ok) {
         throw new Error(t('errors.noPageForSlug'));
       }
-      const related: { id: string; title: string; slug: string; summary: string | null } = await lookupRes.json();
+      const related: RelatedPageSummary = await lookupRes.json();
       await authPost(`/adventure-pages/${pageId}/related-pages`, { relatedPageId: related.id });
       setPages((prev) => [...prev, related]);
       setSlugInput('');
@@ -893,15 +1012,36 @@ function SeeAlsoSection({
         <ul className="mt-3 flex flex-col gap-2">
           {pages.map((related) => (
             <li key={related.id}>
-              <Card className="p-4">
-                <Link
-                  to="/adventures/$slug"
-                  params={{ slug: related.slug }}
-                  className="font-medium text-primary-700 hover:underline dark:text-primary-400"
-                >
-                  {related.title}
-                </Link>
-                {related.summary && <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">{related.summary}</p>}
+              <Card className="flex gap-3 p-4">
+                {related.media[0] && (
+                  <img
+                    src={related.media[0].url}
+                    alt={related.media[0].altText ?? ''}
+                    className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to="/adventures/$slug"
+                    params={{ slug: related.slug }}
+                    className="font-medium text-primary-700 hover:underline dark:text-primary-400"
+                  >
+                    {related.title}
+                  </Link>
+                  {related.summary && (
+                    <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">{related.summary}</p>
+                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <StatusBadge status={related.verificationStatus} />
+                    {related.activityType && <Badge tone="neutral">{related.activityType.name}</Badge>}
+                    {related.difficultyLevel && <Badge tone="neutral">{related.difficultyLevel.name}</Badge>}
+                    {(related.durationMinDays || related.durationMaxDays) && (
+                      <span className="text-xs text-stone-500 dark:text-stone-400">
+                        {t('info.durationValue', { min: related.durationMinDays, max: related.durationMaxDays })}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </Card>
             </li>
           ))}

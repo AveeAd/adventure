@@ -1,9 +1,9 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/nunito";
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --font-sans: "InterVariable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Nunito Variable", ui-rounded, ui-sans-serif, system-ui, sans-serif;
 
   /* Pine/forest green - brand chrome, primary actions, verified status */
   --color-primary-50: #f1f7f3;

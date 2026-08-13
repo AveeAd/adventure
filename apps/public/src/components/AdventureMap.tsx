@@ -197,7 +197,7 @@ export function AdventureMap({
       className={
         isFullscreen
           ? 'fixed inset-0 z-[1000]'
-          : 'relative overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800'
+          : 'relative isolate z-0 overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800'
       }
     >
       <FullscreenToggle isFullscreen={isFullscreen} onToggle={() => setIsFullscreen((v) => !v)} />

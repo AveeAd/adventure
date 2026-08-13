@@ -39,7 +39,7 @@ export const Route = createRootRoute({
 })
 
 const navLinkClass =
-  'flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-stone-600 hover:text-primary-700 dark:text-stone-300 dark:hover:text-primary-400'
+  'flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-stone-800 hover:text-primary-700 dark:text-stone-100 dark:hover:text-primary-400'
 
 // A filled waypoint dot marks the current stop on the trail - on-theme for
 // a map/trail app, and a clearer active-state signal than a color change
@@ -90,13 +90,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
             <Link
               to="/"
-              className="glass-1 flex items-center gap-2.5 rounded-full border border-[color:var(--glass-border)] px-6 py-3.5 text-primary-800 shadow-lg backdrop-blur-lg dark:text-primary-300"
+              className="glass-3 flex items-center gap-2.5 rounded-full border border-[color:var(--glass-border)] px-6 py-3.5 text-primary-800 shadow-lg backdrop-blur-xl dark:text-primary-300"
             >
               <Mountain className="h-6 w-6" strokeWidth={2.5} />
-              <span className="text-lg font-semibold tracking-tight">{appConfig.name}</span>
+              <span className="text-lg font-bold tracking-tight">{appConfig.name}</span>
             </Link>
 
-            <nav className="glass-1 hidden items-center gap-1 rounded-full border border-[color:var(--glass-border)] px-3 py-3 shadow-lg backdrop-blur-lg sm:flex">
+            <nav className="glass-3 hidden items-center gap-1 rounded-full border border-[color:var(--glass-border)] px-3 py-3 shadow-lg backdrop-blur-xl sm:flex">
               <PrimaryNavLink to="/">{t('nav.discover')}</PrimaryNavLink>
               <PrimaryNavLink to="/guides">{t('nav.guides')}</PrimaryNavLink>
               <span className="mx-1.5 h-6 w-px bg-stone-200 dark:bg-stone-800" aria-hidden="true" />
@@ -105,7 +105,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
             <button
               type="button"
-              className="glass-1 inline-flex items-center justify-center rounded-full border border-[color:var(--glass-border)] p-4 text-stone-600 shadow-lg backdrop-blur-lg sm:hidden dark:text-stone-300"
+              className="glass-3 inline-flex items-center justify-center rounded-full border border-[color:var(--glass-border)] p-4 text-stone-800 shadow-lg backdrop-blur-xl sm:hidden dark:text-stone-100"
               onClick={() => setMenuOpen((open) => !open)}
               aria-label={t('nav.toggleMenu')}
             >
@@ -114,7 +114,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </div>
 
           {menuOpen && (
-            <div className="glass-1 mx-auto mt-2 flex max-w-5xl flex-col gap-4 rounded-2xl border border-[color:var(--glass-border)] px-4 py-4 shadow-lg backdrop-blur-lg sm:hidden">
+            <div className="glass-3 mx-auto mt-2 flex max-w-5xl flex-col gap-4 rounded-2xl border border-[color:var(--glass-border)] px-4 py-4 shadow-lg backdrop-blur-xl sm:hidden">
               <nav className="flex flex-col gap-4">
                 <PrimaryNavLink to="/" onClick={() => setMenuOpen(false)}>
                   {t('nav.discover')}
