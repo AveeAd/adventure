@@ -64,9 +64,9 @@
  * utilities directly on elements - no separate blur token needed.
  */
 :root {
-  --glass-bg-1: rgba(255, 255, 255, 0.55);
-  --glass-bg-2: rgba(255, 255, 255, 0.65);
-  --glass-bg-3: rgba(255, 255, 255, 0.8);
+  --glass-bg-1: rgba(255, 255, 255, 0.38);
+  --glass-bg-2: rgba(255, 255, 255, 0.46);
+  --glass-bg-3: rgba(255, 255, 255, 0.6);
   --glass-fallback-bg-1: rgba(255, 255, 255, 0.92);
   --glass-fallback-bg-2: rgba(255, 255, 255, 0.95);
   --glass-fallback-bg-3: rgba(255, 255, 255, 0.98);
@@ -77,9 +77,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --glass-bg-1: rgba(28, 25, 23, 0.5);
-    --glass-bg-2: rgba(28, 25, 23, 0.62);
-    --glass-bg-3: rgba(28, 25, 23, 0.76);
+    --glass-bg-1: rgba(28, 25, 23, 0.32);
+    --glass-bg-2: rgba(28, 25, 23, 0.42);
+    --glass-bg-3: rgba(28, 25, 23, 0.55);
     --glass-fallback-bg-1: rgba(28, 25, 23, 0.94);
     --glass-fallback-bg-2: rgba(28, 25, 23, 0.96);
     --glass-fallback-bg-3: rgba(28, 25, 23, 0.98);

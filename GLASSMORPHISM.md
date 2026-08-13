@@ -4,7 +4,7 @@
 
 **Defers**: `apps/admin` — **explicitly out of scope for this whole doc**, by user decision. Admin keeps its current Ant Design `ConfigProvider` theming untouched; nothing here should be read as implying a follow-up admin phase. Also defers any manual light/dark toggle (CLAUDE.md's `prefers-color-scheme`-only decision stands) and any change to Leaflet/map *interaction* behavior — this is chrome and surface styling only.
 
-**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–36 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
+**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–37 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
 
 ---
 
@@ -167,6 +167,22 @@ Per a same-session follow-up, both pills' padding was bumped up a size (brand pi
 **Outcome**: `apps/public/src/routes/index.tsx`'s search `<input>` swapped its ad hoc `bg-white/60`/`dark:bg-stone-900/50` fill and `border-stone-300/70`/`dark:border-stone-600/70` border for `glass-2` and `border-[color:var(--glass-border)]`, matching the mid-elevation tier used by cards and map buttons elsewhere. Its own `shadow-sm`/`hover:shadow-md`/`focus:shadow-md` utilities were dropped rather than kept alongside — `.glass-2`'s plain-CSS `box-shadow` (highlight + ambient shadow) already wins the cascade over any Tailwind shadow utility per Phase 30's documented cascade-priority note, so they were dead weight, not a visible effect being removed. `backdrop-blur-md` and the focus ring/border-color states were left as they were.
 
 Verified in-browser in both light and dark mode: the input now shows the same green-tinted hairline border and soft ambient shadow as the rest of the site's glass surfaces, with the mesh blobs bleeding through underneath, and placeholder/icon legibility unchanged.
+
+---
+
+## Phase 37 — Stronger glass tuning (built)
+
+**Scope**: turn up the actual "glass" quality of every `.glass-1`/`.glass-2`/`.glass-3` surface site-wide, per direct feedback that the tiers were reading as slightly-translucent flat panels rather than real glass — lower the fill opacity (more of the background shows through) and raise the blur radius (what does show through reads as properly frosted, not just tinted).
+
+**Outcome**: the three elevation tiers' alpha values in `apps/public/src/styles.css` were all lowered, roughly 25–30% relative reduction, both light and dark:
+- Light: `--glass-bg-1` 0.55→0.38, `--glass-bg-2` 0.65→0.46, `--glass-bg-3` 0.8→0.6.
+- Dark: `--glass-bg-1` 0.5→0.32, `--glass-bg-2` 0.62→0.42, `--glass-bg-3` 0.76→0.55.
+
+The `--glass-fallback-bg-*` values (used only when `backdrop-filter` isn't supported, or under `prefers-reduced-transparency`/`prefers-contrast: more`) were left untouched — those exist specifically to *not* be translucent, so they're outside this tuning's scope.
+
+Every `backdrop-blur-*` utility on a `.glass-*` element was bumped one Tailwind step: `backdrop-blur-md`→`backdrop-blur-lg` on all `glass-1`/`glass-2` surfaces (header pills, mobile menu, cards, map buttons, landing search bar), `backdrop-blur-lg`→`backdrop-blur-xl` on both `glass-3` surfaces (notification dropdown, account menu). The one `backdrop-blur-sm` usage in the codebase (trip-card photo badges) isn't part of the glass tier system and was left alone.
+
+Verified in-browser, both light and dark mode, on the landing page: scrolled page content is now clearly visible and blurred through both header pills and the search bar — a stronger, more legible "looking through glass" effect than before the tuning — with text and icons still fully legible against it.
 
 ---
 

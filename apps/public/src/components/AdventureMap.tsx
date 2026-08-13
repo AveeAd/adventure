@@ -91,7 +91,7 @@ function FullscreenToggle({ isFullscreen, onToggle }: { isFullscreen: boolean; o
       type="button"
       onClick={onToggle}
       aria-label={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
-      className="glass-2 absolute right-2 top-2 z-[1000] rounded-lg border border-[color:var(--glass-border)] p-2 text-stone-600 backdrop-blur-md transition-opacity hover:opacity-80 dark:text-stone-300"
+      className="glass-2 absolute right-2 top-2 z-[1000] rounded-lg border border-[color:var(--glass-border)] p-2 text-stone-600 backdrop-blur-lg transition-opacity hover:opacity-80 dark:text-stone-300"
     >
       {isFullscreen ? (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
@@ -139,7 +139,7 @@ function LocateButton({ topOffset }: { topOffset: number }) {
         aria-label="Show my location"
         title={error ? "Couldn't get your location" : 'Show my location'}
         style={{ top: topOffset }}
-        className="glass-2 absolute right-2 z-[1000] rounded-lg border border-[color:var(--glass-border)] p-2 text-stone-600 backdrop-blur-md transition-opacity hover:opacity-80 disabled:opacity-60 dark:text-stone-300"
+        className="glass-2 absolute right-2 z-[1000] rounded-lg border border-[color:var(--glass-border)] p-2 text-stone-600 backdrop-blur-lg transition-opacity hover:opacity-80 disabled:opacity-60 dark:text-stone-300"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
