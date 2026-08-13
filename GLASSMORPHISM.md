@@ -4,7 +4,7 @@
 
 **Defers**: `apps/admin` — **explicitly out of scope for this whole doc**, by user decision. Admin keeps its current Ant Design `ConfigProvider` theming untouched; nothing here should be read as implying a follow-up admin phase. Also defers any manual light/dark toggle (CLAUDE.md's `prefers-color-scheme`-only decision stands) and any change to Leaflet/map *interaction* behavior — this is chrome and surface styling only.
 
-**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–39 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
+**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–40 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
 
 ---
 
@@ -209,6 +209,18 @@ Per an immediate follow-up ("spread should be less"), every glow's blur radius w
 **Outcome**: `apps/public/src/styles.css` briefly gained a `.neon-border`/`.neon-border-{primary,accent,danger}` rule set for the gradient-border prototype, then had it removed again once the double-ring direction was confirmed — no dead CSS left behind. The landed approach instead uses a `before:` pseudo-element per `Button.tsx` variant: the button's own `border-2` is the outer ring, and an absolutely-positioned `before:inset-[3px] before:rounded-[inherit] before:border` inset a few pixels forms the inner ring, both in the *same* single hue per variant (green for primary, terracotta for accent, red for danger) with their own independent glow shadows, brightening together on hover (`hover:border-{color}-300`, `hover:before:border-{color}-300/80`) and losing their glow (not their ring) when disabled. `secondary`/`ghost` were left as single-ring/no-ring per Phase 38's original low-emphasis reasoning — the double-ring treatment is for the three "pressable and emphasized" variants. The landing page's map-toggle button (not built on `Button`) got the same `before:`-ring treatment by hand for its active state, matching the shared component.
 
 Verified in-browser in both light and dark mode: the "Sign in" button and the map-toggle button both show two concentric glowing outlines in a single hue, structurally matching the shared reference image (a lit neon-sign frame) rather than a flat single-line border with a shadow behind it.
+
+**Superseded by Phase 40 below** — the double ring didn't hold up at real button size; see that phase for why and what replaced it.
+
+---
+
+## Phase 40 — Layered-glow single border (built)
+
+**Scope**: after "still not convinced," rather than guess again, the double-ring's actual computed styles were inspected directly in the browser (`getComputedStyle(btn, '::before')`) to confirm it was rendering exactly as coded — it was: `border: 2px`, `before: inset 3px`, both with their glow shadows present. The problem wasn't a bug, it was scale: on an actual ~36px-tall button, a 3px gap between two ~5px-blurred rings is imperceptible: the two rings visually merge into one soft, slightly-thick border rather than reading as the reference image's two distinct traced lines (which worked because that frame was hundreds of pixels across). Confirmed by re-examining a zoomed screenshot at the button's real rendered size, not an enlarged crop.
+
+**Outcome**: `Button.tsx`'s `primary`/`accent`/`danger` variants dropped the `before:` pseudo-element ring entirely and moved to a single `border-2` with a **layered glow** — four stacked `box-shadow` rings at increasing blur radius and decreasing opacity in the same hue (`0_0_2px`/`0_0_6px`/`0_0_14px`/`0_0_26px`, roughly 90%→30% alpha), rather than one flat blur value. This is the standard CSS technique for a convincing lit-neon look: real neon light falls off in graduated steps, not a single soft halo, so a single `box-shadow` value reads as flatter than several stacked at different radii even at equivalent total spread. Hover intensifies all four layers together (tighter core, wider bloom). The landing page's map-toggle button got the identical shadow stack for its active state, dropping its own `before:` ring the same way.
+
+Verified in-browser at real rendered size (not a magnified crop) in both light and dark mode: the border now reads as a genuinely glowing line with a soft graduated bloom around it, closer to an actual lit neon sign than either of the two previous attempts (flat single-blur glow in Phase 38, double thin ring in Phase 39).
 
 ---
 
