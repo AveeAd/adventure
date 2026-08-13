@@ -156,7 +156,23 @@ export class AdventurePagesService {
         relatedTo: {
           include: {
             relatedPage: {
-              select: { id: true, title: true, slug: true, summary: true },
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                summary: true,
+                verificationStatus: true,
+                durationMinDays: true,
+                durationMaxDays: true,
+                activityType: { select: { name: true } },
+                difficultyLevel: { select: { name: true } },
+                media: {
+                  where: { isActive: true },
+                  orderBy: { sortOrder: 'asc' },
+                  take: 1,
+                  select: { url: true, altText: true },
+                },
+              },
             },
           },
         },
@@ -467,11 +483,13 @@ export class AdventurePagesService {
     if (revision.approvalStatus !== 'PENDING') {
       throw new BadRequestException('This revision has already been resolved');
     }
-    if (revision.editorId === voterId) {
-      throw new ForbiddenException('You cannot vote on your own revision');
-    }
 
     const isAdminOrMod = voterRole === Role.ADMIN || voterRole === Role.MODERATOR;
+    // "God mode": an admin/moderator can approve/decline their own edits -
+    // everyone else still needs an independent reviewer.
+    if (revision.editorId === voterId && !isAdminOrMod) {
+      throw new ForbiddenException('You cannot vote on your own revision');
+    }
     if (!isAdminOrMod) {
       const profile = await this.prisma.guideProfile.findUnique({
         where: { userId: voterId },

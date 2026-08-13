@@ -3,14 +3,21 @@ import type { ButtonHTMLAttributes } from 'react';
 type Variant = 'primary' | 'accent' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md';
 
+// Every variant is an outline button - transparent fill, a thick saturated
+// border, blur behind it, brightening slightly on hover. No neon glow (a
+// few earlier iterations tried and dropped it); the border alone carries
+// the variant's color and emphasis.
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-primary-600 text-white hover:bg-primary-700 disabled:bg-primary-300 dark:bg-primary-500 dark:hover:bg-primary-600',
-  accent: 'bg-accent-500 text-white hover:bg-accent-600 disabled:bg-accent-200',
+    'bg-transparent border-[3px] border-primary-400 text-primary-700 backdrop-blur-lg hover:border-primary-300 disabled:opacity-50 dark:text-primary-300',
+  accent:
+    'bg-transparent border-[3px] border-accent-400 text-accent-700 backdrop-blur-lg hover:border-accent-300 disabled:opacity-50 dark:text-accent-300',
   secondary:
-    'border border-stone-300 text-stone-800 hover:bg-stone-100 disabled:text-stone-400 dark:border-stone-600 dark:text-stone-100 dark:hover:bg-stone-800',
-  ghost: 'text-primary-700 hover:bg-primary-50 disabled:text-stone-400 dark:text-primary-300 dark:hover:bg-stone-800',
-  danger: 'border border-red-300 text-red-700 hover:bg-red-50 disabled:text-red-300 dark:border-red-800 dark:text-red-400',
+    'bg-transparent border-[3px] border-stone-300 text-stone-800 backdrop-blur-lg hover:border-primary-400/70 disabled:text-stone-400 dark:border-stone-600 dark:text-stone-100 dark:hover:border-primary-400/50',
+  ghost:
+    'bg-transparent border-[3px] border-primary-300/50 text-primary-700 backdrop-blur-lg hover:border-primary-400 disabled:opacity-50 dark:border-primary-400/30 dark:text-primary-300 dark:hover:border-primary-400',
+  danger:
+    'bg-transparent border-[3px] border-red-400 text-red-700 backdrop-blur-lg hover:border-red-300 disabled:opacity-50 dark:text-red-400',
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -26,7 +33,7 @@ export function Button({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
   return (
     <button
-      className={`inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     />
   );

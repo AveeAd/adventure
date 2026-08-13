@@ -109,9 +109,6 @@ export function GeodataHistory({ resource, id }: { resource: 'trails' | 'spots';
                 resource={resource}
                 id={id}
                 version={revision.version}
-                approveCount={revision.approveCount}
-                rejectCount={revision.rejectCount}
-                threshold={revision.threshold}
                 onVoted={() => {
                   invalidate({ resource, invalidates: ['detail', 'list'], id });
                   query.refetch();
@@ -207,17 +204,11 @@ function VotePanel({
   resource,
   id,
   version,
-  approveCount,
-  rejectCount,
-  threshold,
   onVoted,
 }: {
   resource: 'trails' | 'spots';
   id: string;
   version: number;
-  approveCount: number;
-  rejectCount: number;
-  threshold: number;
   onVoted: () => void;
 }) {
   const { mutate, mutation } = useCustomMutation();
@@ -236,16 +227,17 @@ function VotePanel({
           message.success(t('approval.voted'));
           onVoted();
         },
-        onError: () => message.error(t('approval.voteError')),
+        onError: (err: unknown) => {
+          const apiMessage = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+          message.error(apiMessage || t('approval.voteError'));
+        },
       },
     );
   };
 
   return (
     <div style={{ marginTop: 12, borderTop: '1px solid #f0f0f0', paddingTop: 12 }}>
-      <Typography.Text type="secondary">
-        {t('approval.voteProgress', { approve: approveCount, reject: rejectCount, threshold })}
-      </Typography.Text>
+      <Typography.Text type="secondary">{t('approval.adminVoteNotice')}</Typography.Text>
       <Space style={{ marginTop: 8, display: 'flex' }}>
         <Button type="primary" onClick={() => vote('APPROVE')} loading={mutation.isPending}>
           {t('approval.approve')}

@@ -9,7 +9,7 @@ const VIEW_WIDTH = 800;
 const VIEW_HEIGHT = 220;
 const PADDING = { top: 16, right: 16, bottom: 28, left: 44 };
 
-// Inline SVG, no charting library - matches TopoLines.tsx already being
+// Inline SVG, no charting library - matches GradientMesh.tsx already being
 // hand-rolled SVG and the no-CDN/no-API-key ethos elsewhere in this app.
 // Single series (distance -> elevation), so no legend is needed - the
 // title/caption names it, per the dataviz skill's single-series rule.

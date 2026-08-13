@@ -124,6 +124,7 @@
     "viewChange": "View change"
   },
   "info": {
+    "heading": "At a glance",
     "duration": "Duration",
     "durationValue": "{{min}}-{{max}} days",
     "maxAltitude": "Max altitude",
@@ -133,11 +134,17 @@
     "contributors": "Contributors"
   },
   "stories": {
-    "heading": "Stories",
-    "findTripGroup": "Find a trip group →",
+    "heading": "Tales from the trail",
+    "findTripGroup": "Find a trip group",
     "noneShared": "No one has shared a story from here yet. Be the first.",
     "fallbackTitle": "Story",
     "durationSuffix": " · {{days}} days",
+    "author": "Contributor",
+    "authorGuideLevel": "Lvl {{level}}",
+    "kudosCount": "{{count}} kudos",
+    "seeMore": "See more",
+    "sortMostLiked": "Most liked",
+    "sortNewest": "Newest",
     "tellYourStory": "Tell your story",
     "shared": "Story shared. Thanks for telling it!",
     "sharing": "Sharing...",
@@ -173,7 +180,7 @@
     "visitedCount": "{{count}} been here"
   },
   "gallery": {
-    "heading": "Photos",
+    "heading": "Views from the trail",
     "addPhoto": "Add photo",
     "noPhotosYet": "No photos yet. Be the first to show what this place looks like.",
     "photo": "Photo",
@@ -187,7 +194,8 @@
     "counter": "{{current}} / {{total}}"
   },
   "trailsAndSpots": {
-    "heading": "Trails & spots",
+    "mapHeading": "Find your way",
+    "heading": "Paths worth taking",
     "noneYet": "No one has mapped a trail or spot here yet. Be the first explorer.",
     "trailFallback": "Trail",
     "traits": {
@@ -200,7 +208,7 @@
     "showLess": "Show less"
   },
   "seeAlso": {
-    "heading": "See also",
+    "heading": "Where to next?",
     "addRelatedPage": "Add related page",
     "noneYet": "Nothing linked here yet.",
     "pageSlug": "Page slug"

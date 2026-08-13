@@ -72,7 +72,9 @@ export function VoteControls({
 
       {eligibility.loading ? null : !eligibility.currentUser ? (
         <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{t('approval.signInToVote')}</p>
-      ) : eligibility.currentUser.userId === editorId ? (
+      ) : eligibility.currentUser.userId === editorId &&
+        eligibility.currentUser.role !== 'ADMIN' &&
+        eligibility.currentUser.role !== 'MODERATOR' ? (
         <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{t('approval.cannotVoteOwn')}</p>
       ) : !eligibility.canVote ? (
         <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{t('approval.notEligible')}</p>

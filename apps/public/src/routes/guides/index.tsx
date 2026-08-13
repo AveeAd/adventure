@@ -122,7 +122,7 @@ function GuideDirectoryPage() {
         <div className="mt-6 flex flex-col gap-3">
           {guides.map((guide) => (
             <Link key={guide.id} to="/guides/$id" params={{ id: guide.id }}>
-              <Card className="p-5 transition-shadow hover:shadow-md">
+              <Card glass className="p-5 transition-shadow hover:shadow-md">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="font-semibold text-stone-900 dark:text-stone-50">
                     {guide.specialties.map((s) => s.activityType.name).join(', ') || t('guideFallbackName')}

@@ -9,7 +9,6 @@ import { Card } from '../components/Card';
 import { Container } from '../components/Container';
 import { EmptyState } from '../components/EmptyState';
 import { LazyAdventureMap } from '../components/LazyAdventureMap';
-import { TopoLines } from '../components/TopoLines';
 import type { MapSpot, MapTrail } from '../components/AdventureMap';
 
 interface SearchResult {
@@ -134,8 +133,7 @@ function DiscoverPage() {
 
   return (
     <>
-      <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-stone-200 bg-gradient-to-b from-primary-50 to-stone-50 dark:border-stone-800 dark:from-primary-950/40 dark:to-stone-950">
-        <TopoLines className="absolute inset-x-0 top-0 h-full w-full text-primary-600/25 dark:text-primary-400/15" />
+      <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-stone-200 dark:border-stone-800">
         <Container size="wide" className="relative">
           <div
             className="animate-fade-up flex items-center gap-2 text-primary-700 dark:text-primary-400"
@@ -162,7 +160,7 @@ function DiscoverPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-full rounded-full border-2 border-stone-300/70 bg-white/60 py-4 pl-14 pr-16 text-base text-stone-900 shadow-sm backdrop-blur-md placeholder:text-stone-400 transition-shadow hover:shadow-md focus:border-primary-500 focus:shadow-md focus:outline-none focus:ring-4 focus:ring-primary-100 dark:border-stone-600/70 dark:bg-stone-900/50 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:ring-primary-900/50 sm:pr-40"
+              className="glass-2 w-full rounded-full border-2 border-[color:var(--glass-border)] py-4 pl-14 pr-16 text-base text-stone-900 backdrop-blur-lg placeholder:text-stone-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:ring-primary-900/50 sm:pr-40"
             />
             {(trails.length > 0 || spots.length > 0) && (
               <button
@@ -170,9 +168,9 @@ function DiscoverPage() {
                 onClick={toggleMap}
                 aria-pressed={showMap}
                 aria-label={showMap ? t('hideMap') : t('showMap')}
-                className={`absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-full p-3 text-sm font-medium transition-colors sm:px-4 sm:py-2.5 ${
+                className={`absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-full p-3 text-sm font-medium transition-all sm:px-4 sm:py-2.5 ${
                   showMap
-                    ? 'bg-primary-600 text-white hover:bg-primary-700'
+                    ? 'bg-transparent border-[3px] border-primary-400 text-primary-800 backdrop-blur-lg dark:text-primary-200'
                     : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
                 }`}
               >
@@ -292,7 +290,10 @@ function DiscoverPage() {
                         </div>
                       </div>
                     ) : (
-                      <Card className="flex flex-col gap-2 overflow-hidden p-4 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary-900/5">
+                      <Card
+                        glass
+                        className="flex flex-col gap-2 overflow-hidden p-4 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary-900/5"
+                      >
                         <div className="flex items-center gap-1.5 font-semibold text-stone-900 group-hover:text-primary-700 dark:text-stone-50 dark:group-hover:text-primary-400">
                           <MountainSnow className="h-4 w-4 shrink-0 text-primary-500 dark:text-primary-300" />
                           {page.title}
@@ -344,7 +345,7 @@ function SearchResults({ query, results, searching }: { query: string; results: 
       {results.map((result) => (
         <li key={result.id}>
           <Link to="/adventures/$slug" params={{ slug: result.slug }}>
-            <Card className="p-4 transition-shadow hover:shadow-md">
+            <Card glass className="p-4 transition-shadow hover:shadow-md">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-semibold text-stone-900 dark:text-stone-50">{result.title}</h2>
                 <StatusBadge status={result.verificationStatus} />

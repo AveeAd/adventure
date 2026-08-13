@@ -9,6 +9,16 @@ const toneClasses: Record<Tone, string> = {
   danger: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
 };
 
+// For badges placed over a photo (e.g. the adventure-page hero overlay),
+// where the tone's solid light background would clash with the image -
+// same tone-tinted text, but a blurred translucent fill instead.
+const glassToneClasses: Record<Tone, string> = {
+  success: 'border-emerald-200/30 bg-white/10 text-emerald-200 backdrop-blur-md',
+  warning: 'border-amber-200/30 bg-white/10 text-amber-200 backdrop-blur-md',
+  neutral: 'border-white/25 bg-white/10 text-white backdrop-blur-md',
+  danger: 'border-red-200/30 bg-white/10 text-red-200 backdrop-blur-md',
+};
+
 const STATUS_TONE: Record<string, Tone> = {
   VERIFIED: 'success',
   UNVERIFIED: 'neutral',
@@ -19,9 +29,20 @@ const STATUS_TONE: Record<string, Tone> = {
   REJECTED: 'danger',
 };
 
-export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: React.ReactNode }) {
+export function Badge({
+  tone = 'neutral',
+  glass = false,
+  children,
+}: {
+  tone?: Tone;
+  glass?: boolean;
+  children: React.ReactNode;
+}) {
+  const toneClass = glass ? glassToneClasses[tone] : toneClasses[tone];
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClasses[tone]}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${glass ? 'border' : ''} ${toneClass}`}
+    >
       {children}
     </span>
   );
@@ -29,9 +50,13 @@ export function Badge({ tone = 'neutral', children }: { tone?: Tone; children: R
 
 // One of I18N.md's two named "natural first extraction" enum-label maps -
 // moved into common.json's status namespace rather than staying hardcoded.
-export function StatusBadge({ status }: { status: string }) {
+export function StatusBadge({ status, glass = false }: { status: string; glass?: boolean }) {
   const { t } = useTranslation();
   const key = `status.${status}`;
   const label = t(key, { defaultValue: status });
-  return <Badge tone={STATUS_TONE[status] ?? 'neutral'}>{label}</Badge>;
+  return (
+    <Badge tone={STATUS_TONE[status] ?? 'neutral'} glass={glass}>
+      {label}
+    </Badge>
+  );
 }

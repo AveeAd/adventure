@@ -91,7 +91,7 @@ function FullscreenToggle({ isFullscreen, onToggle }: { isFullscreen: boolean; o
       type="button"
       onClick={onToggle}
       aria-label={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
-      className="absolute right-2 top-2 z-[1000] rounded-lg border border-stone-200 bg-white/90 p-2 text-stone-600 shadow-sm hover:bg-white dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300 dark:hover:bg-stone-900"
+      className="glass-2 absolute right-2 top-2 z-[1000] rounded-lg border border-[color:var(--glass-border)] p-2 text-stone-600 backdrop-blur-lg transition-opacity hover:opacity-80 dark:text-stone-300"
     >
       {isFullscreen ? (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
@@ -139,7 +139,7 @@ function LocateButton({ topOffset }: { topOffset: number }) {
         aria-label="Show my location"
         title={error ? "Couldn't get your location" : 'Show my location'}
         style={{ top: topOffset }}
-        className="absolute right-2 z-[1000] rounded-lg border border-stone-200 bg-white/90 p-2 text-stone-600 shadow-sm hover:bg-white disabled:opacity-60 dark:border-stone-700 dark:bg-stone-900/90 dark:text-stone-300 dark:hover:bg-stone-900"
+        className="glass-2 absolute right-2 z-[1000] rounded-lg border border-[color:var(--glass-border)] p-2 text-stone-600 backdrop-blur-lg transition-opacity hover:opacity-80 disabled:opacity-60 dark:text-stone-300"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -197,7 +197,7 @@ export function AdventureMap({
       className={
         isFullscreen
           ? 'fixed inset-0 z-[1000]'
-          : 'relative overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800'
+          : 'relative isolate z-0 overflow-hidden rounded-xl border border-stone-200 dark:border-stone-800'
       }
     >
       <FullscreenToggle isFullscreen={isFullscreen} onToggle={() => setIsFullscreen((v) => !v)} />

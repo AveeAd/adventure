@@ -20,15 +20,27 @@ export class TripReportsService {
 
   async listForPage(pageId: string, page = 1, pageSize = 20) {
     const where = { adventurePageId: pageId, isActive: true };
-    const [data, total] = await Promise.all([
+    const [reports, total] = await Promise.all([
       this.prisma.tripReport.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { dateCompleted: 'desc' },
+        include: {
+          _count: { select: { kudos: true } },
+          author: {
+            select: { email: true, profile: { select: { name: true } }, guideProfile: { select: { guideLevel: true } } },
+          },
+        },
       }),
       this.prisma.tripReport.count({ where }),
     ]);
+    const data = reports.map(({ _count, author, ...rest }) => ({
+      ...rest,
+      kudosCount: _count.kudos,
+      authorName: author.profile?.name ?? author.email,
+      authorGuideLevel: author.guideProfile?.guideLevel ?? 1,
+    }));
     return { data, total, page, pageSize };
   }
 
