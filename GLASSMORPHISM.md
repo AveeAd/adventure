@@ -4,7 +4,7 @@
 
 **Defers**: `apps/admin` — **explicitly out of scope for this whole doc**, by user decision. Admin keeps its current Ant Design `ConfigProvider` theming untouched; nothing here should be read as implying a follow-up admin phase. Also defers any manual light/dark toggle (CLAUDE.md's `prefers-color-scheme`-only decision stands) and any change to Leaflet/map *interaction* behavior — this is chrome and surface styling only.
 
-**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–37 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
+**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–39 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
 
 ---
 
@@ -185,6 +185,30 @@ Every `backdrop-blur-*` utility on a `.glass-*` element was bumped one Tailwind 
 Verified in-browser, both light and dark mode, on the landing page: scrolled page content is now clearly visible and blurred through both header pills and the search bar — a stronger, more legible "looking through glass" effect than before the tuning — with text and icons still fully legible against it.
 
 Per an immediate same-session follow-up, `--glass-shadow` was also raised (both modes) — `0 8px 32px` → `0 16px 48px`, and its alpha increased (light `0.12`→`0.2`, dark `0.45`→`0.55`) — so every glass surface reads as more visibly lifted/elevated off the page, not just more transparent and blurred. `--glass-highlight` (the inset top-edge glow) was left as-is; only the ambient drop shadow changed. Re-verified in-browser on the header's brand pill in both modes: a clearly visible, softer, larger shadow under the pill in both light and dark.
+
+---
+
+## Phase 38 — Neon glass for interactive elements (built)
+
+**Scope**: per direct follow-up ("interactive elements neon; eg: button should be neon glass"), give buttons and other clickable controls their own distinct glass treatment — a translucent, colored-glow variant on top of the passive glass chrome from Phases 30–37, since a *pressable* control benefits from a more energetic signal than the same neutral frosted look used for static nav/card surfaces.
+
+**Outcome**: `apps/public/src/components/Button.tsx`'s `variantClasses` were rewritten for all five variants — `primary`/`accent`/`danger` moved from flat solid fills to a translucent color-tinted background (`bg-{color}-500/15`, `dark:bg-{color}-400/10`) + a saturated `border-{color}-400/60` + a colored `box-shadow` glow (`shadow-[0_0_14px_rgba(...)]`) + `backdrop-blur-lg`, intensifying further on hover (`hover:bg-{color}-500/25`, brighter border, wider/stronger glow) and dropping to `disabled:shadow-none` rather than just dimming. `secondary`/`ghost` (originally outline/text-only, lower-emphasis by design) kept their neutral base but gained the same glow-on-hover treatment using the primary green, so hovering any interactive control reads consistently as "this lit up" across the whole variant set. The button's base className switched `transition-colors`→`transition-all` so the added border/shadow/background all animate together, not just color.
+
+The landing page's bespoke "Search on map"/"Hide map" toggle button (`apps/public/src/routes/index.tsx`, not built on the shared `Button` component) got the same active-state treatment by hand — border-primary-400, translucent primary background, and the same green glow — since it's functionally the same kind of pressable control and would otherwise be the one interactive element left out.
+
+Verified in-browser in both light and dark mode: the "Sign in" button (primary variant) and the map-toggle button both show a clearly visible colored glow at rest that brightens on hover, remaining legible against both the landing page's translucent search bar and the header's own glass pill — confirming the neon-glow layer reads distinctly from the passive glass chrome around it rather than blending into it.
+
+Per an immediate follow-up ("spread should be less"), every glow's blur radius was tightened considerably — roughly halved or more (e.g. primary's rest-state `0_0_14px`→`0_0_6px`, hover `0_0_22px`→`0_0_10px`; the map-toggle's active glow `0_0_20px`→`0_0_9px`), with alpha nudged up slightly on each to compensate so the glow reads as a crisp, saturated ring hugging the border rather than a soft diffuse halo — closer to an actual neon-tube look. Re-verified in-browser on the "Sign in" button in light mode: a tight, clearly-defined colored ring instead of the previous wide glow.
+
+---
+
+## Phase 39 — Double-ring neon outline (built)
+
+**Scope**: a further follow-up refined the button border itself twice in the same session — first "bigger neon border, we can use gradient of shades of same color" (prototyped as a gradient-shaded border via the `background-clip: padding-box, border-box` two-layer trick, since `border-image` ignores `border-radius`), then, after the user shared a reference image of a neon sign frame with two concentric traced lines, "this type of button but with single color" — meaning the reference's double-outline *structure*, not its purple/blue two-hue gradient. The gradient-border prototype was superseded before landing rather than kept alongside; this phase's outcome is the double-ring version.
+
+**Outcome**: `apps/public/src/styles.css` briefly gained a `.neon-border`/`.neon-border-{primary,accent,danger}` rule set for the gradient-border prototype, then had it removed again once the double-ring direction was confirmed — no dead CSS left behind. The landed approach instead uses a `before:` pseudo-element per `Button.tsx` variant: the button's own `border-2` is the outer ring, and an absolutely-positioned `before:inset-[3px] before:rounded-[inherit] before:border` inset a few pixels forms the inner ring, both in the *same* single hue per variant (green for primary, terracotta for accent, red for danger) with their own independent glow shadows, brightening together on hover (`hover:border-{color}-300`, `hover:before:border-{color}-300/80`) and losing their glow (not their ring) when disabled. `secondary`/`ghost` were left as single-ring/no-ring per Phase 38's original low-emphasis reasoning — the double-ring treatment is for the three "pressable and emphasized" variants. The landing page's map-toggle button (not built on `Button`) got the same `before:`-ring treatment by hand for its active state, matching the shared component.
+
+Verified in-browser in both light and dark mode: the "Sign in" button and the map-toggle button both show two concentric glowing outlines in a single hue, structurally matching the shared reference image (a lit neon-sign frame) rather than a flat single-line border with a shadow behind it.
 
 ---
 
