@@ -199,13 +199,6 @@ function ClubDetailPage() {
       </div>
 
       <Container size="wide">
-        <Link
-          to="/clubs"
-          className="text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"
-        >
-          {t('backToClubs')}
-        </Link>
-
         {club.description && <p className="mt-4 whitespace-pre-wrap text-stone-700 dark:text-stone-300">{club.description}</p>}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
