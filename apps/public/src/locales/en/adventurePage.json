@@ -140,6 +140,7 @@
     "fallbackTitle": "Story",
     "durationSuffix": " · {{days}} days",
     "author": "Contributor",
+    "authorGuideLevel": "Lvl {{level}}",
     "kudosCount": "{{count}} kudos",
     "seeMore": "See more",
     "sortMostLiked": "Most liked",

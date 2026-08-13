@@ -77,6 +77,7 @@ interface TripReportSummary {
   description: string | null;
   authorId: string;
   authorName: string;
+  authorGuideLevel: number;
   dateCompleted: string;
   durationDays: number | null;
   kudosCount: number;
@@ -163,7 +164,7 @@ function AdventurePageView() {
 
   return (
     <>
-      <div className="relative z-0 -mt-24 flex h-80 items-center justify-center overflow-hidden bg-gradient-to-br from-primary-100 to-accent-100 sm:-mt-28 sm:h-96 dark:from-primary-950 dark:to-accent-950">
+      <div className="relative z-0 -mt-24 flex h-96 items-center justify-center overflow-hidden bg-gradient-to-br from-primary-100 to-accent-100 sm:-mt-28 sm:h-[28rem] dark:from-primary-950 dark:to-accent-950">
         {page.media[0] ? (
           <img src={page.media[0].url} alt={page.media[0].altText ?? ''} className="h-full w-full object-cover" />
         ) : (
@@ -171,8 +172,12 @@ function AdventurePageView() {
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" aria-hidden="true" />
+        <div
+          className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-stone-50 dark:to-stone-950"
+          aria-hidden="true"
+        />
 
-        <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-5xl px-4 pb-5 sm:px-6">
+        <div className="absolute inset-x-0 bottom-16 mx-auto w-full max-w-5xl px-4 pb-5 sm:px-6">
           <h1 className="text-4xl font-bold tracking-tight text-white drop-shadow-sm">{page.title}</h1>
           {page.summary && <p className="mt-1 text-stone-100/90 drop-shadow-sm">{page.summary}</p>}
 
@@ -289,6 +294,7 @@ function AdventurePageView() {
                       >
                         <Avatar label={report.authorName} size="sm" />
                         {report.authorName}
+                        <Badge tone="neutral">{t('stories.authorGuideLevel', { level: report.authorGuideLevel })}</Badge>
                       </Link>
                       <span className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
                         <Heart className="h-3.5 w-3.5" /> {t('stories.kudosCount', { count: report.kudosCount })}

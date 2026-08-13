@@ -28,7 +28,9 @@ export class TripReportsService {
         orderBy: { dateCompleted: 'desc' },
         include: {
           _count: { select: { kudos: true } },
-          author: { select: { email: true, profile: { select: { name: true } } } },
+          author: {
+            select: { email: true, profile: { select: { name: true } }, guideProfile: { select: { guideLevel: true } } },
+          },
         },
       }),
       this.prisma.tripReport.count({ where }),
@@ -37,6 +39,7 @@ export class TripReportsService {
       ...rest,
       kudosCount: _count.kudos,
       authorName: author.profile?.name ?? author.email,
+      authorGuideLevel: author.guideProfile?.guideLevel ?? 1,
     }));
     return { data, total, page, pageSize };
   }

@@ -274,6 +274,7 @@
     "voted": "Vote recorded",
     "voteError": "Failed to submit vote",
     "voteProgress": "{{approve}} approve · {{reject}} decline (of {{threshold}} needed)",
+    "adminVoteNotice": "Your vote as admin/moderator resolves this immediately - no threshold needed.",
     "reviewQueue": {
       "title": "Review queue",
       "empty": "Nothing pending review.",
