@@ -61,13 +61,13 @@ Required additions to existing models:
 - No changes to `ContributionReason`/`ContributionTargetType` — confirmed out of scope.
 
 ### Tasks
-- [ ] Add `ClubVisibility`, `ClubRole`, `ClubMembershipStatus` enums
-- [ ] Add `Club` and `ClubMember` models
-- [ ] Add reverse-relation fields to `User`
-- [ ] Add `clubId`/`club` to `TripReport`
-- [ ] Add `CLUB_JOIN_REQUESTED`/`CLUB_JOIN_DECIDED` to `NotificationType`
-- [ ] Run `npx prisma migrate dev --name add_clubs` from `apps/api`
-- [ ] Regenerate Prisma client
+- [x] Add `ClubVisibility`, `ClubRole`, `ClubMembershipStatus` enums
+- [x] Add `Club` and `ClubMember` models
+- [x] Add reverse-relation fields to `User`
+- [x] Add `clubId`/`club` to `TripReport`
+- [x] Add `CLUB_JOIN_REQUESTED`/`CLUB_JOIN_DECIDED` to `NotificationType`
+- [x] Applied via a hand-written migration SQL file (`prisma migrate dev` refused to run non-interactively in the container; used `prisma migrate diff` + `migrate deploy` instead, stripping the spurious `DROP INDEX` statements the diff produced for the hand-added PostGIS GiST indexes Prisma doesn't know about)
+- [x] Regenerate Prisma client
 
 ## Phase 2 — API: `apps/api/src/clubs/` module
 
@@ -92,12 +92,14 @@ Routes on `ClubsController` (`/clubs`):
 
 Service exposes `isMember(clubId, userId): Promise<boolean>` (checks `status: APPROVED`), used by `TripReportsService`. Authorization helper `ensureOwnerOrSiteModerator(id, currentUser)` is the club analog of `TripGroupsService.ensureOrganizerOrAdmin`, widened to accept `Role.ADMIN` **or** `Role.MODERATOR`.
 
+**Deviations found necessary during implementation**: added `GET /clubs/mine` (a third static route, also registered before `:id`) returning only the caller's approved-membership clubs — needed by the trip-report club picker, which shouldn't over-fetch every public club on the platform via the general `GET /clubs`. Also, the trimmed private-club shape returned to a non-member now includes a `viewerMembership: { role, status } | null` field (the caller's own membership row only, never the roster) so the public UI can render "request pending"/"request declined" state without leaking other members.
+
 ### Tasks
-- [ ] `create-club.dto.ts`, `update-club.dto.ts`, `decide-club-join-request.dto.ts`
-- [ ] `clubs.service.ts`: create/get/list/listAdmin/update/delete/join/leave/requestToJoin/listJoinRequests/decideJoinRequest/isMember + `ensureOwnerOrSiteModerator` helper
-- [ ] `clubs.controller.ts`: all routes above, static `admin/all` before `:id`
-- [ ] `clubs.module.ts`: export `ClubsService`
-- [ ] Register `ClubsModule` in `apps/api/src/app.module.ts`
+- [x] `create-club.dto.ts`, `update-club.dto.ts`, `decide-club-join-request.dto.ts`
+- [x] `clubs.service.ts`: create/get/list/listMine/listAdmin/update/delete/join/leave/requestToJoin/listJoinRequests/decideJoinRequest/isMember + `ensureOwnerOrSiteModerator` helper
+- [x] `clubs.controller.ts`: all routes above, static `admin/all`/`mine` before `:id`
+- [x] `clubs.module.ts`: export `ClubsService`
+- [x] Register `ClubsModule` in `apps/api/src/app.module.ts`
 
 ## Phase 3 — API: `trip-reports` wiring
 
@@ -107,10 +109,10 @@ Service exposes `isMember(clubId, userId): Promise<boolean>` (checks `status: AP
 - Add `club: { select: { id: true, name: true } }` to the relevant `include`s so trip-report reads can show a "posted to [Club]" badge.
 
 ### Tasks
-- [ ] Add `clubId` to `CreateTripReportDto`
-- [ ] Import `ClubsModule` into `TripReportsModule`
-- [ ] Inject `ClubsService`, add membership guard in `create()`/`update()`
-- [ ] Add `club` to relevant `include`s
+- [x] Add `clubId` to `CreateTripReportDto`
+- [x] Import `ClubsModule` into `TripReportsModule`
+- [x] Inject `ClubsService`, add membership guard in `create()`/`update()`
+- [x] Add `club` to relevant `include`s
 
 ## Phase 4 — Admin (`apps/admin`)
 
@@ -118,10 +120,13 @@ Service exposes `isMember(clubId, userId): Promise<boolean>` (checks `status: AP
 - Register the `clubs` resource + routes in `apps/admin/src/App.tsx` next to the existing `trip-groups` entry (same `parent: 'content'` grouping), plus the two new component imports.
 - `apps/admin/src/locales/en/resources.json`: add a `clubs` top-level key mirroring the existing `trip-groups` key's shape (`label`, `fields.*`, `membersHeading`, `noDescription`).
 
+**Deviation found necessary during implementation**: `apps/admin/src/data-provider.ts`'s generic `getList` builds the API path directly from the Refine resource name (`${resource}`), which works for `trip-groups` (its admin listing lives at that same flat root) but not `clubs` (`GET /clubs` is the public, visibility-scoped listing — the admin listing had to move to `GET /clubs/admin/all` to avoid the collision, see Phase 2). Added a one-line special case in `getList` mapping `resource === 'clubs'` to the `clubs/admin/all` path.
+
 ### Tasks
-- [ ] `ClubList.tsx`, `ClubShow.tsx`
-- [ ] Register `clubs` resource + `/clubs` routes in `App.tsx`
-- [ ] `resources.json` locale keys
+- [x] `ClubList.tsx`, `ClubShow.tsx`
+- [x] Register `clubs` resource + `/clubs` routes in `App.tsx`
+- [x] `resources.json` locale keys
+- [x] `data-provider.ts`: special-case `clubs` list path to `clubs/admin/all`
 
 ## Phase 5 — Public (`apps/public`)
 
@@ -137,22 +142,23 @@ New i18n namespace `apps/public/src/locales/en/clubs.json`, modeled on `groups.j
 Trip-report authoring: `StoryForm` lives inline inside `apps/public/src/routes/adventures/$slug/index.tsx` (~line 1091), not a separate route file. Add an optional club `Select` there, populated from the current user's approved club memberships, included as `clubId` in the existing `authPost(\`/adventure-pages/${pageId}/trip-reports\`, {...})` call.
 
 ### Tasks
-- [ ] `clubs/index.tsx`, `clubs/$clubId.tsx`, `clubs/new.tsx` routes
-- [ ] Nav entry (desktop + mobile) + `common.json` `nav.clubs` key
-- [ ] `clubs.json` i18n namespace + registration in `lib/i18n/index.ts`
-- [ ] Club picker in `StoryForm` (`adventures/$slug/index.tsx`)
+- [x] `clubs/index.tsx`, `clubs/$clubId.tsx`, `clubs/new.tsx` routes
+- [x] Nav entry (desktop + mobile) + `common.json` `nav.clubs` key
+- [x] `clubs.json` i18n namespace + registration in `lib/i18n/index.ts`
+- [x] Club picker in `StoryForm` (`adventures/$slug/index.tsx`), backed by `GET /clubs/mine`
 
 ## Phase 6 — Verification
 
-No existing Jest/e2e test files exist anywhere in `apps/api` today, so there's no test convention to extend — verify manually through `docker-compose up` end-to-end:
+No existing Jest/e2e test files exist anywhere in `apps/api` today, so there's no test convention to extend — verified directly against the running `docker-compose` stack via the API (two real dev-DB users, one temporary test `USER`-role account since only `ADMIN` accounts existed; JWTs minted locally with the dev-only `JWT_ACCESS_SECRET` — test data cleaned up afterward) and via curl'd SSR HTML for the public routes:
 
 ### Tasks
-- [ ] Create a public club as user A; confirm A is `OWNER`
-- [ ] As user B, join the public club instantly; leave it
-- [ ] Create a private club as A; as B, send a join request; confirm A sees it pending and gets a notification; A approves; B gets a notification and is now `APPROVED`
-- [ ] As B (now a member), write a trip report and tag it with the club; confirm `STORY_CREATE` points still post normally and no club-related `ContributionEvent` rows are created
-- [ ] As a non-member, confirm the private club's detail view is trimmed (no member list) and a trip-report create attempt with that `clubId` is rejected
-- [ ] In the admin app (as `ADMIN` and separately as `MODERATOR`), confirm both can list/show clubs and deactivate one; confirm the deactivated club disappears from public listings but its tagged trip reports remain intact
+- [x] Create a public club as user A; confirm A is `OWNER`
+- [x] As user B, join the public club instantly; leave it
+- [x] Create a private club as A; as B, send a join request; confirm A sees it pending and gets a notification; A approves; B gets a notification and is now `APPROVED`
+- [x] As B (now a member), write a trip report and tag it with the club; confirm `STORY_CREATE` points still post normally and no club-related `ContributionEvent` rows are created
+- [x] As a non-member, confirm the private club's detail view is trimmed (no member list) and a trip-report create attempt with that `clubId` is rejected
+- [x] In the admin app (as `ADMIN` and separately as `MODERATOR`), confirm both can list/show clubs and deactivate one; confirm the deactivated club disappears from public listings but its tagged trip reports remain intact
+- [ ] Not done: clicking through the actual rendered UI in a browser (join/leave buttons, approve/decline panel, club picker dropdown) — only SSR HTML output and the underlying API were verified. Worth a manual pass before considering this fully shipped.
 
 ## Open decisions
 

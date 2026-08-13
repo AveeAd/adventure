@@ -1,0 +1,41 @@
+{
+  "listTitle": "Clubs",
+  "startClub": "Start a club",
+  "subheading": "Find a persistent community to plan and share with.",
+  "noneYet": "No clubs yet — be the first to start one.",
+  "backToClubs": "← Back to clubs",
+  "members": "Members ({{count}})",
+  "owner": "Owner",
+  "joinClub": "Join club",
+  "leaveClub": "Leave club",
+  "requestToJoin": "Request to join",
+  "requestPending": "Request pending approval",
+  "requestDeclined": "Your request was declined",
+  "pendingRequestsHeading": "Pending requests ({{count}})",
+  "approve": "Approve",
+  "decline": "Decline",
+  "tripReportsHeading": "Trip reports from this club",
+  "noTripReportsYet": "No trip reports tagged with this club yet.",
+  "newTitle": "Start a club",
+  "newSubheading": "You'll be the owner. Choose whether anyone can join instantly or must request to join.",
+  "fields": {
+    "name": "Name",
+    "namePlaceholder": "e.g. Kathmandu Hikers Club",
+    "description": "Description",
+    "optional": "Optional",
+    "visibility": "Visibility",
+    "visibilityPublic": "Public — anyone can join instantly",
+    "visibilityPrivate": "Private — join requests need approval"
+  },
+  "actions": {
+    "creating": "Creating...",
+    "startClubButton": "Start club"
+  },
+  "errors": {
+    "failedToJoin": "Failed to join",
+    "failedToLeave": "Failed to leave",
+    "failedToRequest": "Failed to send join request",
+    "failedToDecide": "Failed to update request",
+    "failedToCreate": "Failed to create club"
+  }
+}

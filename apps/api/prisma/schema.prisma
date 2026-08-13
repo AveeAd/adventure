@@ -55,6 +55,10 @@ model User {
   createdTripGroups    TripGroup[]
   tripGroupMemberships TripGroupMember[]
 
+  createdClubs           Club[]
+  clubMemberships        ClubMember[]
+  clubMembershipsDecided ClubMember[] @relation("ClubMembershipDecidedBy")
+
   guideProfile GuideProfile?
 
   contributionEvents ContributionEvent[]
@@ -684,6 +688,13 @@ model TripReport {
   comments       Comment[]
   activityTracks ActivityTrack[]
 
+  // Nullable, SetNull not Cascade - same rationale as ActivityTrack's page/
+  // report FKs below: a club is a tag on a personal record, so deactivating
+  // it must not touch the record itself. The author picks this at authoring
+  // time from clubs they belong to (checked in the service, not the DTO).
+  clubId String?
+  club   Club?   @relation(fields: [clubId], references: [id], onDelete: SetNull)
+
   @@map("trip_reports")
 }
 
@@ -842,6 +853,69 @@ model TripGroupMember {
   @@map("trip_group_members")
 }
 
+enum ClubVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum ClubRole {
+  OWNER
+  MEMBER
+}
+
+// PENDING doubles as a private club's join request - there's no separate
+// request table, since a request and a membership are the same relationship
+// at different lifecycle stages (unlike ModeratorApplication, which is
+// genuinely distinct from the User.role it eventually sets).
+enum ClubMembershipStatus {
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+// Freestanding persistent community, distinct from TripGroup - no
+// AdventurePage FK, no per-trip date window. Any logged-in user can create
+// one and becomes its OWNER. Deliberately no ContributionEvent involvement
+// anywhere in this model.
+model Club {
+  id            String         @id @default(uuid())
+  name          String
+  description   String?
+  coverImageUrl String?
+  visibility    ClubVisibility @default(PUBLIC)
+  createdById   String
+  createdBy     User           @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  members     ClubMember[]
+  tripReports TripReport[]
+
+  @@map("clubs")
+}
+
+model ClubMember {
+  id       String               @id @default(uuid())
+  clubId   String
+  club     Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     ClubRole             @default(MEMBER)
+  status   ClubMembershipStatus @default(APPROVED)
+  joinedAt DateTime             @default(now())
+
+  // Set when a PENDING request is approved/declined by the club owner or a
+  // site ADMIN/MODERATOR - blank for open-join PUBLIC-club rows, which are
+  // never PENDING in the first place.
+  decidedById String?
+  decidedBy   User?     @relation("ClubMembershipDecidedBy", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt   DateTime?
+
+  @@unique([clubId, userId])
+  @@map("club_members")
+}
+
 enum GuideVerificationStatus {
   UNVERIFIED
   PENDING_LICENSE_REVIEW
@@ -958,6 +1032,10 @@ enum NotificationType {
   CHANGE_APPROVED
   CHANGE_REJECTED
   LEVEL_UP
+  // CLUB_PLAN.md: a private club's owner is notified of a new join request,
+  // and the requester is notified once it's approved/declined.
+  CLUB_JOIN_REQUESTED
+  CLUB_JOIN_DECIDED
 }
 
 // one-way system messages, not user chat - doesn't reopen IDEA.md's

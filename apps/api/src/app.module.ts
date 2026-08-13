@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AdventurePagesModule } from './adventure-pages/adventure-pages.module';
 import { ApprovalsModule } from './approvals/approvals.module';
 import { AuthModule } from './auth/auth.module';
+import { ClubsModule } from './clubs/clubs.module';
 import { ConfigModule } from './config/config.module';
 import { ContributionsModule } from './contributions/contributions.module';
 import { GeodataModule } from './geodata/geodata.module';
@@ -33,6 +34,7 @@ import { HealthController } from './health/health.controller';
     GeodataModule,
     TripReportsModule,
     TripGroupsModule,
+    ClubsModule,
     GuideProfilesModule,
     UploadsModule,
     TracksModule,

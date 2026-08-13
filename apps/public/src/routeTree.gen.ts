@@ -15,6 +15,9 @@ import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as AccountGuideProfileRouteImport } from './routes/account/guide-profile'
 import { Route as AdventuresNewRouteImport } from './routes/adventures/new'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as ClubsIndexRouteImport } from './routes/clubs/index'
+import { Route as ClubsClubIdRouteImport } from './routes/clubs/$clubId'
+import { Route as ClubsNewRouteImport } from './routes/clubs/new'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as GuidesIdRouteImport } from './routes/guides/$id'
 import { Route as ReportsIndexRouteImport } from './routes/reports/index'
@@ -66,6 +69,21 @@ const AdventuresNewRoute = AdventuresNewRouteImport.update({
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubsIndexRoute = ClubsIndexRouteImport.update({
+  id: '/clubs/',
+  path: '/clubs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubsClubIdRoute = ClubsClubIdRouteImport.update({
+  id: '/clubs/$clubId',
+  path: '/clubs/$clubId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubsNewRoute = ClubsNewRouteImport.update({
+  id: '/clubs/new',
+  path: '/clubs/new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuidesIndexRoute = GuidesIndexRouteImport.update({
@@ -194,9 +212,12 @@ export interface FileRoutesByFullPath {
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/clubs/$clubId': typeof ClubsClubIdRoute
+  '/clubs/new': typeof ClubsNewRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
   '/account/': typeof AccountIndexRoute
+  '/clubs/': typeof ClubsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
@@ -224,9 +245,12 @@ export interface FileRoutesByTo {
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/clubs/$clubId': typeof ClubsClubIdRoute
+  '/clubs/new': typeof ClubsNewRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
   '/account': typeof AccountIndexRoute
+  '/clubs': typeof ClubsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/reports': typeof ReportsIndexRoute
   '/review-queue': typeof ReviewQueueIndexRoute
@@ -255,9 +279,12 @@ export interface FileRoutesById {
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/clubs/$clubId': typeof ClubsClubIdRoute
+  '/clubs/new': typeof ClubsNewRoute
   '/guides/$id': typeof GuidesIdRoute
   '/users/$id': typeof UsersIdRoute
   '/account/': typeof AccountIndexRoute
+  '/clubs/': typeof ClubsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
@@ -287,9 +314,12 @@ export interface FileRouteTypes {
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
+    | '/clubs/$clubId'
+    | '/clubs/new'
     | '/guides/$id'
     | '/users/$id'
     | '/account/'
+    | '/clubs/'
     | '/guides/'
     | '/reports/'
     | '/review-queue/'
@@ -317,9 +347,12 @@ export interface FileRouteTypes {
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
+    | '/clubs/$clubId'
+    | '/clubs/new'
     | '/guides/$id'
     | '/users/$id'
     | '/account'
+    | '/clubs'
     | '/guides'
     | '/reports'
     | '/review-queue'
@@ -347,9 +380,12 @@ export interface FileRouteTypes {
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
+    | '/clubs/$clubId'
+    | '/clubs/new'
     | '/guides/$id'
     | '/users/$id'
     | '/account/'
+    | '/clubs/'
     | '/guides/'
     | '/reports/'
     | '/review-queue/'
@@ -378,9 +414,12 @@ export interface RootRouteChildren {
   AccountGuideProfileRoute: typeof AccountGuideProfileRoute
   AdventuresNewRoute: typeof AdventuresNewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  ClubsClubIdRoute: typeof ClubsClubIdRoute
+  ClubsNewRoute: typeof ClubsNewRoute
   GuidesIdRoute: typeof GuidesIdRoute
   UsersIdRoute: typeof UsersIdRoute
   AccountIndexRoute: typeof AccountIndexRoute
+  ClubsIndexRoute: typeof ClubsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
   ReviewQueueIndexRoute: typeof ReviewQueueIndexRoute
@@ -445,6 +484,27 @@ declare module '@tanstack/react-router' {
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubs/': {
+      id: '/clubs/'
+      path: '/clubs'
+      fullPath: '/clubs/'
+      preLoaderRoute: typeof ClubsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubs/$clubId': {
+      id: '/clubs/$clubId'
+      path: '/clubs/$clubId'
+      fullPath: '/clubs/$clubId'
+      preLoaderRoute: typeof ClubsClubIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubs/new': {
+      id: '/clubs/new'
+      path: '/clubs/new'
+      fullPath: '/clubs/new'
+      preLoaderRoute: typeof ClubsNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/guides/': {
@@ -610,9 +670,12 @@ const rootRouteChildren: RootRouteChildren = {
   AccountGuideProfileRoute: AccountGuideProfileRoute,
   AdventuresNewRoute: AdventuresNewRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  ClubsClubIdRoute: ClubsClubIdRoute,
+  ClubsNewRoute: ClubsNewRoute,
   GuidesIdRoute: GuidesIdRoute,
   UsersIdRoute: UsersIdRoute,
   AccountIndexRoute: AccountIndexRoute,
+  ClubsIndexRoute: ClubsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,
   ReviewQueueIndexRoute: ReviewQueueIndexRoute,

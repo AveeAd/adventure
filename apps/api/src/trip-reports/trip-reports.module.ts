@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
+import { ClubsModule } from '../clubs/clubs.module';
 import { CommentsController, TripReportCommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
 import { AdventurePageTripReportsController, TripReportsController } from './trip-reports.controller';
 import { TripReportsService } from './trip-reports.service';
 
 @Module({
+  imports: [ClubsModule],
   controllers: [
     AdventurePageTripReportsController,
     TripReportsController,

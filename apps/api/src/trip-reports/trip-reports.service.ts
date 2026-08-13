@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ContributionReason, ContributionTargetType, NotificationType, Prisma, Role } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
+import { ClubsService } from '../clubs/clubs.service';
 import { ContributionsService } from '../contributions/contributions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -16,6 +17,7 @@ export class TripReportsService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly contributions: ContributionsService,
+    private readonly clubs: ClubsService,
   ) {}
 
   async listForPage(pageId: string, page = 1, pageSize = 20) {
@@ -31,6 +33,7 @@ export class TripReportsService {
           author: {
             select: { email: true, profile: { select: { name: true } }, guideProfile: { select: { guideLevel: true } } },
           },
+          club: { select: { id: true, name: true } },
         },
       }),
       this.prisma.tripReport.count({ where }),
@@ -57,6 +60,7 @@ export class TripReportsService {
         include: {
           adventurePage: { select: { title: true, slug: true } },
           author: { select: { email: true } },
+          club: { select: { id: true, name: true } },
         },
       }),
       this.prisma.tripReport.count({ where }),
@@ -71,6 +75,7 @@ export class TripReportsService {
         media: { orderBy: { sortOrder: 'asc' } },
         activityTracks: { where: { isActive: true }, orderBy: { startedAt: 'asc' } },
         _count: { select: { kudos: true, comments: true } },
+        club: { select: { id: true, name: true } },
       },
     });
     if (!report) {
@@ -88,6 +93,10 @@ export class TripReportsService {
   }
 
   async create(pageId: string, authorId: string, dto: CreateTripReportDto) {
+    if (dto.clubId && !(await this.clubs.isMember(dto.clubId, authorId))) {
+      throw new ForbiddenException('You must be a member of this club to tag a trip report with it');
+    }
+
     const report = await this.prisma.$transaction(async (tx) => {
       const created = await tx.tripReport.create({
         data: {
@@ -100,6 +109,7 @@ export class TripReportsService {
           durationDays: dto.durationDays,
           actualCostAmount: dto.actualCostAmount,
           currency: dto.currency,
+          clubId: dto.clubId,
         },
       });
       if (dto.activityTrackIds?.length) {
@@ -120,7 +130,10 @@ export class TripReportsService {
   }
 
   async update(id: string, currentUser: AuthenticatedUser, dto: UpdateTripReportDto) {
-    await this.ensureOwnerOrAdmin(id, currentUser);
+    const report = await this.ensureOwnerOrAdmin(id, currentUser);
+    if (dto.clubId && !(await this.clubs.isMember(dto.clubId, report.authorId))) {
+      throw new ForbiddenException('The author must be a member of this club to tag a trip report with it');
+    }
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.tripReport.update({
         where: { id },
@@ -132,6 +145,7 @@ export class TripReportsService {
           durationDays: dto.durationDays,
           actualCostAmount: dto.actualCostAmount,
           currency: dto.currency,
+          clubId: dto.clubId,
         },
       });
 
@@ -276,5 +290,6 @@ export class TripReportsService {
     if (report.authorId !== currentUser.userId && currentUser.role !== Role.ADMIN) {
       throw new ForbiddenException('Only the author or an admin can modify this trip report');
     }
+    return report;
   }
 }

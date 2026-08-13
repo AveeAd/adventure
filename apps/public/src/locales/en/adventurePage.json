@@ -160,7 +160,10 @@
     "yourStoryHint": "The full story - markdown supported",
     "yourStoryPlaceholder": "Tell it however long it needs to be...",
     "attachTracks": "Attach recorded tracks",
-    "attachTracksHint": "Pick from your own recorded activity tracks"
+    "attachTracksHint": "Pick from your own recorded activity tracks",
+    "club": "Post as club activity",
+    "clubHint": "Optional - tag this story to a club you belong to",
+    "clubNone": "No club"
   },
   "contribute": {
     "done": "Done",

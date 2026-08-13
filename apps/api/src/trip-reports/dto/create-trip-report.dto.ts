@@ -36,4 +36,10 @@ export class CreateTripReportDto {
   @IsArray()
   @IsUUID('4', { each: true })
   activityTrackIds?: string[];
+
+  // A club the author belongs to, tagging this story as club activity -
+  // membership is checked in the service, not the DTO.
+  @IsOptional()
+  @IsUUID('4')
+  clubId?: string;
 }

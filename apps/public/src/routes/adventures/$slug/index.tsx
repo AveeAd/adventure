@@ -1101,12 +1101,17 @@ function StoryForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [myTracks, setMyTracks] = useState<MyTrackOption[]>([]);
+  const [myClubs, setMyClubs] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     authFetch('/me/activity-tracks')
       .then((res) => (res.ok ? res.json() : []))
       .then(setMyTracks)
       .catch(() => setMyTracks([]));
+    authFetch('/clubs/mine')
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setMyClubs)
+      .catch(() => setMyClubs([]));
   }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -1124,6 +1129,7 @@ function StoryForm({
         actualCostAmount: formData.get('actualCostAmount') ? Number(formData.get('actualCostAmount')) : undefined,
         currency: formData.get('actualCostAmount') ? formData.get('currency') : undefined,
         activityTrackIds: selectedChipValues(event.currentTarget, 'activityTrackIds'),
+        clubId: formData.get('clubId') || undefined,
       });
       onDone();
     } catch (err) {
@@ -1168,6 +1174,18 @@ function StoryForm({
         {myTracks.length > 0 && (
           <Field label={t('stories.attachTracks')} hint={t('stories.attachTracksHint')}>
             <MultiSelectChips name="activityTrackIds" options={myTracks.map(trackOption)} />
+          </Field>
+        )}
+        {myClubs.length > 0 && (
+          <Field label={t('stories.club')} hint={t('stories.clubHint')}>
+            <Select name="clubId" defaultValue="">
+              <option value="">{t('stories.clubNone')}</option>
+              {myClubs.map((club) => (
+                <option key={club.id} value={club.id}>
+                  {club.name}
+                </option>
+              ))}
+            </Select>
           </Field>
         )}
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}

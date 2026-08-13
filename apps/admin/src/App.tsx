@@ -43,6 +43,8 @@ import { TripReportList } from './resources/trip-reports/TripReportList';
 import { TripReportShow } from './resources/trip-reports/TripReportShow';
 import { TripGroupList } from './resources/trip-groups/TripGroupList';
 import { TripGroupShow } from './resources/trip-groups/TripGroupShow';
+import { ClubList } from './resources/clubs/ClubList';
+import { ClubShow } from './resources/clubs/ClubShow';
 import { GuideProfileList } from './resources/guide-profiles/GuideProfileList';
 import { GuideProfileShow } from './resources/guide-profiles/GuideProfileShow';
 import { TrailList } from './resources/trails/TrailList';
@@ -156,6 +158,12 @@ function App() {
               list: '/trip-groups',
               show: '/trip-groups/show/:id',
               meta: { label: t('trip-groups.label'), parent: 'content' },
+            },
+            {
+              name: 'clubs',
+              list: '/clubs',
+              show: '/clubs/show/:id',
+              meta: { label: t('clubs.label'), parent: 'content' },
             },
 
             { name: 'geodata', meta: { label: t('geodata.label') } },
@@ -368,6 +376,11 @@ function App() {
               <Route path="/trip-groups">
                 <Route index element={<TripGroupList />} />
                 <Route path="show/:id" element={<TripGroupShow />} />
+              </Route>
+
+              <Route path="/clubs">
+                <Route index element={<ClubList />} />
+                <Route path="show/:id" element={<ClubShow />} />
               </Route>
 
               <Route path="/trails">

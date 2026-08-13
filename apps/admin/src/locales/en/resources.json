@@ -110,6 +110,21 @@
     "membersHeading": "Members ({{count}})",
     "noDescription": "No description"
   },
+  "clubs": {
+    "label": "Clubs",
+    "fields": {
+      "name": "Name",
+      "visibility": "Visibility",
+      "description": "Description",
+      "owner": "Owner",
+      "members": "Members",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status"
+    },
+    "membersHeading": "Members ({{count}})",
+    "noDescription": "No description"
+  },
   "geodata": { "label": "Trails & Spots" },
   "trails": {
     "label": "Trails",
