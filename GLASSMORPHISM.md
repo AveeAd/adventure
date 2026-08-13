@@ -236,6 +236,8 @@ Re-verified in-browser in both light and dark mode: the "Sign in" button is now 
 
 Verified in-browser in both light and dark mode: every button variant is a rounded-full pill with a visibly more transparent, genuinely frosted fill, and the layered neon glow is unaffected by the opacity change.
 
+**Card surfaces brought onto the same tier as the header**: per feedback that the header's glass (Phase 30's `glass-1`) was "perfect," `Card.tsx`'s `glass` prop moved from `glass-2` down to `glass-1` — its blur was already `backdrop-blur-lg`, matching the header, so opacity was the only mismatch. This affects every `Card glass` call site from Phase 31 (discover-feed/search-result cards, trip-report and trail/spot cards, guide-directory cards) in one place, not per-site-edit. Verified in-browser on the guide directory in both light and dark mode: cards now show the same lighter, more transparent frosted look as the header pills.
+
 ---
 
 ## Performance budget (applies from Phase 31 onward)
