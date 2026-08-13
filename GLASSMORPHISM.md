@@ -4,7 +4,7 @@
 
 **Defers**: `apps/admin` — **explicitly out of scope for this whole doc**, by user decision. Admin keeps its current Ant Design `ConfigProvider` theming untouched; nothing here should be read as implying a follow-up admin phase. Also defers any manual light/dark toggle (CLAUDE.md's `prefers-color-scheme`-only decision stands) and any change to Leaflet/map *interaction* behavior — this is chrome and surface styling only.
 
-**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–34 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
+**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–35 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
 
 ---
 
@@ -143,6 +143,20 @@ Adventure-detail page (`apps/public/src/routes/adventures/$slug/index.tsx`): rat
 Re-verified in-browser, both light and dark, on both pages, after the revision: the header, search bar, and trail/spot glass cards all show a clearly legible color tint bleeding through now, and the same blobs stay put (don't scroll away) as content moves beneath them — confirmed by scrolling the landing page's trending-destinations section into view and watching the blob positions hold steady relative to the viewport. No further token or opacity adjustment needed.
 
 **Folded in on the same follow-up**: the landing hero's `TopoLines` contour-line SVG (previously its own component, mounted only in that one hero) was merged directly into `GradientMesh` alongside the blobs, on the same reasoning — a decorative background element that was arbitrarily scoped to one page's hero now reads as inconsistent once the mesh itself became a site-wide fixed layer, so both moved together. `TopoLines.tsx` was deleted (no longer a separate component) and its SVG markup and waypoint dots now render as the last child inside `GradientMesh`. Its top-anchored fade mask (`linear-gradient(to bottom, black, transparent)` — solid at the top edge, invisible by the bottom) was also replaced with a symmetric center-out fade (`transparent, black 35%, black 65%, transparent`), since it originally existed to keep the lines from competing with hero copy directly below them; pinned full-viewport now, that same top-anchoring instead made the pattern look permanently clipped to the top of the screen rather than sitting in the middle of the viewport the way the blobs do. Verified on `/guides` — a route that never rendered `TopoLines` before this change — that the contour lines and blobs both now appear identically and the lines read as vertically centered in the viewport, confirming the shared layer is genuinely global rather than still hero-scoped.
+
+---
+
+## Phase 35 — Floating header (built)
+
+**Scope**: restyle the site header from an edge-to-edge sticky bar into a floating, inset rounded bar — a direct follow-up request once the header sat above the new site-wide `GradientMesh` background, so the mesh has room to show around the header rather than only bleeding through it.
+
+**Outcome**: `apps/public/src/routes/__root.tsx`'s `<header>` no longer carries the glass background/border/blur itself — it's now a transparent positioning shell (`sticky top-0 z-10 px-4 pt-4`) holding a `flex justify-between` row. Two independent pills sit inside it rather than one continuous bar: a left pill (`glass-1 rounded-full ... px-4 py-2.5`) wrapping just the logo/site name, and a right pill (`glass-1 rounded-full ... px-2 py-2`, `hidden sm:flex`) wrapping the nav links, divider, and `AuthStatus`. On small screens the right pill is replaced by its own small circular glass pill (the hamburger toggle, `rounded-full p-3`), so the layout still reads as two pills rather than one collapsing into the other. The mobile expanded-menu panel kept its own separate rounded floating bar below the row (`mt-2`, unchanged from the first floating-header pass) since it has no shared edge with either pill to attach to.
+
+Active-link styling (`PrimaryNavLink`) was **left as originally built** — a small waypoint dot next to the active link's text, not a filled pill — per explicit follow-up feedback: only the positioning/pill-split was requested, not a copy of the filled-active-pill look from the reference screenshot. The reference image was a layout cue only.
+
+Verified in-browser (desktop, both scroll-top and scrolled states): two visually distinct rounded glass pills, left and right, both showing the mesh's blobs/topo-lines through their edges; scrolling confirms both stay correctly pinned via the shared `sticky top-0` shell. Mobile viewport rendering of the expanded menu panel was not separately verified this pass (the browser tool's window resize didn't change the captured viewport in this environment) — same class of gap flagged for other surfaces in Phases 30–33.
+
+Per a same-session follow-up, both pills' padding was bumped up a size (brand pill `px-4 py-2.5`→`px-6 py-3.5`, icon/text scaled up to match the original pre-floating header's sizing; nav pill `px-2 py-2`→`px-3 py-3`, link padding `px-3.5 py-1.5`→`px-4 py-2`; mobile toggle `p-3`→`p-4`) — a size-only change, re-verified in-browser.
 
 ---
 
