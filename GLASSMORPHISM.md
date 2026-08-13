@@ -228,6 +228,14 @@ Verified in-browser at real rendered size (not a magnified crop) in both light a
 
 Re-verified in-browser in both light and dark mode: the "Sign in" button is now a full pill matching its container, with a genuinely frosted (not flat-tinted) fill and the layered glow still fully intact.
 
+**Extended to every button, not just Sign in**: "for all button" — both changes above were scoped to `Button.tsx`'s shared base/variants rather than staying a one-off, so they apply everywhere the component is used, not just the header:
+- `Button`'s base `rounded-lg` became `rounded-full` directly (the earlier `!rounded-full` call-site override on the Sign in button was removed as redundant).
+- `secondary` gained the same `glass-1` fill treatment as the neon variants (previously borderless/transparent), so every button variant now has a consistent frosted background, not just primary/accent/danger. `ghost` was left without a fill — a fill would make it indistinguishable from `secondary`, defeating the point of a "ghost" (minimal, text-only until hovered) variant.
+
+**Then, "opacity is high"**: the neon variants' fill (and the map-toggle button's active state) moved from `glass-2` down to the more-transparent `glass-1` tier — both are shared tokens, so this was a one-line swap per variant, not a new bespoke value. The map-toggle button's active state, which had been using its own ad hoc `bg-primary-500/25`/`dark:bg-primary-400/20` (higher opacity than either glass tier), was brought onto `glass-1` too for consistency with the now-shared button fill treatment.
+
+Verified in-browser in both light and dark mode: every button variant is a rounded-full pill with a visibly more transparent, genuinely frosted fill, and the layered neon glow is unaffected by the opacity change.
+
 ---
 
 ## Performance budget (applies from Phase 31 onward)
