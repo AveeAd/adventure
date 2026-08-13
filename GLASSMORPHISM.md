@@ -4,7 +4,7 @@
 
 **Defers**: `apps/admin` — **explicitly out of scope for this whole doc**, by user decision. Admin keeps its current Ant Design `ConfigProvider` theming untouched; nothing here should be read as implying a follow-up admin phase. Also defers any manual light/dark toggle (CLAUDE.md's `prefers-color-scheme`-only decision stands) and any change to Leaflet/map *interaction* behavior — this is chrome and surface styling only.
 
-**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–35 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
+**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–36 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
 
 ---
 
@@ -157,6 +157,16 @@ Active-link styling (`PrimaryNavLink`) was **left as originally built** — a sm
 Verified in-browser (desktop, both scroll-top and scrolled states): two visually distinct rounded glass pills, left and right, both showing the mesh's blobs/topo-lines through their edges; scrolling confirms both stay correctly pinned via the shared `sticky top-0` shell. Mobile viewport rendering of the expanded menu panel was not separately verified this pass (the browser tool's window resize didn't change the captured viewport in this environment) — same class of gap flagged for other surfaces in Phases 30–33.
 
 Per a same-session follow-up, both pills' padding was bumped up a size (brand pill `px-4 py-2.5`→`px-6 py-3.5`, icon/text scaled up to match the original pre-floating header's sizing; nav pill `px-2 py-2`→`px-3 py-3`, link padding `px-3.5 py-1.5`→`px-4 py-2`; mobile toggle `p-3`→`p-4`) — a size-only change, re-verified in-browser.
+
+---
+
+## Phase 36 — Landing search bar (built)
+
+**Scope**: bring the landing-page hero's search input onto the shared glass token system — it already had an ad hoc translucent/blurred look (`bg-white/60 dark:bg-stone-900/50` + `backdrop-blur-md`) predating this round, but wasn't using `.glass-2` or `--glass-border` like every other surface from Phases 30–33.
+
+**Outcome**: `apps/public/src/routes/index.tsx`'s search `<input>` swapped its ad hoc `bg-white/60`/`dark:bg-stone-900/50` fill and `border-stone-300/70`/`dark:border-stone-600/70` border for `glass-2` and `border-[color:var(--glass-border)]`, matching the mid-elevation tier used by cards and map buttons elsewhere. Its own `shadow-sm`/`hover:shadow-md`/`focus:shadow-md` utilities were dropped rather than kept alongside — `.glass-2`'s plain-CSS `box-shadow` (highlight + ambient shadow) already wins the cascade over any Tailwind shadow utility per Phase 30's documented cascade-priority note, so they were dead weight, not a visible effect being removed. `backdrop-blur-md` and the focus ring/border-color states were left as they were.
+
+Verified in-browser in both light and dark mode: the input now shows the same green-tinted hairline border and soft ambient shadow as the rest of the site's glass surfaces, with the mesh blobs bleeding through underneath, and placeholder/icon legibility unchanged.
 
 ---
 

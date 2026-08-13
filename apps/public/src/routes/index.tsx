@@ -160,7 +160,7 @@ function DiscoverPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="w-full rounded-full border-2 border-stone-300/70 bg-white/60 py-4 pl-14 pr-16 text-base text-stone-900 shadow-sm backdrop-blur-md placeholder:text-stone-400 transition-shadow hover:shadow-md focus:border-primary-500 focus:shadow-md focus:outline-none focus:ring-4 focus:ring-primary-100 dark:border-stone-600/70 dark:bg-stone-900/50 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:ring-primary-900/50 sm:pr-40"
+              className="glass-2 w-full rounded-full border-2 border-[color:var(--glass-border)] py-4 pl-14 pr-16 text-base text-stone-900 backdrop-blur-md placeholder:text-stone-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-100 dark:text-stone-100 dark:placeholder:text-stone-500 dark:focus:ring-primary-900/50 sm:pr-40"
             />
             {(trails.length > 0 || spots.length > 0) && (
               <button
