@@ -1,9 +1,8 @@
-import { Link, createFileRoute } from '@tanstack/react-router';
-import { Plus, Search, Users } from 'lucide-react';
+import { createFileRoute } from '@tanstack/react-router';
+import { Search, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
-import { Button } from '../../components/Button';
 import { ClubCard, type ClubCardData } from '../../components/ClubCard';
 import { Container } from '../../components/Container';
 import { EmptyState } from '../../components/EmptyState';
@@ -59,14 +58,7 @@ function ClubsListPage() {
 
   return (
     <Container size="wide">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{t('listTitle')}</h1>
-        <Link to="/clubs/new">
-          <Button size="sm">
-            <Plus className="h-3.5 w-3.5" /> {t('startClub')}
-          </Button>
-        </Link>
-      </div>
+      <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{t('listTitle')}</h1>
       <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{t('subheading')}</p>
 
       <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
