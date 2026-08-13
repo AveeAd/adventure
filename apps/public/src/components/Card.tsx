@@ -1,11 +1,16 @@
 import type { ReactNode } from 'react';
 
-export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={`rounded-xl border border-stone-200 bg-white shadow-sm dark:border-stone-800 dark:bg-stone-900 ${className}`}
-    >
-      {children}
-    </div>
-  );
+export function Card({
+  children,
+  className = '',
+  glass = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  glass?: boolean;
+}) {
+  const surface = glass
+    ? 'glass-2 backdrop-blur-md border-[color:var(--glass-border)]'
+    : 'border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900';
+  return <div className={`rounded-xl border shadow-sm ${surface} ${className}`}>{children}</div>;
 }

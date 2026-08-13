@@ -84,7 +84,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/90 backdrop-blur dark:border-stone-800 dark:bg-stone-950/90">
+        <header className="glass-1 sticky top-0 z-10 border-b border-[color:var(--glass-border)] backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
             <Link to="/" className="flex items-center gap-2 text-primary-800 dark:text-primary-300">
               <Mountain className="h-6 w-6" strokeWidth={2.5} />
@@ -109,7 +109,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </div>
 
           {menuOpen && (
-            <div className="flex flex-col gap-4 border-t border-stone-200 px-4 py-4 sm:hidden dark:border-stone-800">
+            <div className="glass-1 flex flex-col gap-4 border-t border-[color:var(--glass-border)] px-4 py-4 backdrop-blur-md sm:hidden">
               <nav className="flex flex-col gap-4">
                 <PrimaryNavLink to="/" onClick={() => setMenuOpen(false)}>
                   {t('nav.discover')}
@@ -118,7 +118,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                   {t('nav.guides')}
                 </PrimaryNavLink>
               </nav>
-              <div className="border-t border-stone-200 pt-4 dark:border-stone-800">
+              <div className="border-t border-[color:var(--glass-border)] pt-4">
                 <AuthStatus stacked />
               </div>
             </div>
@@ -257,12 +257,12 @@ function AccountMenu({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border border-stone-200 bg-white py-1 shadow-lg dark:border-stone-700 dark:bg-stone-900">
+        <div className="glass-3 absolute right-0 z-20 mt-2 w-56 rounded-lg border border-[color:var(--glass-border)] py-1 backdrop-blur-lg">
           <Link
             to="/users/$id"
             params={{ id: user.userId }}
             onClick={() => setOpen(false)}
-            className="block truncate border-b border-stone-200 px-3 py-2 text-sm text-stone-500 hover:bg-stone-50 hover:text-primary-700 dark:border-stone-700 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-primary-400"
+            className="block truncate border-b border-[color:var(--glass-border)] px-3 py-2 text-sm text-stone-500 hover:bg-stone-50 hover:text-primary-700 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-primary-400"
           >
             {user.email}
           </Link>

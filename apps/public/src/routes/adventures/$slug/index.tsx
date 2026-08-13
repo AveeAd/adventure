@@ -208,7 +208,7 @@ function AdventurePageView() {
             <ul className="mt-3 flex flex-col gap-2">
               {tripReports.map((report) => (
                 <li key={report.id}>
-                  <Card className="flex items-center justify-between p-4">
+                  <Card glass className="flex items-center justify-between p-4">
                     <Link
                       to="/adventures/$slug/trips/$tripReportId"
                       params={{ slug, tripReportId: report.id }}
@@ -752,7 +752,7 @@ function TrailsAndSpotsSection({
           <ul className="mt-3 flex flex-col gap-2">
             {trails.map((trail) => (
               <li key={trail.id}>
-                <Card className="p-4">
+                <Card glass className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium text-stone-900 dark:text-stone-50">{trail.name ?? t('trailsAndSpots.trailFallback')}</div>
@@ -791,7 +791,7 @@ function TrailsAndSpotsSection({
             ))}
             {spots.map((spot) => (
               <li key={spot.id}>
-                <Card className="flex items-center justify-between p-4">
+                <Card glass className="flex items-center justify-between p-4">
                   <div>
                     <div className="font-medium text-stone-900 dark:text-stone-50">{spot.name}</div>
                     <div className="flex flex-wrap items-center gap-2">

@@ -292,7 +292,10 @@ function DiscoverPage() {
                         </div>
                       </div>
                     ) : (
-                      <Card className="flex flex-col gap-2 overflow-hidden p-4 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary-900/5">
+                      <Card
+                        glass
+                        className="flex flex-col gap-2 overflow-hidden p-4 transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-lg group-hover:shadow-primary-900/5"
+                      >
                         <div className="flex items-center gap-1.5 font-semibold text-stone-900 group-hover:text-primary-700 dark:text-stone-50 dark:group-hover:text-primary-400">
                           <MountainSnow className="h-4 w-4 shrink-0 text-primary-500 dark:text-primary-300" />
                           {page.title}
@@ -344,7 +347,7 @@ function SearchResults({ query, results, searching }: { query: string; results: 
       {results.map((result) => (
         <li key={result.id}>
           <Link to="/adventures/$slug" params={{ slug: result.slug }}>
-            <Card className="p-4 transition-shadow hover:shadow-md">
+            <Card glass className="p-4 transition-shadow hover:shadow-md">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="font-semibold text-stone-900 dark:text-stone-50">{result.title}</h2>
                 <StatusBadge status={result.verificationStatus} />

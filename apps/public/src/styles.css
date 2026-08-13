@@ -56,6 +56,82 @@
   }
 }
 
+/*
+ * Glassmorphism tokens (GLASSMORPHISM.md Phase 30) - apps/public only.
+ * Three elevation tiers, tinted from the existing pine/terracotta palette
+ * rather than neutral gray, so brand color reads through the blur.
+ * Blur radius itself reuses Tailwind's built-in backdrop-blur-{sm,md,lg}
+ * utilities directly on elements - no separate blur token needed.
+ */
+:root {
+  --glass-bg-1: rgba(255, 255, 255, 0.55);
+  --glass-bg-2: rgba(255, 255, 255, 0.65);
+  --glass-bg-3: rgba(255, 255, 255, 0.8);
+  --glass-fallback-bg-1: rgba(255, 255, 255, 0.92);
+  --glass-fallback-bg-2: rgba(255, 255, 255, 0.95);
+  --glass-fallback-bg-3: rgba(255, 255, 255, 0.98);
+  --glass-border: rgba(35, 79, 59, 0.14);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8px 32px rgba(28, 63, 48, 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-bg-1: rgba(28, 25, 23, 0.5);
+    --glass-bg-2: rgba(28, 25, 23, 0.62);
+    --glass-bg-3: rgba(28, 25, 23, 0.76);
+    --glass-fallback-bg-1: rgba(28, 25, 23, 0.94);
+    --glass-fallback-bg-2: rgba(28, 25, 23, 0.96);
+    --glass-fallback-bg-3: rgba(28, 25, 23, 0.98);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.glass-1,
+.glass-2,
+.glass-3 {
+  box-shadow: var(--glass-highlight), var(--glass-shadow);
+}
+
+.glass-1 {
+  background: var(--glass-bg-1);
+}
+.glass-2 {
+  background: var(--glass-bg-2);
+}
+.glass-3 {
+  background: var(--glass-bg-3);
+}
+
+/* No backdrop-filter support: fall back to a near-solid surface instead of
+   a translucent panel with nothing to blur behind it. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-1 {
+    background: var(--glass-fallback-bg-1);
+  }
+  .glass-2 {
+    background: var(--glass-fallback-bg-2);
+  }
+  .glass-3 {
+    background: var(--glass-fallback-bg-3);
+  }
+}
+
+/* Reduced-transparency / high-contrast preference: glass is a nice-to-have
+   tier, not the accessible baseline - drop translucency and blur entirely. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .glass-1,
+  .glass-2,
+  .glass-3 {
+    background: var(--glass-fallback-bg-3) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: var(--glass-shadow);
+  }
+}
+
 * {
   box-sizing: border-box;
 }
