@@ -170,7 +170,7 @@ function DiscoverPage() {
                 aria-label={showMap ? t('hideMap') : t('showMap')}
                 className={`absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1.5 rounded-full p-3 text-sm font-medium transition-all sm:px-4 sm:py-2.5 ${
                   showMap
-                    ? 'bg-transparent border-2 border-primary-400 text-primary-800 !shadow-[0_0_2px_rgba(92,154,118,0.9),0_0_6px_rgba(92,154,118,0.7),0_0_14px_rgba(92,154,118,0.5),0_0_26px_rgba(92,154,118,0.3)] backdrop-blur-lg dark:text-primary-200'
+                    ? 'bg-transparent border-[3px] border-primary-400 text-primary-800 backdrop-blur-lg dark:text-primary-200'
                     : 'text-stone-600 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800'
                 }`}
               >
