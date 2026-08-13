@@ -4,7 +4,7 @@
 
 **Defers**: `apps/admin` — **explicitly out of scope for this whole doc**, by user decision. Admin keeps its current Ant Design `ConfigProvider` theming untouched; nothing here should be read as implying a follow-up admin phase. Also defers any manual light/dark toggle (CLAUDE.md's `prefers-color-scheme`-only decision stands) and any change to Leaflet/map *interaction* behavior — this is chrome and surface styling only.
 
-**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–32 are **built**; Phases 33–34 remain **planned** — no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
+**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–33 are **built**; Phase 34 remains **planned** — no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
 
 ---
 
@@ -90,7 +90,7 @@ Verified via injected markup against the live dev server (`docker-compose`, port
 
 ---
 
-## Phase 33 — Map overlay panels
+## Phase 33 — Map overlay panels (built)
 
 **Scope**: apply glass to the floating panels that sit over the Leaflet map — search/filter panels, the elevation-profile panel, the Phase 29 map-hero sidebar's floating controls (not the sidebar's base panel itself, which is opaque content, but any floating control chrome on top of the map canvas).
 
@@ -105,6 +105,12 @@ Verified via injected markup against the live dev server (`docker-compose`, port
 **Explicitly deferred**: any change to what the panels do (draw mode, diff view on `GeodataDiffMap` per Phase 29's own deferral) — layout/surface styling only.
 
 **Open decisions before starting**: acceptable perf ceiling on lower-end devices — decide after Phase 31's card-sweep perf data gives a baseline, not upfront from guesswork.
+
+**Outcome**: an audit of every `MapContainer` call site in `apps/public` (`AdventureMap.tsx`, `DrawMap.tsx`, `GeodataDiffMap.tsx`) found exactly one component with floating chrome on top of the map canvas — `AdventureMap.tsx`'s `FullscreenToggle` and `LocateButton`, both `absolute`-positioned buttons in the top-right corner. There is no separate search/filter panel or elevation-profile panel floating over any map: the elevation profile (`ElevationProfile.tsx`) always renders inline in a `Card` below/beside the map, never as an overlay on the map canvas itself, so it was out of scope here by the phase's own "floating control chrome on top of the map canvas" definition rather than silently skipped. `DrawMap` (the point/line-drawing map used in trail/spot creation forms) and `GeodataDiffMap` (the revision diff view) have no floating controls at all, so neither needed a change.
+
+Both buttons swapped their solid `bg-white/90`/`dark:bg-stone-900/90` + `border-stone-200`/`dark:border-stone-700` for the mid-elevation `glass-2 backdrop-blur-md border-[color:var(--glass-border)]` treatment, reusing Phase 30's tokens and fallback paths as-is — no new CSS. The prior `hover:bg-white`/`dark:hover:bg-stone-900` hover states were dropped in favor of `hover:opacity-80`: the plain, unlayered `.glass-2` CSS rule sets `background` at a higher cascade priority than a Tailwind utility class (same reasoning Phase 30 documented for the header's border-side conflict), so a Tailwind `hover:bg-white` utility would never actually have painted over it — opacity is a property glass doesn't otherwise touch, so the hover state is genuinely visible instead of silently dead.
+
+Verified in-browser (dark mode, live dev server on port 3001) on both the discover-feed map (a `height={420}` `AdventureMap` reached via the "Search on map" toggle) and the Annapurna Base Camp adventure-detail page's `MapHeroLayout` split-pane view (Phase 29's heaviest existing rendering surface, per this phase's task 2) — the fullscreen and locate buttons both render a clearly legible translucent dark surface with a green-tinted hairline border directly over live map tiles, the worst-case "real moving content behind the blur" case this phase called out as the visual payoff. No stacked-blur jank observed (task 4's fallback trigger did not fire): the map-hero view's floating buttons don't render simultaneously with the glass nav bar's blur region on screen at any scroll position, so the 2-context perf budget isn't approached. Task 3 (`invalidateSize()`/resize behavior) needed no verification beyond code inspection — this phase touched only `className` strings on the two button components, no layout, sizing, or interaction logic in `AdventureMap.tsx`'s `InvalidateSizeOnChange`/`FitBounds` effects. Light mode and older-mobile-browser `@supports` fallback rendering were not separately screenshotted this pass, the same gap flagged in Phases 30–32 — low risk since the token values and fallback paths are shared and already exercised on other surfaces, but still unverified on this specific surface.
 
 ---
 
