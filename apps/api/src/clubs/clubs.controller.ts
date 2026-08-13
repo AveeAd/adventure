@@ -3,7 +3,7 @@ import { Role } from '@prisma/client';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { ClubsService } from './clubs.service';
+import { ClubSort, ClubsService } from './clubs.service';
 import { CreateClubDto } from './dto/create-club.dto';
 import { DecideClubJoinRequestDto } from './dto/decide-club-join-request.dto';
 import { UpdateClubDto } from './dto/update-club.dto';
@@ -22,8 +22,15 @@ export class ClubsController {
 
   @Public()
   @Get()
-  list(@CurrentUser() user: AuthenticatedUser | undefined, @Query('page') page?: string, @Query('pageSize') pageSize?: string) {
-    return this.clubsService.list(Number(page) || 1, Number(pageSize) || 20, user?.userId);
+  list(
+    @CurrentUser() user: AuthenticatedUser | undefined,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('sort') sort?: string,
+  ) {
+    const resolvedSort: ClubSort = sort === 'newest' || sort === 'active' ? sort : 'members';
+    return this.clubsService.list(Number(page) || 1, Number(pageSize) || 20, user?.userId, search, resolvedSort);
   }
 
   // Static route, registered before ":id" for the same reason as "admin/all".

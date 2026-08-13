@@ -9,6 +9,22 @@ import { UpdateClubDto } from './dto/update-club.dto';
 
 type ViewerContext = { userId: string; role?: Role };
 
+export type ClubSort = 'members' | 'newest' | 'active';
+
+function resolveClubOrderBy(sort: ClubSort) {
+  switch (sort) {
+    case 'newest':
+      return { createdAt: 'desc' as const };
+    // "Active" reads as "recently active", not "not deactivated" - isActive
+    // is already unconditionally filtered, so it can't double as a sort.
+    case 'active':
+      return { updatedAt: 'desc' as const };
+    case 'members':
+    default:
+      return { members: { _count: 'desc' as const } };
+  }
+}
+
 const APPROVED_MEMBER_INCLUDE = {
   members: {
     where: { status: ClubMembershipStatus.APPROVED },
@@ -24,13 +40,28 @@ export class ClubsService {
   ) {}
 
   // Public clubs, plus (for a signed-in caller) private clubs they belong to.
-  async list(page = 1, pageSize = 20, currentUserId?: string) {
+  // Defaults to sorting by member count (most popular first).
+  async list(page = 1, pageSize = 20, currentUserId?: string, search?: string, sort: ClubSort = 'members') {
     const where = {
       isActive: true,
-      OR: [
-        { visibility: ClubVisibility.PUBLIC },
-        ...(currentUserId
-          ? [{ members: { some: { userId: currentUserId, status: ClubMembershipStatus.APPROVED } } }]
+      AND: [
+        {
+          OR: [
+            { visibility: ClubVisibility.PUBLIC },
+            ...(currentUserId
+              ? [{ members: { some: { userId: currentUserId, status: ClubMembershipStatus.APPROVED } } }]
+              : []),
+          ],
+        },
+        ...(search?.trim()
+          ? [
+              {
+                OR: [
+                  { name: { contains: search.trim(), mode: 'insensitive' as const } },
+                  { description: { contains: search.trim(), mode: 'insensitive' as const } },
+                ],
+              },
+            ]
           : []),
       ],
     };
@@ -39,7 +70,7 @@ export class ClubsService {
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        orderBy: { createdAt: 'desc' },
+        orderBy: resolveClubOrderBy(sort),
         include: { _count: { select: { members: true } } },
       }),
       this.prisma.club.count({ where }),
