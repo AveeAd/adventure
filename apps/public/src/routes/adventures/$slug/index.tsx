@@ -231,6 +231,66 @@ function AdventurePageView() {
           page={page}
         />
 
+        <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-6 dark:border-stone-800">
+          <div className="flex flex-wrap items-center gap-2">
+            <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
+            <VisitButton pageId={page.id} initialVisitCount={page.visitCount} initialVisited={page.visitedByMe} />
+            {signedIn && !storyFormOpen && !storyShared && (
+              <Button variant="secondary" size="sm" onClick={() => setStoryFormOpen(true)}>
+                {t('stories.tellYourStory')}
+              </Button>
+            )}
+            {storyShared && (
+              <p className="text-sm text-primary-700 dark:text-primary-400">{t('stories.shared')}</p>
+            )}
+            <Link to="/adventures/$slug/groups" params={{ slug }}>
+              <Button variant="secondary" size="sm">
+                <Users className="h-3.5 w-3.5" /> {t('stories.findTripGroup')}
+              </Button>
+            </Link>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {signedIn && (
+              <Button
+                variant={contributeMode ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setContributeMode((v) => !v)}
+              >
+                {contributeMode ? <X className="h-3.5 w-3.5" /> : <Hammer className="h-3.5 w-3.5" />}
+                {contributeMode ? t('contribute.done') : t('contribute.contribute')}
+              </Button>
+            )}
+            {contributeMode && (
+              <Link to="/adventures/$slug/edit" params={{ slug }}>
+                <Button variant="secondary" size="sm">
+                  <Pencil className="h-3.5 w-3.5" /> {t('contribute.edit')}
+                </Button>
+              </Link>
+            )}
+            <Link
+              to="/adventures/$slug/history"
+              params={{ slug }}
+              aria-label={t('common:actions.history')}
+              title={t('common:actions.history')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-200"
+            >
+              <History className="h-4 w-4" />
+            </Link>
+            <ReportButton targetType="ADVENTURE_PAGE" targetId={page.id} />
+          </div>
+        </div>
+
+        {storyFormOpen && (
+          <StoryForm
+            pageId={page.id}
+            onDone={() => {
+              setStoryFormOpen(false);
+              setStoryShared(true);
+            }}
+            onCancel={() => setStoryFormOpen(false)}
+          />
+        )}
+
         <section className="mt-10">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('stories.heading')}</h2>
@@ -320,66 +380,6 @@ function AdventurePageView() {
         </section>
 
         <SeeAlsoSection pageId={page.id} relatedPages={page.relatedPages} contributeMode={contributeMode} />
-
-        <div className="mt-10 flex flex-wrap items-center justify-between gap-2 border-t border-stone-200 pt-6 dark:border-stone-800">
-          <div className="flex flex-wrap items-center gap-2">
-            <LikeButton pageId={page.id} initialLikeCount={page.likeCount} initialLiked={page.likedByMe} />
-            <VisitButton pageId={page.id} initialVisitCount={page.visitCount} initialVisited={page.visitedByMe} />
-            {signedIn && !storyFormOpen && !storyShared && (
-              <Button variant="secondary" size="sm" onClick={() => setStoryFormOpen(true)}>
-                {t('stories.tellYourStory')}
-              </Button>
-            )}
-            {storyShared && (
-              <p className="text-sm text-primary-700 dark:text-primary-400">{t('stories.shared')}</p>
-            )}
-            <Link to="/adventures/$slug/groups" params={{ slug }}>
-              <Button variant="secondary" size="sm">
-                <Users className="h-3.5 w-3.5" /> {t('stories.findTripGroup')}
-              </Button>
-            </Link>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {signedIn && (
-              <Button
-                variant={contributeMode ? 'primary' : 'secondary'}
-                size="sm"
-                onClick={() => setContributeMode((v) => !v)}
-              >
-                {contributeMode ? <X className="h-3.5 w-3.5" /> : <Hammer className="h-3.5 w-3.5" />}
-                {contributeMode ? t('contribute.done') : t('contribute.contribute')}
-              </Button>
-            )}
-            {contributeMode && (
-              <Link to="/adventures/$slug/edit" params={{ slug }}>
-                <Button variant="secondary" size="sm">
-                  <Pencil className="h-3.5 w-3.5" /> {t('contribute.edit')}
-                </Button>
-              </Link>
-            )}
-            <Link
-              to="/adventures/$slug/history"
-              params={{ slug }}
-              aria-label={t('common:actions.history')}
-              title={t('common:actions.history')}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-stone-300 text-stone-500 hover:border-stone-400 hover:text-stone-700 dark:border-stone-700 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-200"
-            >
-              <History className="h-4 w-4" />
-            </Link>
-            <ReportButton targetType="ADVENTURE_PAGE" targetId={page.id} />
-          </div>
-        </div>
-
-        {storyFormOpen && (
-          <StoryForm
-            pageId={page.id}
-            onDone={() => {
-              setStoryFormOpen(false);
-              setStoryShared(true);
-            }}
-            onCancel={() => setStoryFormOpen(false)}
-          />
-        )}
       </Container>
     </>
   );
