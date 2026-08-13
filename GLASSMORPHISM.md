@@ -238,6 +238,8 @@ Verified in-browser in both light and dark mode: every button variant is a round
 
 **Card surfaces brought onto the same tier as the header**: per feedback that the header's glass (Phase 30's `glass-1`) was "perfect," `Card.tsx`'s `glass` prop moved from `glass-2` down to `glass-1` — its blur was already `backdrop-blur-lg`, matching the header, so opacity was the only mismatch. This affects every `Card glass` call site from Phase 31 (discover-feed/search-result cards, trip-report and trail/spot cards, guide-directory cards) in one place, not per-site-edit. Verified in-browser on the guide directory in both light and dark mode: cards now show the same lighter, more transparent frosted look as the header pills.
 
+**Button fill dropped to fully transparent**: a final follow-up asked for the button background itself to be transparent, not just more translucent — `Button.tsx`'s `primary`/`accent`/`secondary`/`danger` variants swapped their `glass-1` fill for `bg-transparent`, keeping the colored border, layered glow, and `backdrop-blur-lg` (blur still distorts what's behind the button even with no tint of its own). The map-toggle button's active state got the same change by hand. Verified in-browser in both light and dark mode: buttons now read as a pure glowing outline + text over whatever sits behind them (the header pill's own glass, in the "Sign in" case), with no fill of their own.
+
 ---
 
 ## Performance budget (applies from Phase 31 onward)
