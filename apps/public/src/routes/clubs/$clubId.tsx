@@ -74,6 +74,7 @@ function ClubDetailPage() {
   const [pendingRequests, setPendingRequests] = useState<ClubMember[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<'feed' | 'members'>('feed');
 
   async function refresh() {
     const res = await authFetch(`/clubs/${club.id}`);
@@ -182,9 +183,17 @@ function ClubDetailPage() {
             <Badge tone={club.visibility === 'PUBLIC' ? 'success' : 'neutral'} glass>
               {club.visibility === 'PUBLIC' ? t('visibilityPublicShort') : t('visibilityPrivateShort')}
             </Badge>
-            <Badge tone="neutral" glass>
-              <Users className="mr-1 h-3 w-3" /> {t('membersCount', { count: club._count.members })}
-            </Badge>
+            {club.members ? (
+              <button type="button" onClick={() => setView('members')} className="cursor-pointer">
+                <Badge tone="neutral" glass>
+                  <Users className="mr-1 h-3 w-3" /> {t('membersCount', { count: club._count.members })}
+                </Badge>
+              </button>
+            ) : (
+              <Badge tone="neutral" glass>
+                <Users className="mr-1 h-3 w-3" /> {t('membersCount', { count: club._count.members })}
+              </Badge>
+            )}
           </div>
         </div>
       </div>
@@ -255,26 +264,35 @@ function ClubDetailPage() {
           </Card>
         )}
 
-        {club.members && (
-          <Card className="mt-6 p-5">
-            <h2 className="flex items-center gap-2 font-semibold text-stone-900 dark:text-stone-50">
-              <Users className="h-4 w-4" /> {t('members', { count: club.members.length })}
-            </h2>
-            <ul className="mt-3 flex flex-col gap-2">
-              {club.members.map((member) => (
-                <li key={member.id} className="flex items-center gap-2">
-                  <Avatar label={member.user.email} size="sm" />
-                  <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.email}</span>
-                  {member.role === 'OWNER' && <span className="text-xs text-stone-500 dark:text-stone-400">{t('owner')}</span>}
-                </li>
-              ))}
-            </ul>
-          </Card>
-        )}
-
         <section className="mt-8 mb-10">
-          <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">{t('feedHeading')}</h2>
-          {tripReports.length === 0 ? (
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">
+              {view === 'members' ? t('members', { count: club.members?.length ?? 0 }) : t('feedHeading')}
+            </h2>
+            {view === 'members' && (
+              <button
+                type="button"
+                onClick={() => setView('feed')}
+                className="text-sm text-primary-700 hover:underline dark:text-primary-400"
+              >
+                {t('feedHeading')}
+              </button>
+            )}
+          </div>
+
+          {view === 'members' ? (
+            <Card className="mt-3 p-5">
+              <ul className="flex flex-col gap-2">
+                {club.members?.map((member) => (
+                  <li key={member.id} className="flex items-center gap-2">
+                    <Avatar label={member.user.email} size="sm" />
+                    <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.email}</span>
+                    {member.role === 'OWNER' && <span className="text-xs text-stone-500 dark:text-stone-400">{t('owner')}</span>}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : tripReports.length === 0 ? (
             <div className="mt-3">
               <EmptyState>{t('noTripReportsYet')}</EmptyState>
             </div>
