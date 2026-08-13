@@ -4,7 +4,7 @@
 
 **Defers**: `apps/admin` — **explicitly out of scope for this whole doc**, by user decision. Admin keeps its current Ant Design `ConfigProvider` theming untouched; nothing here should be read as implying a follow-up admin phase. Also defers any manual light/dark toggle (CLAUDE.md's `prefers-color-scheme`-only decision stands) and any change to Leaflet/map *interaction* behavior — this is chrome and surface styling only.
 
-**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–33 are **built**; Phase 34 remains **planned** — no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
+**Numbering note**: continues the phase sequence from CLAUDE.md/SUMMARY.md/UI_DESIGN_REFRESH_PLAN.md (through Phase 29, built). Phases 30–34 are **built** — this closes out the glassmorphism round; no phase is marked done until its own commit lands and this doc is updated to say so, per the repo's existing convention.
 
 ---
 
@@ -114,7 +114,7 @@ Verified in-browser (dark mode, live dev server on port 3001) on both the discov
 
 ---
 
-## Phase 34 — Background texture pass
+## Phase 34 — Background texture pass (built)
 
 **Scope**: add a subtle gradient-mesh / blurred brand-color background treatment to key high-traffic pages (discover/landing, adventure-detail) so the blur from Phases 30–33 has real texture to refract instead of sitting over a flat stone-neutral fill.
 
@@ -129,6 +129,12 @@ Verified in-browser (dark mode, live dev server on port 3001) on both the discov
 **Explicitly deferred**: extending the background treatment beyond discover/landing + adventure-detail — other routes stay on the flat stone-neutral background unless a future phase picks them up.
 
 **Open decisions before starting**: which pages beyond the two named above get the treatment — decide after the landing-page prototype is reviewed, same "prototype first, don't pre-commit to full rollout" pattern as Phase 29's map-hero work.
+
+**Outcome**: new `GradientMesh` component (`apps/public/src/components/GradientMesh.tsx`, aria-hidden decorative layer alongside the existing `TopoLines`) renders three absolutely-positioned, heavily-blurred (`blur-3xl`) circles tinted from the existing palette — two `primary` (pine-green) at differing opacity/size, one `accent` (terracotta) — with separate light/dark alpha values on each (e.g. `bg-primary-400/35 dark:bg-primary-500/20`) rather than a new token set: three fixed-position blobs don't need the indirection a reusable token would justify, matching Phase 30's "reuse Tailwind utilities directly" precedent for anything that isn't reused across many call sites.
+
+Landing page (`apps/public/src/routes/index.tsx`): `GradientMesh` added inside the existing hero `<div>`, behind `TopoLines`, so the topo-line texture and the color blobs layer together under the glass search bar and (on scroll) the glass nav. User-reviewed in-browser (dark mode) and approved as-is before extending further, per this phase's task 2 checkpoint.
+
+Adventure-detail page (`apps/public/src/routes/adventures/$slug/index.tsx`): rather than the photo/gradient header band (which already carries a photo or the mountain-icon placeholder and shouldn't compete with a second background), the mesh was placed behind the title/badges/pending-banner block through the Phase 29 map-hero section — the actual "hero" content per that phase's own positioning decision, and the segment containing the `glass` trail/spot `Card`s (`TrailsAndSpotsSection`) that benefit most from real color behind them. It stops before the gallery and revision-prose content below, consistent with the design language's exclusion of long-form reading surfaces from glass treatment generally. Verified in-browser (dark mode) on `annapurna-base-camp`: the blobs render behind the glass trail/spot cards in the map-hero sidebar with the green tint clearly bleeding through, text fully legible (task 4's contrast re-check) — no adjustment needed since the glass cards' own background alpha already provides sufficient contrast over the low-opacity blobs, the same headroom validated on the landing page. Light mode was not separately screenshotted this pass, the same gap flagged in Phases 30–33 — low risk since the blob opacity values were authored as an explicit light/dark pair, not derived, but unverified on both pages.
 
 ---
 
