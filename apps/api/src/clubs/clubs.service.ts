@@ -296,11 +296,21 @@ export class ClubsService {
 
   async listTripReports(id: string) {
     await this.ensureExists(id);
-    return this.prisma.tripReport.findMany({
+    const reports = await this.prisma.tripReport.findMany({
       where: { clubId: id, isActive: true },
       orderBy: { dateCompleted: 'desc' },
-      include: { author: { select: { id: true, email: true } } },
+      include: {
+        author: { select: { id: true, email: true, profile: { select: { name: true } } } },
+        adventurePage: { select: { title: true, slug: true } },
+        _count: { select: { kudos: true } },
+      },
     });
+    return reports.map(({ _count, author, ...rest }) => ({
+      ...rest,
+      kudosCount: _count.kudos,
+      authorName: author.profile?.name ?? author.email,
+      authorId: author.id,
+    }));
   }
 
   async isMember(clubId: string, userId: string): Promise<boolean> {

@@ -18,8 +18,11 @@
   "pendingRequestsHeading": "Pending requests ({{count}})",
   "approve": "Approve",
   "decline": "Decline",
-  "tripReportsHeading": "Trip reports from this club",
+  "feedHeading": "Club feed",
   "noTripReportsYet": "No trip reports tagged with this club yet.",
+  "membersCount": "{{count}} members",
+  "visibilityPublicShort": "Public",
+  "visibilityPrivateShort": "Private",
   "newTitle": "Start a club",
   "newSubheading": "You'll be the owner. Choose whether anyone can join instantly or must request to join.",
   "fields": {
