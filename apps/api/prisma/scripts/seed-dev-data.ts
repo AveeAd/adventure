@@ -307,7 +307,7 @@ async function main() {
     });
   }
 
-  // --- Club, with threads and replies (see THREAD_PLAN.md) ---
+  // --- Club, with threads and replies ---
   // No natural unique key on Club (name isn't unique), so re-runs guard on
   // name, same pattern as the trip-group block above.
   async function getOrCreateClub(data: Parameters<typeof prisma.club.create>[0]['data'] & { name: string }) {

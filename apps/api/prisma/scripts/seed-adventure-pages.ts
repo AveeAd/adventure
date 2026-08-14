@@ -1,6 +1,5 @@
 // Bulk-imports adventure pages from a spreadsheet export
-// (prisma/seed-data/adventure-pages.csv - see UI_DESIGN_REFRESH_PLAN.md-era
-// chat for the column format). Each row becomes an AdventurePage + its v1
+// (prisma/seed-data/adventure-pages.csv). Each row becomes an AdventurePage + its v1
 // PageRevision, matching seed-dev-data.ts's "page and first revision in one
 // transaction" convention. Requires seed-master-data.ts, import-locations.ts,
 // and seed-dev-data.ts (for the demo users/GuideProfiles used as editors) to

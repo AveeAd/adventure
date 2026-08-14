@@ -24,7 +24,7 @@ interface Option {
 
 // adventure-pages/search is the pre-existing paginated {data:[...]} search
 // endpoint; the other three are minimal id+title/name arrays added for this
-// picker (no general search service exists in this repo - see THREAD_PLAN.md).
+// picker (no general search service exists in this repo).
 async function search(type: AttachmentType, q: string): Promise<Option[]> {
   const res = await fetch(apiUrl(`${SEARCH_PATH[type]}?q=${encodeURIComponent(q)}`));
   if (!res.ok) return [];
@@ -36,7 +36,7 @@ async function search(type: AttachmentType, q: string): Promise<Option[]> {
 
 // Search-as-you-type combobox for the club-thread composer's four optional
 // attachments (TripReport/Trail/Spot/AdventurePage) - no existing picker
-// pattern to reuse in this app, built from scratch per THREAD_PLAN.md.
+// pattern to reuse in this app, built from scratch for club threads.
 export function AttachmentPicker({
   type,
   label,
