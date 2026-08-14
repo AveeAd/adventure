@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
 import { authPost } from '../../../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../../../lib/auth/require-auth';
+import i18n from '../../../../lib/i18n';
+import { buildMeta } from '../../../../lib/seo';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
@@ -22,9 +24,13 @@ export const Route = createFileRoute('/adventures/$slug/groups/new')({
     return { page };
   },
   component: NewTripGroupPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: `Start a trip group for ${loaderData.page.title}` }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData ? i18n.t('groups:newTitle', { title: loaderData.page.title }) : i18n.t('common:appName'),
+      description: i18n.t('groups:newSubheading'),
+      path: `/adventures/${params.slug}/groups/new`,
+      noindex: true,
+    }),
 });
 
 function NewTripGroupPage() {

@@ -5,6 +5,7 @@ import i18n from '../../lib/i18n';
 import { authFetch, authPatch } from '../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../lib/auth/require-auth';
 import { formatDateTime } from '../../lib/format';
+import { buildMeta } from '../../lib/seo';
 import { Badge } from '../../components/Badge';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
@@ -30,7 +31,15 @@ interface ContentReportRow {
 // "what/why/who", not "jump straight to the diff".
 export const Route = createFileRoute('/reports/')({
   component: ReportsQueuePage,
-  head: () => ({ meta: [{ title: i18n.t('report.queueTitle') }] }),
+  // Auth-gated moderation queue, not a public "trip reports" listing despite
+  // the route name - noindex like review-queue, not indexable.
+  head: () =>
+    buildMeta({
+      title: i18n.t('report.queueTitle'),
+      description: i18n.t('report.queueDescription'),
+      path: '/reports',
+      noindex: true,
+    }),
 });
 
 function ReportsQueuePage() {

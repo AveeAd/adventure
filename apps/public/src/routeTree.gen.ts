@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
 import { Route as AccountGuideProfileRouteImport } from './routes/account/guide-profile'
 import { Route as AdventuresNewRouteImport } from './routes/adventures/new'
@@ -53,6 +54,11 @@ const IndexRoute = IndexRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountIndexRoute = AccountIndexRouteImport.update({
@@ -234,6 +240,7 @@ const AdventuresSlugTrailsTrailIdHistoryVersionRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -271,6 +278,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/sitemap.xml'
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
@@ -385,6 +395,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/sitemap.xml'
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/sitemap.xml'
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
@@ -460,6 +472,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AccountGuideProfileRoute: typeof AccountGuideProfileRoute
   AdventuresNewRoute: typeof AdventuresNewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -509,6 +522,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/': {
@@ -748,6 +768,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   AccountGuideProfileRoute: AccountGuideProfileRoute,
   AdventuresNewRoute: AdventuresNewRoute,
   AuthCallbackRoute: AuthCallbackRoute,

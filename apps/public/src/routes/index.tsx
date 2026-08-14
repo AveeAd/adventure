@@ -3,6 +3,8 @@ import { ChevronDown, Compass, Map as MapIcon, MapPin, MountainSnow, Route as Ro
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../lib/auth/api';
+import i18n from '../lib/i18n';
+import { buildMeta } from '../lib/seo';
 import { useInView } from '../lib/useInView';
 import { Badge, StatusBadge } from '../components/Badge';
 import { Card } from '../components/Card';
@@ -60,6 +62,12 @@ export const Route = createFileRoute('/')({
     const spots: MapSpot[] = spotsRes.ok ? await spotsRes.json() : [];
     return { pages: body.data, trails, spots };
   },
+  head: () =>
+    buildMeta({
+      title: i18n.t('common:appName'),
+      description: i18n.t('discover:subheading'),
+      path: '/',
+    }),
   component: DiscoverPage,
 });
 

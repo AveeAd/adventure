@@ -6,35 +6,65 @@ import { useTranslation } from 'react-i18next'
 import appCss from '../styles.css?url'
 import { Button } from '../components/Button'
 import { GradientMesh } from '../components/GradientMesh'
+import { NotFound } from '../components/NotFound'
 import { NotificationBell } from '../components/NotificationBell'
 import { fetchCurrentUser, logout, type CurrentUser } from '../lib/auth/session'
 import { useApprovalEligibility } from '../lib/auth/eligibility'
 import { fetchAppConfig } from '../lib/app-config'
 import '../lib/i18n' // side-effect: initializes the shared i18next instance
 import { resolveLocale } from '../lib/i18n/locale'
+import { buildMeta, SITE_URL } from '../lib/seo'
 
 export const Route = createRootRoute({
   loader: async () => ({ locale: await resolveLocale(), appConfig: await fetchAppConfig() }),
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        charSet: 'utf-8',
-      },
-      {
-        name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
-      },
-      {
-        title: loaderData?.appConfig.name ?? 'Adventure Nepal',
-      },
-    ],
-    links: [
-      {
-        rel: 'stylesheet',
-        href: appCss,
-      },
-    ],
-  }),
+  head: ({ loaderData }) => {
+    const appConfig = loaderData?.appConfig
+    const name = appConfig?.name ?? 'Adventure Nepal'
+    const description =
+      appConfig?.tagline ?? 'Adventure Nepal — a non-commercial map, wiki, and activity log for Nepal, built by contributors.'
+    // Root's own canonical link is intentionally dropped below - TanStack
+    // Router doesn't dedupe `link` tags by `rel` the way it dedupes `meta`
+    // tags by name/property (confirmed by reading headContentUtils.js), so
+    // keeping it here would render two <link rel="canonical"> tags
+    // alongside every route's own (they all define one - see Phase 3),
+    // which Lighthouse's SEO audit flags as an invalid canonical.
+    const { meta, links } = buildMeta({
+      title: name,
+      description,
+      path: '/',
+      siteName: name,
+      // Sitewide, rendered once per page (every route matches root) -
+      // page-specific JSON-LD (TouristAttraction, Person, ...) coexists
+      // alongside this rather than replacing it.
+      jsonLd: [
+        { '@context': 'https://schema.org', '@type': 'WebSite', name, description, url: SITE_URL },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name,
+          description,
+          url: SITE_URL,
+          logo: `${SITE_URL}/og-default.png`,
+        },
+      ],
+    })
+    return {
+      meta: [
+        { charSet: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'theme-color', content: '#234f3b' },
+        ...meta,
+      ],
+      links: [
+        { rel: 'stylesheet', href: appCss },
+        { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+        { rel: 'icon', href: '/favicon.ico', sizes: 'any' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+        ...links.filter((link) => link.rel !== 'canonical'),
+      ],
+    }
+  },
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
 })
 
@@ -202,7 +232,7 @@ function AccountMenu({
 }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const initial = user.email[0]?.toUpperCase() ?? '?'
+  const initial = user.username[0]?.toUpperCase() ?? '?'
   const { t } = useTranslation()
   const { canVote } = useApprovalEligibility()
 
@@ -230,7 +260,7 @@ function AccountMenu({
     return (
       <div className="flex flex-col gap-3">
         <Link to="/users/$id" params={{ id: user.userId }} className="truncate text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400">
-          {user.email}
+          {user.username}
         </Link>
         <Link to="/adventures/new" className={navLinkClass}>
           <FilePlus className="h-4 w-4" /> {t('nav.contribute')}
@@ -280,7 +310,7 @@ function AccountMenu({
             onClick={() => setOpen(false)}
             className="block truncate border-b border-[color:var(--glass-border)] px-3 py-2 text-sm text-stone-500 hover:bg-stone-50 hover:text-primary-700 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-primary-400"
           >
-            {user.email}
+            {user.username}
           </Link>
           <Link
             to="/adventures/new"

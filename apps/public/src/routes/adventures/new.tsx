@@ -5,6 +5,7 @@ import { apiUrl } from '../../lib/auth/api';
 import i18n from '../../lib/i18n';
 import { authPost, authUpload } from '../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../lib/auth/require-auth';
+import { buildMeta } from '../../lib/seo';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
@@ -57,7 +58,13 @@ export const Route = createFileRoute('/adventures/new')({
     return { activityTypes, difficultyLevels, seasons, districts, tags, spotTypes };
   },
   component: NewAdventurePage,
-  head: () => ({ meta: [{ title: i18n.t('adventurePage:createTitle') }] }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('adventurePage:createTitle'),
+      description: i18n.t('adventurePage:createSubheading'),
+      path: '/adventures/new',
+      noindex: true,
+    }),
 });
 
 function NewAdventurePage() {

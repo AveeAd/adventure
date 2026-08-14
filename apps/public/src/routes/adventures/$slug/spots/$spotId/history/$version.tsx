@@ -13,6 +13,7 @@ import { LazyGeodataDiffMap } from '../../../../../../components/LazyGeodataDiff
 import { UserRef } from '../../../../../../components/UserRef';
 import { VoteControls } from '../../../../../../components/VoteControls';
 import { formatDateTime } from '../../../../../../lib/format';
+import { buildMeta } from '../../../../../../lib/seo';
 
 interface RevisionDetail {
   id: string;
@@ -67,11 +68,15 @@ export const Route = createFileRoute('/adventures/$slug/spots/$spotId/history/$v
     return { slug: params.slug, spot, version, revision, diff };
   },
   component: SpotRevisionPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [{ title: i18n.t('adventurePage:history.diffTitle', { name: loaderData.spot.name, version: loaderData.version }) }]
-      : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData
+        ? i18n.t('adventurePage:history.diffTitle', { name: loaderData.spot.name, version: loaderData.version })
+        : i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}/spots/${params.spotId}/history/${params.version}`,
+      noindex: true,
+    }),
 });
 
 function SpotRevisionPage() {

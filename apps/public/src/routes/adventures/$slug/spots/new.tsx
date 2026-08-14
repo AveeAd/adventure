@@ -5,6 +5,7 @@ import { apiUrl } from '../../../../lib/auth/api';
 import i18n from '../../../../lib/i18n';
 import { authPost } from '../../../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../../../lib/auth/require-auth';
+import { buildMeta } from '../../../../lib/seo';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
@@ -34,9 +35,13 @@ export const Route = createFileRoute('/adventures/$slug/spots/new')({
     return { page, spotTypes: spotTypesBody.data };
   },
   component: NewSpotPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: i18n.t('adventurePage:addSpotTitle', { title: loaderData.page.title }) }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData ? i18n.t('adventurePage:addSpotTitle', { title: loaderData.page.title }) : i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}/spots/new`,
+      noindex: true,
+    }),
 });
 
 function NewSpotPage() {

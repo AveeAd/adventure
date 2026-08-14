@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
 import i18n from '../../lib/i18n';
 import { formatNumber, formatRateUnit } from '../../lib/format';
+import { buildMeta } from '../../lib/seo';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
@@ -18,6 +19,7 @@ interface GuideProfileDetail {
   rateUnit: string | null;
   currency: string;
   verificationStatus: string;
+  isListed: boolean;
   specialties: { activityType: { name: string } }[];
   regions: { district: { name: string } }[];
   languages: { language: { name: string } }[];
@@ -36,7 +38,25 @@ export const Route = createFileRoute('/guides/$id')({
     return { guide };
   },
   component: GuideProfilePage,
-  head: () => ({ meta: [{ title: i18n.t('guides:pageTitle') }] }),
+  head: ({ loaderData, params }) => {
+    if (!loaderData) {
+      return buildMeta({ title: i18n.t('guides:pageTitle'), description: i18n.t('common:tagline'), path: `/guides/${params.id}` });
+    }
+    const { guide } = loaderData;
+    const name = guide.specialties.map((s) => s.activityType.name).join(', ') || i18n.t('guides:guideFallbackName');
+    const description = guide.bio ?? i18n.t('guides:directorySubheading');
+    return buildMeta({
+      title: name,
+      description,
+      path: `/guides/${params.id}`,
+      noindex: !guide.isListed,
+      // Person schema for listed guides only - credential trust, not
+      // content trust (see CLAUDE.md's guide-verification note).
+      jsonLd: guide.isListed
+        ? { '@context': 'https://schema.org', '@type': 'Person', name, description, jobTitle: i18n.t('guides:guideFallbackName') }
+        : undefined,
+    });
+  },
 });
 
 function GuideProfilePage() {

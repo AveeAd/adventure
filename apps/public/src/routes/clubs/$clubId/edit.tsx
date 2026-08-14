@@ -5,6 +5,8 @@ import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authFetch, authPatch } from '../../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../../lib/auth/session';
 import { useRequireAuth } from '../../../lib/auth/require-auth';
+import i18n from '../../../lib/i18n';
+import { buildMeta } from '../../../lib/seo';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Container } from '../../../components/Container';
@@ -39,9 +41,13 @@ export const Route = createFileRoute('/clubs/$clubId/edit')({
     return { club };
   },
   component: EditClubPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: loaderData.club.name }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData?.club.name ?? i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/clubs/${params.clubId}/edit`,
+      noindex: true,
+    }),
 });
 
 function EditClubPage() {

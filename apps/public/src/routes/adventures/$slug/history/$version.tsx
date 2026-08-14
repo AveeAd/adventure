@@ -12,6 +12,7 @@ import { Container } from '../../../../components/Container';
 import { UserRef } from '../../../../components/UserRef';
 import { VoteControls } from '../../../../components/VoteControls';
 import { formatDateTime } from '../../../../lib/format';
+import { buildMeta } from '../../../../lib/seo';
 
 interface DiffChange {
   value: string;
@@ -62,11 +63,15 @@ export const Route = createFileRoute('/adventures/$slug/history/$version')({
     return { slug: params.slug, page, version, revision, changes };
   },
   component: RevisionDiffPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [{ title: i18n.t('adventurePage:history.diffTitle', { name: loaderData.page.title, version: loaderData.version }) }]
-      : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData
+        ? i18n.t('adventurePage:history.diffTitle', { name: loaderData.page.title, version: loaderData.version })
+        : i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}/history/${params.version}`,
+      noindex: true,
+    }),
 });
 
 function RevisionDiffPage() {

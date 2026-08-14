@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
 import i18n from '../../../../lib/i18n';
 import { formatDateTime } from '../../../../lib/format';
+import { buildMeta } from '../../../../lib/seo';
 import { StatusBadge } from '../../../../components/Badge';
 import { Container } from '../../../../components/Container';
 import { UserRef } from '../../../../components/UserRef';
@@ -37,9 +38,13 @@ export const Route = createFileRoute('/adventures/$slug/history/')({
     return { slug: params.slug, page, revisions: revisions.sort((a, b) => b.version - a.version) };
   },
   component: HistoryPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: i18n.t('adventurePage:history.title', { name: loaderData.page.title }) }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData ? i18n.t('adventurePage:history.title', { name: loaderData.page.title }) : i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}/history`,
+      noindex: true,
+    }),
 });
 
 function HistoryPage() {

@@ -55,6 +55,7 @@
   },
   "report": {
     "button": "Report",
+    "queueDescription": "Flagged content awaiting moderator review.",
     "reasonLabel": "Reason",
     "detailsLabel": "Details (optional)",
     "submit": "Submit report",
@@ -90,6 +91,22 @@
       "COMMENT": "Comment",
       "THREAD": "Club thread",
       "THREAD_REPLY": "Club thread reply"
+    }
+  },
+  "seo": {
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you're looking for doesn't exist or may have moved.",
+      "heading": "Page not found",
+      "body": "We couldn't find what you were looking for. It may have been moved, renamed, or never existed.",
+      "backHome": "Back to Discover"
+    },
+    "serverError": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred while loading this page.",
+      "heading": "Something went wrong",
+      "body": "An unexpected error occurred. Try reloading the page, or head back to Discover.",
+      "backHome": "Back to Discover"
     }
   }
 }

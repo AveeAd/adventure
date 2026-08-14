@@ -52,6 +52,7 @@ services:
       target: public
       args:
         VITE_API_URL: ${VITE_API_URL}
+        VITE_SITE_URL: ${VITE_SITE_URL}
     restart: always
     # No env_file here deliberately - public has no runtime dependency on
     # .env (SERVER_API_URL is hardcoded to http://api:3000 in code,

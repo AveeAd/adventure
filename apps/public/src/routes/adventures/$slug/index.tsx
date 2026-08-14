@@ -6,6 +6,8 @@ import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authFetch, authPost, authUpload } from '../../../lib/auth/auth-fetch';
 import { checkAuth, fetchCurrentUser, type CurrentUser } from '../../../lib/auth/session';
 import { formatDate } from '../../../lib/format';
+import i18n from '../../../lib/i18n';
+import { buildMeta } from '../../../lib/seo';
 import { Avatar } from '../../../components/Avatar';
 import { Badge, StatusBadge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
@@ -109,11 +111,28 @@ export const Route = createFileRoute('/adventures/$slug/')({
     return { page, tripReports: tripReportsBody.data, trails, spots };
   },
   component: AdventurePageView,
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [{ title: loaderData.page.title }, { name: 'description', content: loaderData.page.summary ?? '' }]
-      : [],
-  }),
+  head: ({ loaderData, params }) => {
+    if (!loaderData) {
+      return buildMeta({ title: i18n.t('common:appName'), description: i18n.t('common:tagline'), path: `/adventures/${params.slug}` });
+    }
+    const { page, spots } = loaderData;
+    const [lng, lat] = spots[0]?.geometry.coordinates ?? [];
+    return buildMeta({
+      title: page.title,
+      description: page.summary ?? i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}`,
+      image: page.media[0]?.url,
+      type: 'article',
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'TouristAttraction',
+        name: page.title,
+        description: page.summary ?? undefined,
+        image: page.media[0]?.url,
+        ...(lat != null && lng != null ? { geo: { '@type': 'GeoCoordinates', latitude: lat, longitude: lng } } : {}),
+      },
+    });
+  },
 });
 
 function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {

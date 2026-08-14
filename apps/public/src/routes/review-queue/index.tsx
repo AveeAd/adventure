@@ -6,6 +6,7 @@ import i18n from '../../lib/i18n';
 import { authFetch } from '../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../lib/auth/require-auth';
 import { formatDateTime } from '../../lib/format';
+import { buildMeta } from '../../lib/seo';
 import { Badge } from '../../components/Badge';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
@@ -52,7 +53,13 @@ async function fetchDistricts(): Promise<MasterDataOption[]> {
 export const Route = createFileRoute('/review-queue/')({
   loader: async () => ({ districts: await fetchDistricts() }),
   component: ReviewQueuePage,
-  head: () => ({ meta: [{ title: i18n.t('adventurePage:approval.reviewQueueTitle') }] }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('adventurePage:approval.reviewQueueTitle'),
+      description: i18n.t('adventurePage:approval.reviewQueueDescription'),
+      path: '/review-queue',
+      noindex: true,
+    }),
 });
 
 function targetLink(row: PendingRevisionRow): { to: string; params: Record<string, string> } {

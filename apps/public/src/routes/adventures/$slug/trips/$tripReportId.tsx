@@ -6,6 +6,8 @@ import { apiUrl } from '../../../../lib/auth/api';
 import { authDelete, authFetch, authPatch, authPost } from '../../../../lib/auth/auth-fetch';
 import { checkAuth, fetchCurrentUser } from '../../../../lib/auth/session';
 import { formatCurrency, formatDate, formatDateTime } from '../../../../lib/format';
+import i18n from '../../../../lib/i18n';
+import { buildMeta } from '../../../../lib/seo';
 import { Avatar } from '../../../../components/Avatar';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
@@ -68,9 +70,19 @@ export const Route = createFileRoute('/adventures/$slug/trips/$tripReportId')({
     return { slug: params.slug, report, comments };
   },
   component: TripReportPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: loaderData.report.title ?? 'Story' }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    loaderData
+      ? buildMeta({
+          title: loaderData.report.title ?? i18n.t('tripReports:fallbackTitle'),
+          description: loaderData.report.description ?? i18n.t('common:tagline'),
+          path: `/adventures/${params.slug}/trips/${params.tripReportId}`,
+          type: 'article',
+        })
+      : buildMeta({
+          title: i18n.t('common:appName'),
+          description: i18n.t('common:tagline'),
+          path: `/adventures/${params.slug}/trips/${params.tripReportId}`,
+        }),
 });
 
 function TripReportPage() {

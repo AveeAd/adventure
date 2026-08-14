@@ -6,6 +6,8 @@ import { apiUrl } from '../../../../lib/auth/api';
 import { authDelete, authPatch, authPost } from '../../../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../../../lib/auth/session';
 import { formatDate } from '../../../../lib/format';
+import i18n from '../../../../lib/i18n';
+import { buildMeta } from '../../../../lib/seo';
 import { Avatar } from '../../../../components/Avatar';
 import { StatusBadge } from '../../../../components/Badge';
 import { Button } from '../../../../components/Button';
@@ -17,7 +19,7 @@ interface TripGroupMember {
   id: string;
   userId: string;
   role: string;
-  user: { id: string; email: string };
+  user: { id: string; username: string };
 }
 
 interface TripGroupDetail {
@@ -45,9 +47,13 @@ export const Route = createFileRoute('/adventures/$slug/groups/$groupId')({
     return { slug: params.slug, group };
   },
   component: TripGroupDetailPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: loaderData.group.title }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData?.group.title ?? i18n.t('common:appName'),
+      description: loaderData?.group.description ?? i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}/groups/${params.groupId}`,
+      noindex: true,
+    }),
 });
 
 function TripGroupDetailPage() {
@@ -165,8 +171,8 @@ function TripGroupDetailPage() {
         <ul className="mt-3 flex flex-col gap-2">
           {group.members.map((member) => (
             <li key={member.id} className="flex items-center gap-2">
-              <Avatar label={member.user.email} size="sm" />
-              <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.email}</span>
+              <Avatar label={member.user.username} size="sm" />
+              <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.username}</span>
               {member.role === 'ORGANIZER' && (
                 <span className="text-xs text-stone-500 dark:text-stone-400">{t('organizer')}</span>
               )}

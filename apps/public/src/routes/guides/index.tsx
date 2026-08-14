@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
 import i18n from '../../lib/i18n';
 import { formatNumber, formatRateUnit } from '../../lib/format';
+import { buildMeta } from '../../lib/seo';
 import { Badge, StatusBadge } from '../../components/Badge';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
@@ -64,7 +65,12 @@ export const Route = createFileRoute('/guides/')({
     return { guides: guidesBody.data, activityTypes, districts, languages };
   },
   component: GuideDirectoryPage,
-  head: () => ({ meta: [{ title: i18n.t('guides:directoryTitle') }] }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('guides:directoryTitle'),
+      description: i18n.t('guides:directorySubheading'),
+      path: '/guides',
+    }),
 });
 
 function GuideDirectoryPage() {

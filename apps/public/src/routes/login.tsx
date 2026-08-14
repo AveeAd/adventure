@@ -3,11 +3,18 @@ import { Mountain } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { API_URL } from '../lib/auth/api';
 import i18n from '../lib/i18n';
+import { buildMeta } from '../lib/seo';
 import { Card } from '../components/Card';
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
-  head: () => ({ meta: [{ title: i18n.t('account:login.pageTitle') }] }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('account:login.pageTitle'),
+      description: i18n.t('account:login.subheading'),
+      path: '/login',
+      noindex: true,
+    }),
 });
 
 function GoogleIcon() {

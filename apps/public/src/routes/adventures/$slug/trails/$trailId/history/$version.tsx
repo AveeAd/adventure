@@ -13,6 +13,7 @@ import { LazyGeodataDiffMap } from '../../../../../../components/LazyGeodataDiff
 import { UserRef } from '../../../../../../components/UserRef';
 import { VoteControls } from '../../../../../../components/VoteControls';
 import { formatDateTime } from '../../../../../../lib/format';
+import { buildMeta } from '../../../../../../lib/seo';
 
 interface RevisionDetail {
   id: string;
@@ -70,18 +71,18 @@ export const Route = createFileRoute('/adventures/$slug/trails/$trailId/history/
     return { slug: params.slug, trail, version, revision, diff };
   },
   component: TrailRevisionPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [
-          {
-            title: i18n.t('adventurePage:history.diffTitle', {
-              name: loaderData.trail.name ?? i18n.t('adventurePage:history.trailFallback'),
-              version: loaderData.version,
-            }),
-          },
-        ]
-      : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData
+        ? i18n.t('adventurePage:history.diffTitle', {
+            name: loaderData.trail.name ?? i18n.t('adventurePage:history.trailFallback'),
+            version: loaderData.version,
+          })
+        : i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}/trails/${params.trailId}/history/${params.version}`,
+      noindex: true,
+    }),
 });
 
 function TrailRevisionPage() {

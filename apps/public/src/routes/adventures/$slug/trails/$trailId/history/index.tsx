@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../../../lib/auth/api';
 import i18n from '../../../../../../lib/i18n';
 import { formatDateTime } from '../../../../../../lib/format';
+import { buildMeta } from '../../../../../../lib/seo';
 import { StatusBadge } from '../../../../../../components/Badge';
 import { Container } from '../../../../../../components/Container';
 import { UserRef } from '../../../../../../components/UserRef';
@@ -37,11 +38,15 @@ export const Route = createFileRoute('/adventures/$slug/trails/$trailId/history/
     return { slug: params.slug, trail, revisions: revisions.sort((a, b) => b.version - a.version) };
   },
   component: TrailHistoryPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData
-      ? [{ title: i18n.t('adventurePage:history.title', { name: loaderData.trail.name ?? i18n.t('adventurePage:history.trailFallback') }) }]
-      : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData
+        ? i18n.t('adventurePage:history.title', { name: loaderData.trail.name ?? i18n.t('adventurePage:history.trailFallback') })
+        : i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}/trails/${params.trailId}/history`,
+      noindex: true,
+    }),
 });
 
 function TrailHistoryPage() {

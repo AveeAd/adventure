@@ -3,6 +3,8 @@ import { Plus, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
 import { formatDate } from '../../../../lib/format';
+import i18n from '../../../../lib/i18n';
+import { buildMeta } from '../../../../lib/seo';
 import { StatusBadge } from '../../../../components/Badge';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
@@ -36,9 +38,13 @@ export const Route = createFileRoute('/adventures/$slug/groups/')({
     return { slug: params.slug, page, groups: groupsBody.data };
   },
   component: TripGroupsListPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: `Trip groups — ${loaderData.page.title}` }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData ? i18n.t('groups:listTitle', { title: loaderData.page.title }) : i18n.t('common:appName'),
+      description: i18n.t('groups:subheading'),
+      path: `/adventures/${params.slug}/groups`,
+      noindex: true,
+    }),
 });
 
 function TripGroupsListPage() {

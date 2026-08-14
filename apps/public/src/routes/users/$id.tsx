@@ -4,6 +4,8 @@ import { CheckCircle2, FileEdit, MapPinned, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
 import { formatDate } from '../../lib/format';
+import i18n from '../../lib/i18n';
+import { buildMeta } from '../../lib/seo';
 import { Avatar } from '../../components/Avatar';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
@@ -68,9 +70,15 @@ export const Route = createFileRoute('/users/$id')({
     return { profile, ledger, userId: params.id };
   },
   component: ContributorProfilePage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: loaderData.profile.displayName }] : [],
-  }),
+  // A user profile isn't content the site wants ranked - same reasoning
+  // that keeps isListed scoping the guide directory.
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData?.profile.displayName ?? i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/users/${params.id}`,
+      noindex: true,
+    }),
 });
 
 function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {

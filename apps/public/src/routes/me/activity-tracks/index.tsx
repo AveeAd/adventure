@@ -7,6 +7,7 @@ import i18n from '../../../lib/i18n';
 import { fetchCurrentUser } from '../../../lib/auth/session';
 import { useRequireAuth } from '../../../lib/auth/require-auth';
 import { formatDate } from '../../../lib/format';
+import { buildMeta } from '../../../lib/seo';
 import { Badge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -24,7 +25,13 @@ interface ActivityTrackSummary {
 
 export const Route = createFileRoute('/me/activity-tracks/')({
   component: MyActivityTracksPage,
-  head: () => ({ meta: [{ title: i18n.t('account:activityTracks.listTitle') }] }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('account:activityTracks.listTitle'),
+      description: i18n.t('account:activityTracks.listDescription'),
+      path: '/me/activity-tracks',
+      noindex: true,
+    }),
 });
 
 function MyActivityTracksPage() {

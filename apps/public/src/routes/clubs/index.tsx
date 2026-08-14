@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
 import { authFetch } from '../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../lib/auth/session';
+import i18n from '../../lib/i18n';
+import { buildMeta } from '../../lib/seo';
 import { Button } from '../../components/Button';
 import { ClubCard, type ClubCardData } from '../../components/ClubCard';
 import { Container } from '../../components/Container';
@@ -33,9 +35,12 @@ export const Route = createFileRoute('/clubs/')({
     return { clubs: body.data };
   },
   component: ClubsListPage,
-  head: () => ({
-    meta: [{ title: 'Clubs' }],
-  }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('clubs:listTitle'),
+      description: i18n.t('clubs:subheading'),
+      path: '/clubs',
+    }),
 });
 
 function ClubsListPage() {

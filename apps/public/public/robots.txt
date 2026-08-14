@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+Disallow: /account/
+Disallow: /me/
+Disallow: /login
+Disallow: /auth/
+Disallow: /review-queue
+Disallow: /adventures/new
+Disallow: /adventures/*/edit
+Disallow: /adventures/*/spots/new
+Disallow: /adventures/*/trails/new
+Disallow: /adventures/*/groups/new
+Disallow: /clubs/new
+Disallow: /clubs/*/edit
+Disallow: /clubs/*/threads/new
+
+Sitemap: https://app.example.com/sitemap.xml

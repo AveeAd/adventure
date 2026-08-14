@@ -6,6 +6,7 @@ import { authDelete, authFetch, authPatch, authPost } from '../../../lib/auth/au
 import { useRequireAuth } from '../../../lib/auth/require-auth';
 import { formatDateTime } from '../../../lib/format';
 import i18n from '../../../lib/i18n';
+import { buildMeta } from '../../../lib/seo';
 import { Badge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
@@ -32,7 +33,13 @@ interface ActivityTrackDetail {
 
 export const Route = createFileRoute('/me/activity-tracks/$trackId')({
   component: ActivityTrackDetailPage,
-  head: () => ({ meta: [{ title: i18n.t('account:activityTracks.detailTitle') }] }),
+  head: ({ params }) =>
+    buildMeta({
+      title: i18n.t('account:activityTracks.detailTitle'),
+      description: i18n.t('account:activityTracks.detailDescription'),
+      path: `/me/activity-tracks/${params.trackId}`,
+      noindex: true,
+    }),
 });
 
 function ActivityTrackDetailPage() {

@@ -114,6 +114,7 @@
     "voteError": "Failed to submit vote",
     "voted": "Vote recorded",
     "reviewQueueTitle": "Review queue",
+    "reviewQueueDescription": "Pending edits to adventure pages, trails, and spots awaiting approval.",
     "reviewQueueEmpty": "Nothing pending review right now.",
     "reviewQueueNotEligible": "The review queue is open to guide level 10+ contributors, moderators, and admins.",
     "filterAllTypes": "All types",

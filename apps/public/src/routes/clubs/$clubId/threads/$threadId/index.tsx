@@ -6,6 +6,8 @@ import { apiUrl } from '../../../../../lib/auth/api';
 import { authPost } from '../../../../../lib/auth/auth-fetch';
 import { checkAuth } from '../../../../../lib/auth/session';
 import { formatDateTime } from '../../../../../lib/format';
+import i18n from '../../../../../lib/i18n';
+import { buildMeta } from '../../../../../lib/seo';
 import { Avatar } from '../../../../../components/Avatar';
 import { Badge } from '../../../../../components/Badge';
 import { Button } from '../../../../../components/Button';
@@ -68,9 +70,16 @@ export const Route = createFileRoute('/clubs/$clubId/threads/$threadId/')({
     return { clubId: params.clubId, thread, replies };
   },
   component: ThreadDetailPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: loaderData.thread.content.slice(0, 60) }] : [],
-  }),
+  // Thread content is user-generated/ephemeral, not a canonical content
+  // page - noindex, follow so links inside it (attached page/trail/spot)
+  // still get crawled.
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData?.thread.content.slice(0, 60) ?? i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/clubs/${params.clubId}/threads/${params.threadId}`,
+      noindex: true,
+    }),
 });
 
 function ThreadDetailPage() {

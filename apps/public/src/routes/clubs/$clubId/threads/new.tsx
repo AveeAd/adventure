@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
 import { authPost } from '../../../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../../../lib/auth/require-auth';
+import i18n from '../../../../lib/i18n';
+import { buildMeta } from '../../../../lib/seo';
 import { AttachmentPicker } from '../../../../components/AttachmentPicker';
 import type { AttachmentOption } from '../../../../components/AttachmentPicker';
 import { Button } from '../../../../components/Button';
@@ -26,9 +28,13 @@ export const Route = createFileRoute('/clubs/$clubId/threads/new')({
     return { club };
   },
   component: NewThreadPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: loaderData.club.name }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData ? i18n.t('threads:composer.heading') + ' — ' + loaderData.club.name : i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/clubs/${params.clubId}/threads/new`,
+      noindex: true,
+    }),
 });
 
 function NewThreadPage() {

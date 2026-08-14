@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { authPost } from '../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../lib/auth/require-auth';
+import i18n from '../../lib/i18n';
+import { buildMeta } from '../../lib/seo';
 import { Button } from '../../components/Button';
 import { Card } from '../../components/Card';
 import { Container } from '../../components/Container';
@@ -10,9 +12,13 @@ import { Field, Input, Select, Textarea } from '../../components/FormField';
 
 export const Route = createFileRoute('/clubs/new')({
   component: NewClubPage,
-  head: () => ({
-    meta: [{ title: 'Start a club' }],
-  }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('clubs:newTitle'),
+      description: i18n.t('clubs:newSubheading'),
+      path: '/clubs/new',
+      noindex: true,
+    }),
 });
 
 function NewClubPage() {

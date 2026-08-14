@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../lib/auth/api';
 import { formatDate } from '../../lib/format';
+import i18n from '../../lib/i18n';
+import { buildMeta } from '../../lib/seo';
 import { AttachmentPicker } from '../../components/AttachmentPicker';
 import type { AttachmentOption } from '../../components/AttachmentPicker';
 import { StatusBadge } from '../../components/Badge';
@@ -30,9 +32,12 @@ export const Route = createFileRoute('/trip-groups/')({
     return { groups: body.data };
   },
   component: TripGroupsListPage,
-  head: () => ({
-    meta: [{ title: 'Trip Groups' }],
-  }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('groups:allListTitle'),
+      description: i18n.t('groups:allSubheading'),
+      path: '/trip-groups',
+    }),
 });
 
 function TripGroupsListPage() {

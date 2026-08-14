@@ -5,10 +5,17 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../../lib/i18n';
 import { consumePostLoginRedirect } from '../../lib/auth/require-auth';
 import { tokenStore } from '../../lib/auth/token-store';
+import { buildMeta } from '../../lib/seo';
 
 export const Route = createFileRoute('/auth/callback')({
   component: AuthCallbackPage,
-  head: () => ({ meta: [{ title: i18n.t('account:authCallback.pageTitle') }] }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('account:authCallback.pageTitle'),
+      description: i18n.t('account:authCallback.pageDescription'),
+      path: '/auth/callback',
+      noindex: true,
+    }),
 });
 
 function AuthCallbackPage() {

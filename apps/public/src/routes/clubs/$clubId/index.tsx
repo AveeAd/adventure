@@ -18,6 +18,8 @@ import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authFetch, authPatch, authPost } from '../../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../../lib/auth/session';
+import i18n from '../../../lib/i18n';
+import { buildMeta } from '../../../lib/seo';
 import { Avatar } from '../../../components/Avatar';
 import { Badge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
@@ -30,7 +32,7 @@ interface ClubMember {
   userId: string;
   role: 'OWNER' | 'MODERATOR' | 'MEMBER';
   status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'BANNED';
-  user: { id: string; email: string };
+  user: { id: string; username: string };
 }
 
 interface ClubDetail {
@@ -80,9 +82,18 @@ export const Route = createFileRoute('/clubs/$clubId/')({
     return { club, threads };
   },
   component: ClubDetailPage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: loaderData.club.name }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    loaderData
+      ? buildMeta({
+          title: loaderData.club.name,
+          description: loaderData.club.description ?? i18n.t('clubs:subheading'),
+          path: `/clubs/${params.clubId}`,
+          image: loaderData.club.coverImageUrl ?? undefined,
+          // A private club's name/description shouldn't be indexed - same
+          // reasoning as guides:isListed scoping the guide directory.
+          noindex: loaderData.club.visibility !== 'PUBLIC',
+        })
+      : buildMeta({ title: i18n.t('common:appName'), description: i18n.t('common:tagline'), path: `/clubs/${params.clubId}` }),
 });
 
 function ClubDetailPage() {
@@ -364,8 +375,8 @@ function ClubDetailPage() {
               {pendingRequests.map((request) => (
                 <li key={request.id} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Avatar label={request.user.email} size="sm" />
-                    <span className="text-sm text-stone-700 dark:text-stone-300">{request.user.email}</span>
+                    <Avatar label={request.user.username} size="sm" />
+                    <span className="text-sm text-stone-700 dark:text-stone-300">{request.user.username}</span>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => decide(request.id, 'APPROVED')} disabled={busy}>
@@ -414,8 +425,8 @@ function ClubDetailPage() {
                 {club.members?.map((member) => (
                   <li key={member.id} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <Avatar label={member.user.email} size="sm" />
-                      <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.email}</span>
+                      <Avatar label={member.user.username} size="sm" />
+                      <span className="text-sm text-stone-700 dark:text-stone-300">{member.user.username}</span>
                       {member.role === 'OWNER' && (
                         <span className="text-xs text-stone-500 dark:text-stone-400">{t('owner')}</span>
                       )}

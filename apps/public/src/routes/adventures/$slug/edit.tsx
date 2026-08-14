@@ -6,6 +6,7 @@ import { apiUrl } from '../../../lib/auth/api';
 import i18n from '../../../lib/i18n';
 import { authPost, authUpload } from '../../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../../lib/auth/require-auth';
+import { buildMeta } from '../../../lib/seo';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Container } from '../../../components/Container';
@@ -31,9 +32,15 @@ export const Route = createFileRoute('/adventures/$slug/edit')({
     return { page };
   },
   component: EditAdventurePage,
-  head: ({ loaderData }) => ({
-    meta: loaderData ? [{ title: i18n.t('adventurePage:editTitle', { title: loaderData.page.title }) }] : [],
-  }),
+  head: ({ loaderData, params }) =>
+    buildMeta({
+      title: loaderData
+        ? i18n.t('adventurePage:editTitle', { title: loaderData.page.title })
+        : i18n.t('common:appName'),
+      description: i18n.t('common:tagline'),
+      path: `/adventures/${params.slug}/edit`,
+      noindex: true,
+    }),
 });
 
 function EditAdventurePage() {

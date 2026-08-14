@@ -5,6 +5,7 @@ import { apiUrl } from '../../../lib/auth/api';
 import i18n from '../../../lib/i18n';
 import { authUpload } from '../../../lib/auth/auth-fetch';
 import { useRequireAuth } from '../../../lib/auth/require-auth';
+import { buildMeta } from '../../../lib/seo';
 import { Button } from '../../../components/Button';
 import { Card } from '../../../components/Card';
 import { Container } from '../../../components/Container';
@@ -22,7 +23,13 @@ export const Route = createFileRoute('/me/activity-tracks/upload')({
     return { activityTypes: body.data };
   },
   component: UploadActivityTrackPage,
-  head: () => ({ meta: [{ title: i18n.t('account:activityTracks.uploadTitle') }] }),
+  head: () =>
+    buildMeta({
+      title: i18n.t('account:activityTracks.uploadTitle'),
+      description: i18n.t('account:activityTracks.uploadDescription'),
+      path: '/me/activity-tracks/upload',
+      noindex: true,
+    }),
 });
 
 function UploadActivityTrackPage() {
