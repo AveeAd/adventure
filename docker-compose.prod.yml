@@ -1,10 +1,14 @@
 # Production compose file - separate from docker-compose.yml (dev) rather
-# than an override, since almost everything differs: compiled builds instead
-# of bind-mounted source + watch mode, no host-exposed db/app ports (Caddy is
-# the only thing the internet can reach), and a reverse proxy for TLS.
+# than an override, since almost everything differs: pre-built images
+# instead of bind-mounted source + watch mode, no host-exposed db/app ports
+# (Caddy is the only thing the internet can reach), and a reverse proxy for
+# TLS.
+#
+# api/admin/public are built and pushed to GHCR by .github/workflows/deploy.yml,
+# not built here - the VM only pulls. See that workflow for the build.
 #
 # Usage on the server (see DEPLOYMENT.md for the full first-time setup):
-#   docker compose -f docker-compose.prod.yml up -d --build
+#   docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
 services:
   db:
     image: postgis/postgis:16-3.4
@@ -22,10 +26,7 @@ services:
       retries: 5
 
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-      target: api
+    image: ghcr.io/aveead/adventure-api:latest
     restart: always
     env_file: .env
     volumes:
@@ -35,24 +36,13 @@ services:
         condition: service_healthy
 
   admin:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-      target: admin
-      args:
-        VITE_API_URL: ${VITE_API_URL}
+    image: ghcr.io/aveead/adventure-admin:latest
     restart: always
     depends_on:
       - api
 
   public:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-      target: public
-      args:
-        VITE_API_URL: ${VITE_API_URL}
-        VITE_SITE_URL: ${VITE_SITE_URL}
+    image: ghcr.io/aveead/adventure-public:latest
     restart: always
     # No env_file here deliberately - public has no runtime dependency on
     # .env (SERVER_API_URL is hardcoded to http://api:3000 in code,
