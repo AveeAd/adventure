@@ -1,7 +1,3 @@
----
-title: Home
----
-
 # Adventure Nepal
 
 *A community-built guide to every kind of adventure in Nepal — trekking, biking, motorcycle routes, bungee, paragliding, and more. Free, non-commercial, built by the people who go.*
