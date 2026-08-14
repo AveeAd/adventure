@@ -7,7 +7,7 @@ import { CreateThreadDto } from './dto/create-thread.dto';
 import { ModerateThreadDto } from './dto/moderate-thread.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
 
-const AUTHOR_SELECT = { id: true, email: true, profile: { select: { name: true } } } as const;
+const AUTHOR_SELECT = { id: true, username: true, profile: { select: { name: true } } } as const;
 
 const THREAD_INCLUDE = {
   author: { select: AUTHOR_SELECT },
@@ -20,7 +20,7 @@ const THREAD_INCLUDE = {
 } as const;
 
 type ThreadWithIncludes = {
-  author: { id: string; email: string; profile: { name: string | null } | null };
+  author: { id: string; username: string; profile: { name: string | null } | null };
   tripReport: { id: string; title: string | null; isActive: boolean } | null;
   trail: { id: string; name: string | null; isActive: boolean } | null;
   spot: { id: string; name: string; isActive: boolean } | null;
@@ -38,7 +38,7 @@ function dropInactiveAttachments<T extends ThreadWithIncludes>(thread: T) {
   return {
     ...rest,
     authorId: author.id,
-    authorName: author.profile?.name ?? author.email,
+    authorName: author.profile?.name ?? author.username,
     tripReport: tripReport?.isActive ? { id: tripReport.id, title: tripReport.title } : null,
     trail: trail?.isActive ? { id: trail.id, name: trail.name } : null,
     spot: spot?.isActive ? { id: spot.id, name: spot.name } : null,

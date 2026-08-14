@@ -93,7 +93,7 @@ export class ReportsService {
         orderBy: { createdAt: 'asc' },
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { reporter: { include: { profile: true } } },
+        include: { reporter: { select: { id: true, username: true, profile: true } } },
       }),
       this.prisma.contentReport.count({ where }),
     ]);

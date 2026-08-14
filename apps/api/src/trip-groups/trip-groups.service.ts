@@ -7,7 +7,7 @@ import { UpdateTripGroupDto } from './dto/update-trip-group.dto';
 import { UpdateTripGroupStatusDto } from './dto/update-trip-group-status.dto';
 
 const MEMBER_INCLUDE = {
-  members: { include: { user: { select: { id: true, email: true } } } },
+  members: { include: { user: { select: { id: true, username: true } } } },
 } as const;
 
 type DisplayStatus = 'UPCOMING' | 'ONGOING' | 'EXPIRED' | 'COMPLETED' | 'CANCELLED';

@@ -8,7 +8,7 @@ interface ClubMember {
   userId: string;
   role: string;
   status: string;
-  user: { email: string };
+  user: { username: string };
 }
 
 interface ClubDetail {
@@ -16,7 +16,7 @@ interface ClubDetail {
   name: string;
   description: string | null;
   visibility: string;
-  createdBy?: { email: string };
+  createdBy?: { username: string };
   members: ClubMember[];
 }
 
@@ -36,7 +36,7 @@ export const ClubShow = () => {
             <Descriptions.Item label={t('clubs.fields.visibility')}>
               <Tag color={record.visibility === 'PUBLIC' ? 'green' : 'default'}>{record.visibility}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label={t('clubs.fields.owner')}>{record.createdBy?.email}</Descriptions.Item>
+            <Descriptions.Item label={t('clubs.fields.owner')}>{record.createdBy?.username}</Descriptions.Item>
           </Descriptions>
 
           <Typography.Title level={5} style={{ marginTop: 24 }}>
@@ -48,7 +48,7 @@ export const ClubShow = () => {
             {t('clubs.membersHeading', { count: record.members.length })}
           </Typography.Title>
           <Table dataSource={record.members} rowKey="id" pagination={false} size="small">
-            <Table.Column dataIndex={['user', 'email']} title={t('clubs.fields.email')} />
+            <Table.Column dataIndex={['user', 'username']} title={t('clubs.fields.username')} />
             <Table.Column
               dataIndex="role"
               title={t('clubs.fields.role')}

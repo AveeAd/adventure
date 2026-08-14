@@ -11,8 +11,23 @@
 // Google-authenticated account (see ARCHITECTURE.md Sec 8) - fine for local
 // dev, never something to run against a real environment.
 import { PrismaClient } from '@prisma/client';
+import { sanitizeUsernameSeed } from '../../src/common/username';
 
 const prisma = new PrismaClient();
+
+// Same collision-loop shape as UsersService.generateUniqueUsername - this
+// script runs standalone (tsx, no Nest DI container), so it can't inject
+// that service directly.
+async function generateUniqueUsername(seed: string): Promise<string> {
+  const base = sanitizeUsernameSeed(seed);
+  const existing = await prisma.user.findMany({ where: { username: { startsWith: base } }, select: { username: true } });
+  const taken = new Set(existing.map((u) => u.username));
+  if (!taken.has(base)) return base;
+  for (let i = 2; ; i++) {
+    const candidate = `${base}_${i}`;
+    if (!taken.has(candidate)) return candidate;
+  }
+}
 
 function requireByKey<T extends { id: string }, K extends keyof T>(
   rows: T[],
@@ -28,11 +43,12 @@ function requireByKey<T extends { id: string }, K extends keyof T>(
 }
 
 async function upsertDemoUser(email: string, googleId: string, name: string) {
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: {},
-    create: { email, googleId, role: 'USER' },
-  });
+  const existing = await prisma.user.findUnique({ where: { email } });
+  const user =
+    existing ??
+    (await prisma.user.create({
+      data: { email, googleId, role: 'USER', username: await generateUniqueUsername(name) },
+    }));
   await prisma.profile.upsert({
     where: { userId: user.id },
     update: { name },

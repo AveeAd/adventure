@@ -106,7 +106,7 @@
       "dates": "Dates",
       "members": "Members",
       "description": "Description",
-      "email": "Email",
+      "username": "Username",
       "role": "Role",
       "status": "Status"
     },
@@ -121,7 +121,7 @@
       "description": "Description",
       "owner": "Owner",
       "members": "Members",
-      "email": "Email",
+      "username": "Username",
       "role": "Role",
       "status": "Status"
     },

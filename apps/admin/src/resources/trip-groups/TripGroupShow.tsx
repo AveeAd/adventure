@@ -8,7 +8,7 @@ interface TripGroupMember {
   id: string;
   userId: string;
   role: string;
-  user: { email: string };
+  user: { username: string };
 }
 
 interface TripGroupDetail {
@@ -59,7 +59,7 @@ export const TripGroupShow = () => {
             {t('trip-groups.membersHeading', { count: record.members.length })}
           </Typography.Title>
           <Table dataSource={record.members} rowKey="id" pagination={false} size="small">
-            <Table.Column dataIndex={['user', 'email']} title={t('trip-groups.fields.email')} />
+            <Table.Column dataIndex={['user', 'username']} title={t('trip-groups.fields.username')} />
             <Table.Column
               dataIndex="role"
               title={t('trip-groups.fields.role')}

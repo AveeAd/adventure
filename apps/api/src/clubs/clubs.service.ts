@@ -28,7 +28,7 @@ function resolveClubOrderBy(sort: ClubSort) {
 const APPROVED_MEMBER_INCLUDE = {
   members: {
     where: { status: ClubMembershipStatus.APPROVED },
-    include: { user: { select: { id: true, email: true } } },
+    include: { user: { select: { id: true, username: true } } },
   },
 } as const;
 
@@ -128,7 +128,7 @@ export class ClubsService {
       include: {
         ...APPROVED_MEMBER_INCLUDE,
         _count: { select: { members: true } },
-        createdBy: { select: { id: true, email: true } },
+        createdBy: { select: { id: true, username: true } },
       },
     });
     if (!club || !club.isActive) {
@@ -266,7 +266,7 @@ export class ClubsService {
     await this.ensureOwnerOrSiteModerator(id, currentUser);
     return this.prisma.clubMember.findMany({
       where: { clubId: id, status: ClubMembershipStatus.PENDING },
-      include: { user: { select: { id: true, email: true } } },
+      include: { user: { select: { id: true, username: true } } },
       orderBy: { joinedAt: 'asc' },
     });
   }
@@ -310,7 +310,7 @@ export class ClubsService {
       where: { clubId: id, isActive: true },
       orderBy: { dateCompleted: 'desc' },
       include: {
-        author: { select: { id: true, email: true, profile: { select: { name: true } } } },
+        author: { select: { id: true, username: true, profile: { select: { name: true } } } },
         adventurePage: { select: { title: true, slug: true } },
         _count: { select: { kudos: true } },
       },
@@ -318,7 +318,7 @@ export class ClubsService {
     return reports.map(({ _count, author, ...rest }) => ({
       ...rest,
       kudosCount: _count.kudos,
-      authorName: author.profile?.name ?? author.email,
+      authorName: author.profile?.name ?? author.username,
       authorId: author.id,
     }));
   }

@@ -31,7 +31,7 @@ export class TripReportsService {
         include: {
           _count: { select: { kudos: true } },
           author: {
-            select: { email: true, profile: { select: { name: true } }, guideProfile: { select: { guideLevel: true } } },
+            select: { username: true, profile: { select: { name: true } }, guideProfile: { select: { guideLevel: true } } },
           },
           club: { select: { id: true, name: true } },
         },
@@ -41,7 +41,7 @@ export class TripReportsService {
     const data = reports.map(({ _count, author, ...rest }) => ({
       ...rest,
       kudosCount: _count.kudos,
-      authorName: author.profile?.name ?? author.email,
+      authorName: author.profile?.name ?? author.username,
       authorGuideLevel: author.guideProfile?.guideLevel ?? 1,
     }));
     return { data, total, page, pageSize };

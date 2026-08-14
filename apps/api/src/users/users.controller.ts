@@ -5,6 +5,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ContributionsService } from '../contributions/contributions.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUsernameDto } from './dto/update-username.dto';
 import { UsersService } from './users.service';
 
 @Controller('users')
@@ -35,6 +36,15 @@ export class UsersController {
   @Get(':id/profile')
   getPublicProfile(@Param('id') id: string) {
     return this.usersService.getPublicProfile(id);
+  }
+
+  // "me/username" is two segments (unlike the admin-only, single-segment
+  // ":id" PATCH below), so it can't collide with it regardless of
+  // registration order - no route-ordering gotcha here. One self-service
+  // edit, only while the username is still auto-generated - see UsersService.
+  @Patch('me/username')
+  updateOwnUsername(@Body() dto: UpdateUsernameDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.usersService.updateOwnUsername(user.userId, dto);
   }
 
   // MILESTONE_3.md §9.1: "Profile pages ... the point ledger" - a
