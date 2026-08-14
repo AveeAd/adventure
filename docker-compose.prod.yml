@@ -64,6 +64,7 @@ services:
       PUBLIC_DOMAIN: ${PUBLIC_DOMAIN}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN}
       API_DOMAIN: ${API_DOMAIN}
+      CRM_DOMAIN: ${CRM_DOMAIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -76,10 +77,9 @@ services:
     # networks - otherwise Compose stops attaching it to this project's
     # implicit network, breaking the api/admin/public reverse-proxy targets
     # above. `caddy_net` is a separate Docker project's (the `crm` compose
-    # stack, elsewhere on this host) pre-existing external network - joining
-    # it doesn't add any routing on its own (no Caddyfile site block yet),
-    # it only makes that project's containers reachable by name from here
-    # once one is added.
+    # stack, elsewhere on this host) pre-existing external network, joined
+    # so this Caddy can reach that project's containers by name - see the
+    # Caddyfile's {$CRM_DOMAIN} block.
     networks:
       - default
       - caddy_net

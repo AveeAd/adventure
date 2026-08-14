@@ -15,3 +15,21 @@
 {$API_DOMAIN} {
 	reverse_proxy api:3000
 }
+
+# Fronts the `crm` project - a separate compose stack on this same host
+# (see docker-compose.prod.yml's caddy_net comment). Its own containers
+# publish host ports 3000/4000 directly today, but those aren't open to
+# the internet (only 80/443/22 are, at the GCP firewall level) - this site
+# block is what actually makes crm.aveead.com reachable. Path-routed, not
+# subdomain-routed like the three blocks above, because that project's own
+# NEXT_PUBLIC_API_URL is already `https://crm.aveead.com/api/v1` - the
+# NestJS app's routes already carry the `/api/v1` prefix themselves, so
+# no path stripping/rewriting here.
+{$CRM_DOMAIN} {
+	handle /api/* {
+		reverse_proxy aveead-crm-api-prod:4000
+	}
+	handle {
+		reverse_proxy aveead-crm-web-prod:3000
+	}
+}
