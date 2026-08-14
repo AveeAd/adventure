@@ -1,21 +1,20 @@
 import { Link } from '@tanstack/react-router'
 import { Compass, MapPinOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { getRequestUrl, setResponseStatus } from '@tanstack/react-start/server'
 import { Button } from './Button'
 import { Container } from './Container'
 import { buildMeta } from '../lib/seo'
+import { getCurrentPath, setHttpStatus } from '../lib/server-status'
 
 export function NotFound() {
   // TanStack Start's router doesn't set the HTTP status code for an
   // unmatched route on its own (confirmed against the installed
   // @tanstack/react-router - only its in-browser `stores.statusCode`
   // reflects notFound/error, which doesn't affect the actual SSR Response)
-  // - the component sets it itself, guarded to only run on the server the
-  // way apps/public/src/lib/auth/api.ts's isServer split does, since
-  // setResponseStatus throws outside a request context.
-  const isServer = typeof document === 'undefined'
-  if (isServer) setResponseStatus(404)
+  // - the component sets it itself. See lib/server-status.ts for why this
+  // has to go through createIsomorphicFn rather than a runtime isServer
+  // check around a direct import.
+  setHttpStatus(404)
 
   const { t } = useTranslation()
   const meta = buildMeta({
@@ -23,7 +22,7 @@ export function NotFound() {
     description: t('common:seo.notFound.description'),
     // The actual requested path, not a hardcoded '/' - a noindex page still
     // shouldn't claim a canonical URL that isn't itself.
-    path: isServer ? getRequestUrl().pathname : window.location.pathname,
+    path: getCurrentPath(),
     noindex: true,
   })
 

@@ -1,22 +1,22 @@
 import { Link } from '@tanstack/react-router'
 import { Compass, TriangleAlert } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { getRequestUrl, setResponseStatus } from '@tanstack/react-start/server'
 import { Button } from './Button'
 import { Container } from './Container'
 import { buildMeta } from '../lib/seo'
+import { getCurrentPath, setHttpStatus } from '../lib/server-status'
 
 export function ErrorPage() {
   // See NotFound.tsx for why the status code has to be set here rather than
-  // falling out of the router automatically.
-  const isServer = typeof document === 'undefined'
-  if (isServer) setResponseStatus(500)
+  // falling out of the router automatically, and lib/server-status.ts for
+  // why it goes through createIsomorphicFn.
+  setHttpStatus(500)
 
   const { t } = useTranslation()
   const meta = buildMeta({
     title: t('common:seo.serverError.title'),
     description: t('common:seo.serverError.description'),
-    path: isServer ? getRequestUrl().pathname : window.location.pathname,
+    path: getCurrentPath(),
     noindex: true,
   })
 
