@@ -5,6 +5,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CreateTripGroupDto } from './dto/create-trip-group.dto';
 import { UpdateTripGroupDto } from './dto/update-trip-group.dto';
+import { UpdateTripGroupStatusDto } from './dto/update-trip-group-status.dto';
 import { TripGroupsService } from './trip-groups.service';
 
 @Controller('adventure-pages/:pageId/trip-groups')
@@ -61,6 +62,15 @@ export class TripGroupsController {
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateTripGroupDto, @CurrentUser() user: AuthenticatedUser) {
     return this.tripGroupsService.update(id, user, dto);
+  }
+
+  @Patch(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateTripGroupStatusDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.tripGroupsService.updateStatus(id, user, dto);
   }
 
   @Delete(':id')

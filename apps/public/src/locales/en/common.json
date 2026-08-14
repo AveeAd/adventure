@@ -35,7 +35,12 @@
     "PENDING_LICENSE_REVIEW": "Pending license review",
     "PENDING": "Pending",
     "APPROVED": "Approved",
-    "REJECTED": "Declined"
+    "REJECTED": "Declined",
+    "UPCOMING": "Upcoming",
+    "ONGOING": "Ongoing",
+    "EXPIRED": "Expired",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
   },
   "rateUnit": {
     "PER_DAY": "per day",

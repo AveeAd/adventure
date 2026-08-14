@@ -17,8 +17,17 @@ interface TripGroupDetail {
   description: string;
   dateStart: string;
   dateEnd: string;
+  displayStatus: string;
   members: TripGroupMember[];
 }
+
+const STATUS_COLOR: Record<string, string> = {
+  UPCOMING: 'blue',
+  ONGOING: 'green',
+  EXPIRED: 'default',
+  COMPLETED: 'green',
+  CANCELLED: 'red',
+};
 
 export const TripGroupShow = () => {
   const { query, result: record } = useShow<TripGroupDetail>({ resource: 'trip-groups' });
@@ -35,6 +44,9 @@ export const TripGroupShow = () => {
             <Descriptions.Item label={t('trip-groups.fields.title')}>{record.title}</Descriptions.Item>
             <Descriptions.Item label={t('trip-groups.fields.dates')}>
               {formatDate(record.dateStart)} – {formatDate(record.dateEnd)}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('trip-groups.fields.status')}>
+              <Tag color={STATUS_COLOR[record.displayStatus] ?? 'default'}>{record.displayStatus}</Tag>
             </Descriptions.Item>
           </Descriptions>
 

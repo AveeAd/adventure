@@ -3,6 +3,7 @@ import { Plus, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
 import { formatDate } from '../../../../lib/format';
+import { StatusBadge } from '../../../../components/Badge';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
@@ -14,6 +15,7 @@ interface TripGroupSummary {
   description: string;
   dateStart: string;
   dateEnd: string;
+  displayStatus: 'UPCOMING' | 'ONGOING' | 'EXPIRED' | 'COMPLETED' | 'CANCELLED';
   _count: { members: number };
 }
 
@@ -65,15 +67,18 @@ function TripGroupsListPage() {
             <li key={group.id}>
               <Link to="/adventures/$slug/groups/$groupId" params={{ slug, groupId: group.id }}>
                 <Card className="p-5 transition-shadow hover:shadow-md">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <h2 className="font-semibold text-stone-900 dark:text-stone-50">{group.title}</h2>
-                    <span className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
+                    <span className="flex shrink-0 items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
                       <Users className="h-3.5 w-3.5" /> {group._count.members}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-                    {formatDate(group.dateStart)} – {formatDate(group.dateEnd)}
-                  </p>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <StatusBadge status={group.displayStatus} />
+                    <p className="text-sm text-stone-500 dark:text-stone-400">
+                      {formatDate(group.dateStart)} – {formatDate(group.dateEnd)}
+                    </p>
+                  </div>
                   <p className="mt-2 line-clamp-2 text-sm text-stone-600 dark:text-stone-400">{group.description}</p>
                 </Card>
               </Link>

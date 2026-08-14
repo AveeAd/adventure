@@ -1,12 +1,13 @@
-import { Link, createFileRoute, notFound, useNavigate } from '@tanstack/react-router';
-import { Calendar, UserMinus, UserPlus, Users } from 'lucide-react';
+import { Link, createFileRoute, notFound } from '@tanstack/react-router';
+import { Calendar, CheckCircle2, UserMinus, UserPlus, Users, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../../lib/auth/api';
-import { authDelete, authPost } from '../../../../lib/auth/auth-fetch';
+import { authDelete, authPatch, authPost } from '../../../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../../../lib/auth/session';
 import { formatDate } from '../../../../lib/format';
 import { Avatar } from '../../../../components/Avatar';
+import { StatusBadge } from '../../../../components/Badge';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
@@ -26,6 +27,8 @@ interface TripGroupDetail {
   dateStart: string;
   dateEnd: string;
   createdById: string;
+  status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+  displayStatus: 'UPCOMING' | 'ONGOING' | 'EXPIRED' | 'COMPLETED' | 'CANCELLED';
   members: TripGroupMember[];
 }
 
@@ -49,7 +52,6 @@ export const Route = createFileRoute('/adventures/$slug/groups/$groupId')({
 
 function TripGroupDetailPage() {
   const { slug, group: initialGroup } = Route.useLoaderData();
-  const navigate = useNavigate();
   const { t } = useTranslation('groups');
   const [group, setGroup] = useState(initialGroup);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -62,6 +64,7 @@ function TripGroupDetailPage() {
 
   const membership = group.members.find((m) => m.userId === currentUserId);
   const isOrganizer = membership?.role === 'ORGANIZER';
+  const isOpen = group.status === 'ACTIVE';
 
   async function refresh() {
     const res = await fetch(apiUrl(`/trip-groups/${group.id}`));
@@ -94,14 +97,15 @@ function TripGroupDetailPage() {
     }
   }
 
-  async function cancelGroup() {
+  async function setStatus(status: 'COMPLETED' | 'CANCELLED') {
     setBusy(true);
     setError(null);
     try {
-      await authDelete(`/trip-groups/${group.id}`);
-      navigate({ to: '/adventures/$slug/groups', params: { slug } });
+      await authPatch(`/trip-groups/${group.id}/status`, { status });
+      await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('errors.failedToCancel'));
+      setError(err instanceof Error ? err.message : t('errors.failedToUpdateStatus'));
+    } finally {
       setBusy(false);
     }
   }
@@ -116,7 +120,10 @@ function TripGroupDetailPage() {
         {t('backToGroups')}
       </Link>
 
-      <h1 className="mt-3 text-2xl font-semibold text-stone-900 dark:text-stone-50">{group.title}</h1>
+      <div className="mt-3 flex items-center gap-2">
+        <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">{group.title}</h1>
+        <StatusBadge status={group.displayStatus} />
+      </div>
       <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-500 dark:text-stone-400">
         <Calendar className="h-4 w-4" />
         {formatDate(group.dateStart)} – {formatDate(group.dateEnd)}
@@ -126,8 +133,9 @@ function TripGroupDetailPage() {
         <MarkdownContent content={group.description} />
       </div>
 
-      <div className="mt-4 flex gap-2">
-        {currentUserId &&
+      <div className="mt-4 flex flex-wrap gap-2">
+        {isOpen &&
+          currentUserId &&
           (membership ? (
             <Button variant="secondary" size="sm" onClick={leave} disabled={busy}>
               <UserMinus className="h-3.5 w-3.5" /> {t('leaveGroup')}
@@ -137,10 +145,15 @@ function TripGroupDetailPage() {
               <UserPlus className="h-3.5 w-3.5" /> {t('joinGroup')}
             </Button>
           ))}
-        {isOrganizer && (
-          <Button variant="danger" size="sm" onClick={cancelGroup} disabled={busy}>
-            {t('cancelGroup')}
-          </Button>
+        {isOrganizer && isOpen && (
+          <>
+            <Button variant="secondary" size="sm" onClick={() => setStatus('COMPLETED')} disabled={busy}>
+              <CheckCircle2 className="h-3.5 w-3.5" /> {t('markCompleted')}
+            </Button>
+            <Button variant="danger" size="sm" onClick={() => setStatus('CANCELLED')} disabled={busy}>
+              <XCircle className="h-3.5 w-3.5" /> {t('cancelGroup')}
+            </Button>
+          </>
         )}
       </div>
       {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}

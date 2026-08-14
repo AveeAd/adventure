@@ -16,6 +16,10 @@ const SEARCH_PATH: Record<AttachmentType, string> = {
 interface Option {
   id: string;
   label: string;
+  // Only populated for type="adventurePage" - lets a caller route to
+  // /adventures/$slug/... (e.g. the flat trip-groups list's "start a
+  // group" picker) without a second lookup.
+  slug?: string;
 }
 
 // adventure-pages/search is the pre-existing paginated {data:[...]} search
@@ -25,9 +29,9 @@ async function search(type: AttachmentType, q: string): Promise<Option[]> {
   const res = await fetch(apiUrl(`${SEARCH_PATH[type]}?q=${encodeURIComponent(q)}`));
   if (!res.ok) return [];
   const body = await res.json();
-  const rows: Array<{ id: string; title?: string | null; name?: string | null }> =
+  const rows: Array<{ id: string; title?: string | null; name?: string | null; slug?: string }> =
     type === 'adventurePage' ? body.data : body;
-  return rows.map((row) => ({ id: row.id, label: row.title ?? row.name ?? row.id }));
+  return rows.map((row) => ({ id: row.id, label: row.title ?? row.name ?? row.id, slug: row.slug }));
 }
 
 // Search-as-you-type combobox for the club-thread composer's four optional
@@ -96,6 +100,13 @@ export function AttachmentPicker({
             <li key={option.id}>
               <button
                 type="button"
+                // Without this, the input's onBlur fires first (on
+                // mousedown) and races its own setTimeout-delayed close
+                // against this click's onChange - losing the race closes
+                // the list before the selection registers. Blocking the
+                // blur here keeps focus on the input until the click (and
+                // its onChange) has already run.
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   onChange(option);
                   setQuery('');

@@ -27,6 +27,11 @@ const STATUS_TONE: Record<string, Tone> = {
   PENDING: 'warning',
   APPROVED: 'success',
   REJECTED: 'danger',
+  UPCOMING: 'neutral',
+  ONGOING: 'success',
+  EXPIRED: 'neutral',
+  COMPLETED: 'success',
+  CANCELLED: 'danger',
 };
 
 export function Badge({

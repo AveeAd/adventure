@@ -829,19 +829,31 @@ enum TripGroupRole {
   MEMBER
 }
 
+// The organizer-managed lifecycle, distinct from isActive (which stays a
+// pure admin-moderation soft-delete flag). UPCOMING/ONGOING/EXPIRED are
+// deliberately not values here - they're derived from dateStart/dateEnd at
+// read time (see TripGroupsService), never stored, so they can't drift out
+// of sync with "now". ACTIVE is the only state that badge applies to.
+enum TripGroupStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
 model TripGroup {
-  id              String        @id @default(uuid())
+  id              String          @id @default(uuid())
   adventurePageId String
-  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  adventurePage   AdventurePage   @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   title           String
   description     String // Markdown, rendered like TripReport.content
   dateStart       DateTime
   dateEnd         DateTime
   createdById     String
-  createdBy       User          @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  isActive        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdBy       User            @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  status          TripGroupStatus @default(ACTIVE)
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   members TripGroupMember[]
 

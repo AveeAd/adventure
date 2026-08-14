@@ -5,12 +5,15 @@
   "startGroup": "Start a group",
   "subheading": "Find companions doing this route in the same window.",
   "noneYet": "No trip groups yet — be the first to start one.",
+  "noneMatch": "No trip groups for that adventure page yet.",
+  "adventurePageFilterHint": "Filters the list below, and is where a new group gets started.",
   "backToGroups": "← Back to trip groups",
   "members": "Members ({{count}})",
   "organizer": "Organizer",
   "joinGroup": "Join group",
   "leaveGroup": "Leave group",
   "cancelGroup": "Cancel group",
+  "markCompleted": "Mark completed",
   "newTitle": "Start a trip group for {{title}}",
   "newSubheading": "You'll be the organizer. Anyone can join once it's posted.",
   "fields": {
@@ -19,7 +22,8 @@
     "startDate": "Start date",
     "endDate": "End date",
     "description": "Description",
-    "descriptionHint": "Markdown supported"
+    "descriptionHint": "Markdown supported",
+    "adventurePage": "Adventure page"
   },
   "actions": {
     "creating": "Creating...",
@@ -28,7 +32,7 @@
   "errors": {
     "failedToJoin": "Failed to join",
     "failedToLeave": "Failed to leave",
-    "failedToCancel": "Failed to cancel group",
+    "failedToUpdateStatus": "Failed to update trip group status",
     "failedToCreate": "Failed to create trip group"
   }
 }

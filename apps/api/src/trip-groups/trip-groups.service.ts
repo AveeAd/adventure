@@ -1,13 +1,33 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Role, TripGroupRole } from '@prisma/client';
+import { Role, TripGroupRole, TripGroupStatus } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateTripGroupDto } from './dto/create-trip-group.dto';
 import { UpdateTripGroupDto } from './dto/update-trip-group.dto';
+import { UpdateTripGroupStatusDto } from './dto/update-trip-group-status.dto';
 
 const MEMBER_INCLUDE = {
   members: { include: { user: { select: { id: true, email: true } } } },
 } as const;
+
+type DisplayStatus = 'UPCOMING' | 'ONGOING' | 'EXPIRED' | 'COMPLETED' | 'CANCELLED';
+
+// COMPLETED/CANCELLED are organizer-set and always win; otherwise the badge
+// is purely derived from dateStart/dateEnd vs now - never stored, so it
+// can't drift out of sync with "now" the way a cached value could.
+function withDisplayStatus<T extends { status: TripGroupStatus; dateStart: Date; dateEnd: Date }>(
+  group: T,
+): T & { displayStatus: DisplayStatus } {
+  if (group.status === TripGroupStatus.COMPLETED) {
+    return { ...group, displayStatus: 'COMPLETED' };
+  }
+  if (group.status === TripGroupStatus.CANCELLED) {
+    return { ...group, displayStatus: 'CANCELLED' };
+  }
+  const now = new Date();
+  const displayStatus: DisplayStatus = now < group.dateStart ? 'UPCOMING' : now > group.dateEnd ? 'EXPIRED' : 'ONGOING';
+  return { ...group, displayStatus };
+}
 
 @Injectable()
 export class TripGroupsService {
@@ -29,7 +49,7 @@ export class TripGroupsService {
       }),
       this.prisma.tripGroup.count({ where }),
     ]);
-    return { data, total, page, pageSize };
+    return { data: data.map(withDisplayStatus), total, page, pageSize };
   }
 
   // admin-only flat listing across all pages
@@ -48,7 +68,7 @@ export class TripGroupsService {
       }),
       this.prisma.tripGroup.count({ where }),
     ]);
-    return { data, total, page, pageSize };
+    return { data: data.map(withDisplayStatus), total, page, pageSize };
   }
 
   async get(id: string) {
@@ -56,7 +76,7 @@ export class TripGroupsService {
     if (!group) {
       throw new NotFoundException(`Trip group ${id} not found`);
     }
-    return group;
+    return withDisplayStatus(group);
   }
 
   // creating a group and joining it as ORGANIZER happen together - a group
@@ -77,13 +97,14 @@ export class TripGroupsService {
       await tx.tripGroupMember.create({
         data: { tripGroupId: group.id, userId, role: TripGroupRole.ORGANIZER },
       });
-      return tx.tripGroup.findUniqueOrThrow({ where: { id: group.id }, include: MEMBER_INCLUDE });
+      const created = await tx.tripGroup.findUniqueOrThrow({ where: { id: group.id }, include: MEMBER_INCLUDE });
+      return withDisplayStatus(created);
     });
   }
 
   async update(id: string, currentUser: AuthenticatedUser, dto: UpdateTripGroupDto) {
     await this.ensureOrganizerOrAdmin(id, currentUser);
-    return this.prisma.tripGroup.update({
+    const group = await this.prisma.tripGroup.update({
       where: { id },
       data: {
         title: dto.title,
@@ -93,6 +114,21 @@ export class TripGroupsService {
       },
       include: MEMBER_INCLUDE,
     });
+    return withDisplayStatus(group);
+  }
+
+  // Organizer-only lifecycle action (COMPLETED/CANCELLED, no way back to
+  // ACTIVE yet) - deliberately separate from delete()'s isActive flag below,
+  // which stays a pure admin-moderation soft-delete, not something an
+  // organizer marking their own trip "done" should touch.
+  async updateStatus(id: string, currentUser: AuthenticatedUser, dto: UpdateTripGroupStatusDto) {
+    await this.ensureOrganizerOrAdmin(id, currentUser);
+    const group = await this.prisma.tripGroup.update({
+      where: { id },
+      data: { status: dto.status as TripGroupStatus },
+      include: MEMBER_INCLUDE,
+    });
+    return withDisplayStatus(group);
   }
 
   async delete(id: string, currentUser: AuthenticatedUser) {
@@ -101,7 +137,13 @@ export class TripGroupsService {
   }
 
   async join(id: string, userId: string) {
-    await this.ensureExists(id);
+    const group = await this.prisma.tripGroup.findUnique({ where: { id }, select: { id: true, status: true } });
+    if (!group) {
+      throw new NotFoundException(`Trip group ${id} not found`);
+    }
+    if (group.status !== TripGroupStatus.ACTIVE) {
+      throw new ConflictException('This trip group is no longer accepting members');
+    }
     const existing = await this.prisma.tripGroupMember.findUnique({
       where: { tripGroupId_userId: { tripGroupId: id, userId } },
     });

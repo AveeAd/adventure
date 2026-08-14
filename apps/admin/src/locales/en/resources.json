@@ -107,7 +107,8 @@
       "members": "Members",
       "description": "Description",
       "email": "Email",
-      "role": "Role"
+      "role": "Role",
+      "status": "Status"
     },
     "membersHeading": "Members ({{count}})",
     "noDescription": "No description"
