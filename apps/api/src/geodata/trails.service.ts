@@ -81,6 +81,18 @@ export class TrailsService {
     `;
   }
 
+  // Minimal id+name lookup backing the club-thread attachment picker - not a
+  // general search service, just enough for a search-as-you-type combobox.
+  // No geometry needed, so a plain Prisma query rather than the raw-SQL
+  // pattern the geometry-returning methods below require.
+  async search(q: string) {
+    return this.prisma.trail.findMany({
+      where: { isActive: true, name: { contains: q, mode: 'insensitive' } },
+      select: { id: true, name: true },
+      take: 10,
+    });
+  }
+
   // Response gains elevationProfile (aggregates + samples) when present, per
   // TRAIL_ELEVATION.md - an explicit extra select, not selected on the list/
   // bbox paths above, matching the doc's "not selected unless asked for" rule.

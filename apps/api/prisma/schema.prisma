@@ -25,20 +25,20 @@ model User {
   profile       Profile?
   refreshTokens RefreshToken[]
 
-  revisions          PageRevision[]
-  pageConfirmations  PageConfirmation[]
-  uploadedMedia      Media[]
-  adventurePageLikes AdventurePageLike[]
+  revisions           PageRevision[]
+  pageConfirmations   PageConfirmation[]
+  uploadedMedia       Media[]
+  adventurePageLikes  AdventurePageLike[]
   adventurePageVisits AdventurePageVisit[]
 
-  createdTrails      Trail[] @relation("TrailCreatedBy")
-  lastEditedTrails   Trail[] @relation("TrailLastEditedBy")
+  createdTrails      Trail[]             @relation("TrailCreatedBy")
+  lastEditedTrails   Trail[]             @relation("TrailLastEditedBy")
   trailConfirmations TrailConfirmation[]
-  trailRevisions     TrailRevision[] @relation("TrailRevisionEditor")
-  createdSpots       Spot[] @relation("SpotCreatedBy")
-  lastEditedSpots    Spot[] @relation("SpotLastEditedBy")
+  trailRevisions     TrailRevision[]     @relation("TrailRevisionEditor")
+  createdSpots       Spot[]              @relation("SpotCreatedBy")
+  lastEditedSpots    Spot[]              @relation("SpotLastEditedBy")
   spotConfirmations  SpotConfirmation[]
-  spotRevisions      SpotRevision[] @relation("SpotRevisionEditor")
+  spotRevisions      SpotRevision[]      @relation("SpotRevisionEditor")
 
   // MILESTONE_3.md §5.1: the approver whose vote resolved a pending revision
   // (blank for the pre-Phase-21 backfill, and for votes that never crossed
@@ -58,6 +58,9 @@ model User {
   createdClubs           Club[]
   clubMemberships        ClubMember[]
   clubMembershipsDecided ClubMember[] @relation("ClubMembershipDecidedBy")
+
+  threads       Thread[]
+  threadReplies ThreadReply[]
 
   guideProfile GuideProfile?
 
@@ -157,23 +160,23 @@ model Province {
 }
 
 model District {
-  id                       String   @id @default(uuid())
+  id                       String                                       @id @default(uuid())
   provinceId               String
-  province                 Province @relation(fields: [provinceId], references: [id], onDelete: Restrict)
+  province                 Province                                     @relation(fields: [provinceId], references: [id], onDelete: Restrict)
   name                     String
   slug                     String
-  requiresRegisteredAgency Boolean  @default(false)
+  requiresRegisteredAgency Boolean                                      @default(false)
   // Nullable: import may be partial, and the ~838 pre-existing location rows
   // predate boundaries. Same Unsupported/GiST/raw-SQL consequences as
   // Trail.geometry - see FEATURE.md §4's district-tagging design.
   boundary                 Unsupported("geometry(MultiPolygon, 4326)")?
-  isActive                 Boolean  @default(true)
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  isActive                 Boolean                                      @default(true)
+  createdAt                DateTime                                     @default(now())
+  updatedAt                DateTime                                     @updatedAt
 
-  municipalities Municipality[]
+  municipalities         Municipality[]
   adventurePageDistricts AdventurePageDistrict[]
-  guideRegions GuideRegion[]
+  guideRegions           GuideRegion[]
 
   @@unique([provinceId, slug])
   @@map("districts")
@@ -245,48 +248,49 @@ enum ApprovalDecision {
 }
 
 model AdventurePage {
-  id                 String   @id @default(uuid())
-  title              String
-  slug               String   @unique
-  summary            String?
-  activityTypeId     String
-  activityType       ActivityType     @relation(fields: [activityTypeId], references: [id], onDelete: Restrict)
-  difficultyLevelId  String?
-  difficultyLevel    DifficultyLevel? @relation(fields: [difficultyLevelId], references: [id], onDelete: Restrict)
-  durationMinDays    Int?
-  durationMaxDays    Int?
-  maxAltitudeMeters  Int?
-  verificationStatus PageVerificationStatus @default(UNVERIFIED)
+  id                   String                 @id @default(uuid())
+  title                String
+  slug                 String                 @unique
+  summary              String?
+  activityTypeId       String
+  activityType         ActivityType           @relation(fields: [activityTypeId], references: [id], onDelete: Restrict)
+  difficultyLevelId    String?
+  difficultyLevel      DifficultyLevel?       @relation(fields: [difficultyLevelId], references: [id], onDelete: Restrict)
+  durationMinDays      Int?
+  durationMaxDays      Int?
+  maxAltitudeMeters    Int?
+  verificationStatus   PageVerificationStatus @default(UNVERIFIED)
   // MILESTONE_3.md §5.1: null until any revision has ever been approved -
   // the published version. pendingRevisionCount is a cache for the "N
   // unapproved changes" badge (Phase 22 UI), recomputed on every vote.
-  approvedRevisionId   String? @unique
-  approvedRevision     PageRevision? @relation("ApprovedPageRevision", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
-  pendingRevisionCount Int      @default(0)
-  isActive           Boolean  @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  approvedRevisionId   String?                @unique
+  approvedRevision     PageRevision?          @relation("ApprovedPageRevision", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
+  pendingRevisionCount Int                    @default(0)
+  isActive             Boolean                @default(true)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
 
   // trigger-maintained (title + summary + latest revision content) - see
   // migration 20260729080000_search_and_notifications. Never written to by
   // Prisma, same "Unsupported columns aren't diff-managed" gotcha as geometry.
   searchVector Unsupported("tsvector")?
 
-  revisions PageRevision[]
-  districts AdventurePageDistrict[]
-  seasons   AdventurePageSeason[]
-  media     Media[]
-  likes     AdventurePageLike[]
-  visits    AdventurePageVisit[]
-  trails    Trail[]
-  spots     Spot[]
-  tripReports TripReport[]
-  tripGroups TripGroup[]
+  revisions      PageRevision[]
+  districts      AdventurePageDistrict[]
+  seasons        AdventurePageSeason[]
+  media          Media[]
+  likes          AdventurePageLike[]
+  visits         AdventurePageVisit[]
+  trails         Trail[]
+  spots          Spot[]
+  tripReports    TripReport[]
+  tripGroups     TripGroup[]
   activityTracks ActivityTrack[]
-  tags      AdventurePageTag[]
-  relatedTo   RelatedAdventurePage[] @relation("PageRelations")
-  relatedFrom RelatedAdventurePage[] @relation("RelatedByPage")
-  views       AdventurePageView[]
+  tags           AdventurePageTag[]
+  relatedTo      RelatedAdventurePage[]  @relation("PageRelations")
+  relatedFrom    RelatedAdventurePage[]  @relation("RelatedByPage")
+  views          AdventurePageView[]
+  threads        Thread[]
 
   @@map("adventure_pages")
 }
@@ -297,23 +301,23 @@ model AdventurePage {
 // per-load counter is enough for a non-commercial community site, revisit
 // if it ever needs to resist inflation.
 model AdventurePageView {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
+  createdAt       DateTime      @default(now())
 
   @@index([adventurePageId, createdAt])
   @@map("adventure_page_views")
 }
 
 model PageRevision {
-  id                   String   @id @default(uuid())
+  id                   String        @id @default(uuid())
   adventurePageId      String
   adventurePage        AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   version              Int
-  content              String        // Markdown, full snapshot per revision - not a diff
+  content              String // Markdown, full snapshot per revision - not a diff
   editSummary          String?
-  isSafetyCriticalEdit Boolean  @default(false)
+  isSafetyCriticalEdit Boolean       @default(false)
   editorId             String
   editor               User          @relation(fields: [editorId], references: [id], onDelete: Restrict)
   createdAt            DateTime      @default(now())
@@ -338,13 +342,13 @@ model PageRevision {
 // retargeting confirmation tables to revisionId. `decision` turns what used
 // to be a pure confirm-count into an APPROVE/REJECT vote.
 model PageConfirmation {
-  id         String   @id @default(uuid())
+  id         String           @id @default(uuid())
   revisionId String
-  revision   PageRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  revision   PageRevision     @relation(fields: [revisionId], references: [id], onDelete: Cascade)
   userId     String
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   decision   ApprovalDecision @default(APPROVE)
-  createdAt  DateTime @default(now())
+  createdAt  DateTime         @default(now())
 
   @@unique([revisionId, userId])
   @@map("page_confirmations")
@@ -356,23 +360,23 @@ enum DistrictTagSource {
 }
 
 model AdventurePageDistrict {
-  id              String   @id @default(uuid())
+  id              String            @id @default(uuid())
   adventurePageId String
-  adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  adventurePage   AdventurePage     @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   districtId      String
-  district        District      @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  district        District          @relation(fields: [districtId], references: [id], onDelete: Restrict)
   // Was missing createdAt/updatedAt entirely - a standing violation of §2's
   // "every table" convention, fixed in the same migration that adds `source`.
   source          DistrictTagSource @default(MANUAL)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@unique([adventurePageId, districtId])
   @@map("adventure_page_districts")
 }
 
 model AdventurePageSeason {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   seasonId        String
@@ -399,7 +403,7 @@ model Tag {
 }
 
 model AdventurePageTag {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   tagId           String
@@ -414,43 +418,43 @@ model AdventurePageTag {
 // a page. Revisit if this becomes a spam vector (see TRIP_GROUPS.md-style
 // open-decisions framing).
 model RelatedAdventurePage {
-  id            String   @id @default(uuid())
+  id            String        @id @default(uuid())
   pageId        String
   page          AdventurePage @relation("PageRelations", fields: [pageId], references: [id], onDelete: Cascade)
   relatedPageId String
   relatedPage   AdventurePage @relation("RelatedByPage", fields: [relatedPageId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
+  createdAt     DateTime      @default(now())
 
   @@unique([pageId, relatedPageId])
   @@map("related_adventure_pages")
 }
 
 model Media {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   url             String
   caption         String?
   altText         String?
-  sortOrder       Int      @default(0)
+  sortOrder       Int           @default(0)
   uploadedById    String
-  uploadedBy      User     @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  uploadedBy      User          @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
   // MILESTONE_3.md §8: flipped false by an upheld MEDIA report - there's no
   // prior version to fall back to, unlike page/trail/spot content, so this
   // is a plain soft delete rather than a revert.
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
 
   @@map("media")
 }
 
 model AdventurePageLike {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   userId          String
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt       DateTime @default(now())
+  createdAt       DateTime      @default(now())
 
   @@unique([adventurePageId, userId])
   @@map("adventure_page_likes")
@@ -460,12 +464,12 @@ model AdventurePageLike {
 // (anonymous, undeduped) - deduped per user with a timestamp so a future
 // trending/"recently most visited" query can use it. See ai/REVISION.md.
 model AdventurePageVisit {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   userId          String
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  visitedAt       DateTime @default(now())
+  visitedAt       DateTime      @default(now())
 
   @@unique([adventurePageId, userId])
   @@index([adventurePageId, visitedAt])
@@ -504,27 +508,28 @@ enum TrailSource {
 }
 
 model Trail {
-  id                 String   @id @default(uuid())
-  adventurePageId    String
-  adventurePage      AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
-  name               String?
-  geometry           Unsupported("geometry(LineString, 4326)")
-  distanceMeters     Int?
-  source             TrailSource @default(DRAWN)
-  verificationStatus GeoVerificationStatus @default(UNVERIFIED)
-  approvedRevisionId   String? @unique
-  approvedRevision     TrailRevision? @relation("ApprovedTrail", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
-  pendingRevisionCount Int      @default(0)
-  isActive           Boolean  @default(true)
-  createdById        String
-  createdBy          User     @relation("TrailCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  lastEditedById     String
-  lastEditedBy       User     @relation("TrailLastEditedBy", fields: [lastEditedById], references: [id], onDelete: Restrict)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                   String                                    @id @default(uuid())
+  adventurePageId      String
+  adventurePage        AdventurePage                             @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  name                 String?
+  geometry             Unsupported("geometry(LineString, 4326)")
+  distanceMeters       Int?
+  source               TrailSource                               @default(DRAWN)
+  verificationStatus   GeoVerificationStatus                     @default(UNVERIFIED)
+  approvedRevisionId   String?                                   @unique
+  approvedRevision     TrailRevision?                            @relation("ApprovedTrail", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
+  pendingRevisionCount Int                                       @default(0)
+  isActive             Boolean                                   @default(true)
+  createdById          String
+  createdBy            User                                      @relation("TrailCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  lastEditedById       String
+  lastEditedBy         User                                      @relation("TrailLastEditedBy", fields: [lastEditedById], references: [id], onDelete: Restrict)
+  createdAt            DateTime                                  @default(now())
+  updatedAt            DateTime                                  @updatedAt
 
   revisions        TrailRevision[]
   elevationProfile TrailElevationProfile?
+  threads          Thread[]
 
   @@map("trails")
 }
@@ -552,13 +557,13 @@ model TrailElevationProfile {
 // exactly PageConfirmation's shape (@@unique([revisionId, userId]), no
 // trailId-equivalent on this table either). See GEODATA_HISTORY.md.
 model TrailConfirmation {
-  id         String        @id @default(uuid())
+  id         String           @id @default(uuid())
   revisionId String
-  revision   TrailRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  revision   TrailRevision    @relation(fields: [revisionId], references: [id], onDelete: Cascade)
   userId     String
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   decision   ApprovalDecision @default(APPROVE)
-  createdAt  DateTime      @default(now())
+  createdAt  DateTime         @default(now())
 
   @@unique([revisionId, userId])
   @@map("trail_confirmations")
@@ -566,26 +571,26 @@ model TrailConfirmation {
 
 // Full snapshot per edit, mirrors PageRevision.content - see GEODATA_HISTORY.md.
 model TrailRevision {
-  id                   String   @id @default(uuid())
+  id                   String                                    @id @default(uuid())
   trailId              String
-  trail                Trail    @relation(fields: [trailId], references: [id], onDelete: Cascade)
+  trail                Trail                                     @relation(fields: [trailId], references: [id], onDelete: Cascade)
   version              Int
   geometry             Unsupported("geometry(LineString, 4326)")
   name                 String?
   distanceMeters       Int?
   editSummary          String?
-  isSafetyCriticalEdit Boolean  @default(false)
+  isSafetyCriticalEdit Boolean                                   @default(false)
   editorId             String
-  editor               User     @relation("TrailRevisionEditor", fields: [editorId], references: [id], onDelete: Restrict)
-  createdAt            DateTime @default(now())
+  editor               User                                      @relation("TrailRevisionEditor", fields: [editorId], references: [id], onDelete: Restrict)
+  createdAt            DateTime                                  @default(now())
 
   // MILESTONE_3.md §5.1 - see PageRevision's identical block for the full note.
-  approvalStatus  ApprovalStatus @default(PENDING)
-  resolvedAt      DateTime?
-  resolvedById    String?
-  resolvedBy      User?          @relation("TrailRevisionResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
-  rejectionReason String?
-  approvedForTrail Trail?        @relation("ApprovedTrail")
+  approvalStatus   ApprovalStatus @default(PENDING)
+  resolvedAt       DateTime?
+  resolvedById     String?
+  resolvedBy       User?          @relation("TrailRevisionResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  rejectionReason  String?
+  approvedForTrail Trail?         @relation("ApprovedTrail")
 
   confirmations TrailConfirmation[]
 
@@ -594,41 +599,42 @@ model TrailRevision {
 }
 
 model Spot {
-  id                 String   @id @default(uuid())
-  adventurePageId    String
-  adventurePage      AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
-  spotTypeId         String
-  spotType           SpotType @relation(fields: [spotTypeId], references: [id], onDelete: Restrict)
-  name               String
-  description        String?
-  geometry           Unsupported("geometry(Point, 4326)")
-  elevationMeters    Int?
-  verificationStatus GeoVerificationStatus @default(UNVERIFIED)
-  approvedRevisionId   String? @unique
-  approvedRevision     SpotRevision? @relation("ApprovedSpot", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
-  pendingRevisionCount Int      @default(0)
-  isActive           Boolean  @default(true)
-  createdById        String
-  createdBy          User     @relation("SpotCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
-  lastEditedById     String
-  lastEditedBy       User     @relation("SpotLastEditedBy", fields: [lastEditedById], references: [id], onDelete: Restrict)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                   String                               @id @default(uuid())
+  adventurePageId      String
+  adventurePage        AdventurePage                        @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  spotTypeId           String
+  spotType             SpotType                             @relation(fields: [spotTypeId], references: [id], onDelete: Restrict)
+  name                 String
+  description          String?
+  geometry             Unsupported("geometry(Point, 4326)")
+  elevationMeters      Int?
+  verificationStatus   GeoVerificationStatus                @default(UNVERIFIED)
+  approvedRevisionId   String?                              @unique
+  approvedRevision     SpotRevision?                        @relation("ApprovedSpot", fields: [approvedRevisionId], references: [id], onDelete: SetNull)
+  pendingRevisionCount Int                                  @default(0)
+  isActive             Boolean                              @default(true)
+  createdById          String
+  createdBy            User                                 @relation("SpotCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  lastEditedById       String
+  lastEditedBy         User                                 @relation("SpotLastEditedBy", fields: [lastEditedById], references: [id], onDelete: Restrict)
+  createdAt            DateTime                             @default(now())
+  updatedAt            DateTime                             @updatedAt
 
   revisions SpotRevision[]
+  threads   Thread[]
 
   @@map("spots")
 }
 
 // CHANGED, not new - retargeted from spotId to revisionId. See GEODATA_HISTORY.md.
 model SpotConfirmation {
-  id         String       @id @default(uuid())
+  id         String           @id @default(uuid())
   revisionId String
-  revision   SpotRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
+  revision   SpotRevision     @relation(fields: [revisionId], references: [id], onDelete: Cascade)
   userId     String
-  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   decision   ApprovalDecision @default(APPROVE)
-  createdAt  DateTime     @default(now())
+  createdAt  DateTime         @default(now())
 
   @@unique([revisionId, userId])
   @@map("spot_confirmations")
@@ -636,21 +642,21 @@ model SpotConfirmation {
 
 // Full snapshot per edit, mirrors PageRevision.content - see GEODATA_HISTORY.md.
 model SpotRevision {
-  id                   String   @id @default(uuid())
+  id                   String                               @id @default(uuid())
   spotId               String
-  spot                 Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  spot                 Spot                                 @relation(fields: [spotId], references: [id], onDelete: Cascade)
   version              Int
   geometry             Unsupported("geometry(Point, 4326)")
   spotTypeId           String
-  spotType             SpotType @relation(fields: [spotTypeId], references: [id], onDelete: Restrict)
+  spotType             SpotType                             @relation(fields: [spotTypeId], references: [id], onDelete: Restrict)
   name                 String
   description          String?
   elevationMeters      Int?
   editSummary          String?
-  isSafetyCriticalEdit Boolean  @default(false)
+  isSafetyCriticalEdit Boolean                              @default(false)
   editorId             String
-  editor               User     @relation("SpotRevisionEditor", fields: [editorId], references: [id], onDelete: Restrict)
-  createdAt            DateTime @default(now())
+  editor               User                                 @relation("SpotRevisionEditor", fields: [editorId], references: [id], onDelete: Restrict)
+  createdAt            DateTime                             @default(now())
 
   // MILESTONE_3.md §5.1 - see PageRevision's identical block for the full note.
   approvalStatus  ApprovalStatus @default(PENDING)
@@ -667,21 +673,21 @@ model SpotRevision {
 }
 
 model TripReport {
-  id                String   @id @default(uuid())
-  adventurePageId   String
-  adventurePage     AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
-  authorId          String
-  author            User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  title             String?
-  description       String? // short summary shown in list views
-  content           String? // full story, markdown - rendered like AdventurePage content
-  dateCompleted     DateTime
-  durationDays      Int?
-  actualCostAmount  Int?
-  currency          String   @default("NPR") // fixed short list (NPR/USD/EUR/INR), validated in the DTO
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id               String        @id @default(uuid())
+  adventurePageId  String
+  adventurePage    AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
+  authorId         String
+  author           User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  title            String?
+  description      String? // short summary shown in list views
+  content          String? // full story, markdown - rendered like AdventurePage content
+  dateCompleted    DateTime
+  durationDays     Int?
+  actualCostAmount Int?
+  currency         String        @default("NPR") // fixed short list (NPR/USD/EUR/INR), validated in the DTO
+  isActive         Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   media          TripReportMedia[]
   kudos          TripReportKudos[]
@@ -694,6 +700,8 @@ model TripReport {
   // time from clubs they belong to (checked in the service, not the DTO).
   clubId String?
   club   Club?   @relation(fields: [clubId], references: [id], onDelete: SetNull)
+
+  threads Thread[]
 
   @@map("trip_reports")
 }
@@ -723,8 +731,8 @@ model ActivityTrack {
   adventurePageId String?
   adventurePage   AdventurePage? @relation(fields: [adventurePageId], references: [id], onDelete: SetNull)
   // Many tracks per report - a multi-day trek is one track per day, one story.
-  tripReportId String?
-  tripReport   TripReport? @relation(fields: [tripReportId], references: [id], onDelete: SetNull)
+  tripReportId    String?
+  tripReport      TripReport?    @relation(fields: [tripReportId], references: [id], onDelete: SetNull)
 
   activityTypeId String
   activityType   ActivityType @relation(fields: [activityTypeId], references: [id], onDelete: Restrict)
@@ -734,7 +742,7 @@ model ActivityTrack {
   // Simplified path, for map rendering and spatial queries only. Full-fidelity
   // series lives in `samples` - the same sidecar split TrailElevationProfile
   // uses, for the same reason: geometry(LineString, 4326) forbids Z and M.
-  geometry Unsupported("geometry(LineString, 4326)")
+  geometry    Unsupported("geometry(LineString, 4326)")
   // [{ t: <s from startedAt>, d: <m along path>, e: <m elevation> }, ...]
   // Whole-object read, never queried into. Timestamps are legitimate here -
   // this row is user-owned and private by default, unlike a public Trail.
@@ -757,8 +765,8 @@ model ActivityTrack {
   // Client-generated, so an offline upload retry is idempotent instead of
   // duplicating the track. Nullable; Postgres treats two NULLs as unequal,
   // so the composite unique still permits many server-created rows.
-  clientUuid      String?
-  originalFileUrl String? // uploaded GPX/KML retained for re-parsing
+  clientUuid        String?
+  originalFileUrl   String? // uploaded GPX/KML retained for re-parsing
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -770,40 +778,40 @@ model ActivityTrack {
 }
 
 model TripReportMedia {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   tripReportId String
   tripReport   TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
   url          String
   caption      String?
   altText      String?
-  sortOrder    Int      @default(0)
-  createdAt    DateTime @default(now())
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
 
   @@map("trip_report_media")
 }
 
 model TripReportKudos {
-  id           String   @id @default(uuid())
+  id           String     @id @default(uuid())
   tripReportId String
   tripReport   TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
   userId       String
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
+  createdAt    DateTime   @default(now())
 
   @@unique([tripReportId, userId])
   @@map("trip_report_kudos")
 }
 
 model Comment {
-  id               String   @id @default(uuid())
-  tripReportId     String
-  tripReport       TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
-  authorId         String
-  author           User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
-  content          String
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id           String     @id @default(uuid())
+  tripReportId String
+  tripReport   TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  content      String
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   parentCommentId String?
   parentComment   Comment?  @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
@@ -822,18 +830,18 @@ enum TripGroupRole {
 }
 
 model TripGroup {
-  id              String   @id @default(uuid())
+  id              String        @id @default(uuid())
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   title           String
-  description     String?
+  description     String // Markdown, rendered like TripReport.content
   dateStart       DateTime
   dateEnd         DateTime
   createdById     String
-  createdBy       User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdBy       User          @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   members TripGroupMember[]
 
@@ -841,13 +849,13 @@ model TripGroup {
 }
 
 model TripGroupMember {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   tripGroupId String
-  tripGroup   TripGroup @relation(fields: [tripGroupId], references: [id], onDelete: Cascade)
+  tripGroup   TripGroup     @relation(fields: [tripGroupId], references: [id], onDelete: Cascade)
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   role        TripGroupRole @default(MEMBER)
-  joinedAt    DateTime  @default(now())
+  joinedAt    DateTime      @default(now())
 
   @@unique([tripGroupId, userId])
   @@map("trip_group_members")
@@ -899,6 +907,7 @@ model Club {
 
   members     ClubMember[]
   tripReports TripReport[]
+  threads     Thread[]
 
   @@map("clubs")
 }
@@ -922,6 +931,70 @@ model ClubMember {
 
   @@unique([clubId, userId])
   @@map("club_members")
+}
+
+enum ThreadTag {
+  DISCUSSION
+  TRIP_SHARE
+  QUESTION
+  ANNOUNCEMENT
+  RANDOM
+}
+
+// A club's feed unit - a discussion post, not a factual claim, so no
+// verification tier and never approval-gated, same reasoning as TripReport.
+// Each of the four attachment FKs is independently optional and SetNull:
+// a thread is a discussion *about* content, not a container for it, so
+// deactivating/deleting the attached item must not destroy the thread.
+model Thread {
+  id        String    @id @default(uuid())
+  clubId    String
+  club      Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  content   String
+  tag       ThreadTag @default(DISCUSSION)
+  isActive  Boolean   @default(true)
+  // Pin/lock is a moderation action, not author-settable - enforced in the
+  // service layer, same split as ClubMember.role vs status.
+  isPinned  Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tripReportId    String?
+  tripReport      TripReport?    @relation(fields: [tripReportId], references: [id], onDelete: SetNull)
+  trailId         String?
+  trail           Trail?         @relation(fields: [trailId], references: [id], onDelete: SetNull)
+  spotId          String?
+  spot            Spot?          @relation(fields: [spotId], references: [id], onDelete: SetNull)
+  adventurePageId String?
+  adventurePage   AdventurePage? @relation(fields: [adventurePageId], references: [id], onDelete: SetNull)
+
+  replies ThreadReply[]
+
+  @@index([clubId, isActive, createdAt])
+  @@map("threads")
+}
+
+// Mirrors Comment's shape (one level of self-referential nesting) rather
+// than a nullable threadId on Comment itself - see CLAUDE.md's stated
+// preference for a duplicated-but-simple table over a polymorphic one.
+model ThreadReply {
+  id        String   @id @default(uuid())
+  threadId  String
+  thread    Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  content   String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parentReplyId String?
+  parentReply   ThreadReply?  @relation("ThreadReplyReplies", fields: [parentReplyId], references: [id], onDelete: Cascade)
+  replies       ThreadReply[] @relation("ThreadReplyReplies")
+
+  @@map("thread_replies")
 }
 
 enum GuideVerificationStatus {
@@ -951,9 +1024,9 @@ enum RateUnit {
 }
 
 model GuideProfile {
-  id                 String   @id @default(uuid())
-  userId             String   @unique
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String                  @id @default(uuid())
+  userId             String                  @unique
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   licenseNumber      String?
   bio                String?
   rateMin            Int?
@@ -963,20 +1036,20 @@ model GuideProfile {
   // rateUnit but no currency column, so NPR was hardcoded at four UI sites
   // while TripReport.currency has existed since Phase 13. Same shape as
   // that column: a fixed short list validated in the DTO, not a Prisma enum.
-  currency           String   @default("NPR")
+  currency           String                  @default("NPR")
   verificationStatus GuideVerificationStatus @default(UNVERIFIED)
-  isActive           Boolean  @default(true)
+  isActive           Boolean                 @default(true)
   // MILESTONE_3.md §2.2: GuideProfile becomes universal (one row per user,
   // auto-created on first login), so the public /guides directory now
   // filters on this rather than listing every row.
-  isListed           Boolean  @default(false)
+  isListed           Boolean                 @default(false)
   // Denormalized caches over ContributionEvent / approval votes - the
   // ledger is the source of truth; a recompute command exists for drift.
-  contributionPoints Int      @default(0)
-  guideLevel         Int      @default(1)
-  approvalsGiven     Int      @default(0)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  contributionPoints Int                     @default(0)
+  guideLevel         Int                     @default(1)
+  approvalsGiven     Int                     @default(0)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
 
   specialties GuideSpecialty[]
   regions     GuideRegion[]
@@ -986,7 +1059,7 @@ model GuideProfile {
 }
 
 model GuideSpecialty {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   guideProfileId String
   guideProfile   GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
   activityTypeId String
@@ -997,7 +1070,7 @@ model GuideSpecialty {
 }
 
 model GuideRegion {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   guideProfileId String
   guideProfile   GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
   districtId     String
@@ -1008,7 +1081,7 @@ model GuideRegion {
 }
 
 model GuideLanguage {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   guideProfileId String
   guideProfile   GuideProfile @relation(fields: [guideProfileId], references: [id], onDelete: Cascade)
   languageId     String
@@ -1044,19 +1117,22 @@ enum NotificationType {
   // and the requester is notified once it's approved/declined.
   CLUB_JOIN_REQUESTED
   CLUB_JOIN_DECIDED
+  // A reply on a thread notifies the parent reply's author, or the thread
+  // author for a top-level reply - same branch as REPLY on Comment.
+  THREAD_REPLY
 }
 
 // one-way system messages, not user chat - doesn't reopen IDEA.md's
 // no-in-app-messaging ruling, per TRIP_GROUPS.md-style framing
 model Notification {
-  id        String   @id @default(uuid())
+  id        String           @id @default(uuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   message   String
   linkUrl   String?
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
 
   @@index([userId, isRead])
   @@map("notifications")
@@ -1112,15 +1188,15 @@ enum ContributionTargetType {
 // audit log never joined for referential integrity. Reads resolve the
 // target lazily and tolerate a missing row (content can be hard-deleted).
 model ContributionEvent {
-  id         String   @id @default(uuid())
+  id         String                 @id @default(uuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   reason     ContributionReason
   points     Int // signed
   targetType ContributionTargetType
   targetId   String
   note       String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime               @default(now())
 
   // anti-double-award guard: approving a revision twice, or a retried
   // transaction, cannot pay twice.
@@ -1143,6 +1219,8 @@ enum ReportTargetType {
   MEDIA
   TRIP_REPORT
   COMMENT
+  THREAD
+  THREAD_REPLY
 }
 
 enum ReportReason {
@@ -1161,20 +1239,20 @@ enum ReportStatus {
 }
 
 model ContentReport {
-  id             String   @id @default(uuid())
+  id             String           @id @default(uuid())
   reporterId     String
-  reporter       User     @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  reporter       User             @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
   targetType     ReportTargetType
   targetId       String
   reason         ReportReason
   details        String?
-  status         ReportStatus @default(PENDING)
+  status         ReportStatus     @default(PENDING)
   resolvedById   String?
-  resolvedBy     User?    @relation("ReportsResolved", fields: [resolvedById], references: [id], onDelete: SetNull)
+  resolvedBy     User?            @relation("ReportsResolved", fields: [resolvedById], references: [id], onDelete: SetNull)
   resolvedAt     DateTime?
   resolutionNote String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([status, createdAt])
   @@index([targetType, targetId])

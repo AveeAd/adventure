@@ -37,9 +37,18 @@ export class AdventurePageTripGroupsController {
 export class TripGroupsController {
   constructor(private readonly tripGroupsService: TripGroupsService) {}
 
+  // Static route, registered before the dynamic ":id" route below so Nest
+  // doesn't try to match "admin" as an :id param - same convention as
+  // clubs.controller.ts/threads.controller.ts.
   @Roles(Role.ADMIN, Role.MODERATOR)
+  @Get('admin/all')
+  listAdmin(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+    return this.tripGroupsService.listAll(Number(page) || 1, Number(pageSize) || 20);
+  }
+
+  @Public()
   @Get()
-  listAll(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
+  list(@Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     return this.tripGroupsService.listAll(Number(page) || 1, Number(pageSize) || 20);
   }
 

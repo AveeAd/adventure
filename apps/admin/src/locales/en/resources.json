@@ -42,7 +42,9 @@
       "SPOT_REVISION": "Spot revision",
       "MEDIA": "Photo",
       "TRIP_REPORT": "Trip report",
-      "COMMENT": "Comment"
+      "COMMENT": "Comment",
+      "THREAD": "Club thread",
+      "THREAD_REPLY": "Club thread reply"
     },
     "reason": {
       "FAKE_OR_FALSE": "Fake or false",
@@ -124,6 +126,23 @@
     },
     "membersHeading": "Members ({{count}})",
     "noDescription": "No description"
+  },
+  "threads": {
+    "label": "Threads",
+    "fields": {
+      "content": "Content",
+      "tag": "Tag",
+      "club": "Club",
+      "author": "Author",
+      "pinned": "Pinned",
+      "replies": "Replies"
+    },
+    "pinned": "Pinned",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinUpdated": "Thread updated",
+    "pinUpdateError": "Failed to update thread",
+    "repliesHeading": "Replies ({{count}})"
   },
   "geodata": { "label": "Trails & Spots" },
   "trails": {

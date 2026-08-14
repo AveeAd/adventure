@@ -11,7 +11,7 @@ import { EmptyState } from '../../../../components/EmptyState';
 interface TripGroupSummary {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   dateStart: string;
   dateEnd: string;
   _count: { members: number };
@@ -74,9 +74,7 @@ function TripGroupsListPage() {
                   <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
                     {formatDate(group.dateStart)} – {formatDate(group.dateEnd)}
                   </p>
-                  {group.description && (
-                    <p className="mt-2 line-clamp-2 text-sm text-stone-600 dark:text-stone-400">{group.description}</p>
-                  )}
+                  <p className="mt-2 line-clamp-2 text-sm text-stone-600 dark:text-stone-400">{group.description}</p>
                 </Card>
               </Link>
             </li>

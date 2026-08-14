@@ -16,7 +16,9 @@ type ReportTargetType =
   | 'SPOT_REVISION'
   | 'MEDIA'
   | 'TRIP_REPORT'
-  | 'COMMENT';
+  | 'COMMENT'
+  | 'THREAD'
+  | 'THREAD_REPLY';
 
 interface ContentReportRow {
   id: string;
@@ -38,6 +40,7 @@ const RESOURCE_ROUTE: Partial<Record<ReportTargetType, string>> = {
   TRAIL: 'trails',
   SPOT: 'spots',
   TRIP_REPORT: 'trip-reports',
+  THREAD: 'threads',
 };
 
 // MILESTONE_3.md §9.2: "Reports" admin resource - a custom page in the

@@ -134,7 +134,7 @@ function DiscoverPage() {
   return (
     <>
       <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden border-b border-stone-200 dark:border-stone-800">
-        <Container size="wide" className="relative">
+        <Container className="relative">
           <div
             className="animate-fade-up flex items-center gap-2 text-primary-700 dark:text-primary-400"
             style={{ animationDelay: '0ms' }}
@@ -186,7 +186,7 @@ function DiscoverPage() {
         </div>
       </div>
 
-      <Container size="wide">
+      <Container>
         {results !== null ? (
           <SearchResults query={query} results={results} searching={searching} />
         ) : (

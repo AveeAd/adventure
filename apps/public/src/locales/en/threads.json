@@ -1,0 +1,48 @@
+{
+  "startThread": "Start a thread",
+  "noneYet": "No threads yet — start the first one.",
+  "pin": "Pin",
+  "unpin": "Unpin",
+  "delete": "Delete thread",
+  "confirmDelete": "Delete this thread? This can't be undone.",
+  "backToClub": "Back to club",
+  "untitledTripReport": "Untitled trip report",
+  "unnamedTrail": "Unnamed trail",
+  "repliesHeading": "Replies ({{count}})",
+  "reply": "Reply",
+  "replyPlaceholder": "Write a reply...",
+  "posting": "Posting...",
+  "postReply": "Post reply",
+  "cancel": "Cancel",
+  "tags": {
+    "DISCUSSION": "Discussion",
+    "TRIP_SHARE": "Trip share",
+    "QUESTION": "Question",
+    "ANNOUNCEMENT": "Announcement",
+    "RANDOM": "Random"
+  },
+  "composer": {
+    "heading": "Start a thread",
+    "subheading": "Posting in {{club}}.",
+    "tag": "Tag",
+    "content": "Content",
+    "contentPlaceholder": "Share something with the club... (Markdown supported)",
+    "attachments": "Attach (optional)",
+    "posting": "Posting...",
+    "postButton": "Post thread"
+  },
+  "attachmentPicker": {
+    "tripReport": "Trip report",
+    "trail": "Trail",
+    "spot": "Spot",
+    "adventurePage": "Adventure page",
+    "searchPlaceholder": "Search {{label}}...",
+    "remove": "Remove"
+  },
+  "errors": {
+    "failedToCreate": "Failed to post thread",
+    "failedToModerate": "Failed to update thread",
+    "failedToDelete": "Failed to delete thread",
+    "failedToPostReply": "Failed to post reply"
+  }
+}

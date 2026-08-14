@@ -207,7 +207,7 @@ function AdventurePageView() {
         </div>
       </div>
 
-      <Container size="wide">
+      <Container>
         {page.pendingRevisionCount > 0 && page.currentRevision && (
           <Link
             to="/adventures/$slug/history/$version"

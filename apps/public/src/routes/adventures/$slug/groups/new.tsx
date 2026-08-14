@@ -53,7 +53,7 @@ function NewTripGroupPage() {
     try {
       const group = await authPost<{ id: string }>(`/adventure-pages/${page.id}/trip-groups`, {
         title: formData.get('title'),
-        description: formData.get('description') || undefined,
+        description: formData.get('description'),
         dateStart: formData.get('dateStart'),
         dateEnd: formData.get('dateEnd'),
       });
@@ -84,8 +84,8 @@ function NewTripGroupPage() {
               <Input name="dateEnd" type="date" required />
             </Field>
           </div>
-          <Field label={t('fields.description')} hint={t('fields.optional')}>
-            <Textarea name="description" rows={4} />
+          <Field label={t('fields.description')} hint={t('fields.descriptionHint')}>
+            <Textarea name="description" rows={6} required className="font-mono text-sm" />
           </Field>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <Button type="submit" disabled={submitting} className="self-start">

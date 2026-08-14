@@ -1,11 +1,23 @@
 import { Link, createFileRoute, notFound } from '@tanstack/react-router';
-import { Ban, Check, Heart, Settings, ShieldPlus, Users, UserMinus, UserPlus, X } from 'lucide-react';
+import {
+  Ban,
+  Check,
+  MessageSquare,
+  Pin,
+  Plus,
+  Settings,
+  ShieldPlus,
+  Trash2,
+  Users,
+  UserMinus,
+  UserPlus,
+  X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiUrl } from '../../../lib/auth/api';
 import { authDelete, authFetch, authPatch, authPost } from '../../../lib/auth/auth-fetch';
 import { fetchCurrentUser } from '../../../lib/auth/session';
-import { formatDate } from '../../../lib/format';
 import { Avatar } from '../../../components/Avatar';
 import { Badge } from '../../../components/Badge';
 import { Button } from '../../../components/Button';
@@ -33,15 +45,22 @@ interface ClubDetail {
   viewerMembership?: { role: string; status: string } | null;
 }
 
-interface ClubTripReport {
+const THREAD_TAGS = ['DISCUSSION', 'TRIP_SHARE', 'QUESTION', 'ANNOUNCEMENT', 'RANDOM'] as const;
+type ThreadTag = (typeof THREAD_TAGS)[number];
+
+interface ClubThread {
   id: string;
-  title: string | null;
-  description: string | null;
-  dateCompleted: string;
+  content: string;
+  tag: ThreadTag;
+  isPinned: boolean;
   authorId: string;
   authorName: string;
-  kudosCount: number;
-  adventurePage: { title: string; slug: string };
+  createdAt: string;
+  replyCount: number;
+  tripReport: { id: string; title: string | null } | null;
+  trail: { id: string; name: string | null } | null;
+  spot: { id: string; name: string } | null;
+  adventurePage: { id: string; title: string; slug: string } | null;
 }
 
 export const Route = createFileRoute('/clubs/$clubId/')({
@@ -55,10 +74,10 @@ export const Route = createFileRoute('/clubs/$clubId/')({
     }
     const club: ClubDetail = await clubRes.json();
 
-    const reportsRes = await fetch(apiUrl(`/clubs/${params.clubId}/trip-reports`));
-    const tripReports: ClubTripReport[] = reportsRes.ok ? await reportsRes.json() : [];
+    const threadsRes = await fetch(apiUrl(`/clubs/${params.clubId}/threads`));
+    const threads: ClubThread[] = threadsRes.ok ? (await threadsRes.json()).data : [];
 
-    return { club, tripReports };
+    return { club, threads };
   },
   component: ClubDetailPage,
   head: ({ loaderData }) => ({
@@ -67,9 +86,10 @@ export const Route = createFileRoute('/clubs/$clubId/')({
 });
 
 function ClubDetailPage() {
-  const { club: initialClub, tripReports } = Route.useLoaderData();
-  const { t } = useTranslation('clubs');
+  const { club: initialClub, threads: initialThreads } = Route.useLoaderData();
+  const { t } = useTranslation(['clubs', 'threads']);
   const [club, setClub] = useState(initialClub);
+  const [threads, setThreads] = useState(initialThreads);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [siteRole, setSiteRole] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<ClubMember[] | null>(null);
@@ -214,6 +234,44 @@ function ClubDetailPage() {
     }
   }
 
+  async function togglePinThread(thread: ClubThread) {
+    setBusy(true);
+    setError(null);
+    try {
+      await authPatch(`/threads/${thread.id}/moderate`, { isPinned: !thread.isPinned });
+      setThreads((prev) => prev.map((th) => (th.id === thread.id ? { ...th, isPinned: !thread.isPinned } : th)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('threads:errors.failedToModerate'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteThread(threadId: string) {
+    if (!window.confirm(t('threads:confirmDelete'))) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await authDelete(`/threads/${threadId}`);
+      setThreads((prev) => prev.filter((th) => th.id !== threadId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('threads:errors.failedToDelete'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // Site admin/moderator CAN pin/delete any thread (ThreadsService checks
+  // getActingTier's STAFF branch) - but that capability is deliberately not
+  // surfaced here. Site staff moderate threads from the admin dashboard's
+  // Threads resource, not from the public club feed, so these two booleans
+  // intentionally exclude isSiteStaff even though the API would allow it.
+  // Delete matches the rest of the club-moderation model otherwise (owner is
+  // always at least as privileged as a club moderator); pin is narrower -
+  // only a club moderator, never the owner alone.
+  const canDeleteThreads = isOwner || isClubModerator;
+  const canPinThreads = isClubModerator;
+
   return (
     <>
       <div className="relative z-0 -mt-24 flex h-72 items-center justify-center overflow-hidden bg-gradient-to-br from-primary-100 to-accent-100 sm:-mt-28 sm:h-80 dark:from-primary-950 dark:to-accent-950">
@@ -264,7 +322,7 @@ function ClubDetailPage() {
         </div>
       </div>
 
-      <Container size="wide">
+      <Container>
         {club.description && <p className="mt-4 whitespace-pre-wrap text-stone-700 dark:text-stone-300">{club.description}</p>}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -328,15 +386,26 @@ function ClubDetailPage() {
             <h2 className="text-xl font-semibold text-stone-900 dark:text-stone-50">
               {view === 'members' ? t('members', { count: club.members?.length ?? 0 }) : t('feedHeading')}
             </h2>
-            {view === 'members' && (
-              <button
-                type="button"
-                onClick={() => setView('feed')}
-                className="text-sm text-primary-700 hover:underline dark:text-primary-400"
-              >
-                {t('feedHeading')}
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {view === 'feed' && isApprovedMember && (
+                <Link
+                  to="/clubs/$clubId/threads/new"
+                  params={{ clubId: club.id }}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-700 hover:underline dark:text-primary-400"
+                >
+                  <Plus className="h-3.5 w-3.5" /> {t('threads:startThread')}
+                </Link>
+              )}
+              {view === 'members' && (
+                <button
+                  type="button"
+                  onClick={() => setView('feed')}
+                  className="text-sm text-primary-700 hover:underline dark:text-primary-400"
+                >
+                  {t('feedHeading')}
+                </button>
+              )}
+            </div>
           </div>
 
           {view === 'members' ? (
@@ -378,47 +447,92 @@ function ClubDetailPage() {
                 ))}
               </ul>
             </Card>
-          ) : tripReports.length === 0 ? (
+          ) : threads.length === 0 ? (
             <div className="mt-3">
-              <EmptyState>{t('noTripReportsYet')}</EmptyState>
+              <EmptyState>{t('threads:noneYet')}</EmptyState>
             </div>
           ) : (
             <Card glass className="mt-3 divide-y divide-[color:var(--glass-border)] p-0">
-              {tripReports.map((report) => (
-                <div key={report.id} className="p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <Link
-                      to="/adventures/$slug/trips/$tripReportId"
-                      params={{ slug: report.adventurePage.slug, tripReportId: report.id }}
-                      className="font-medium text-primary-700 hover:underline dark:text-primary-400"
-                    >
-                      {report.title ?? report.adventurePage.title}
-                    </Link>
-                    <span className="whitespace-nowrap text-sm text-stone-500 dark:text-stone-400">
-                      {formatDate(report.dateCompleted)}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">{report.adventurePage.title}</p>
+              {threads.map((thread) => {
+                const attachments = [
+                  thread.tripReport && { label: thread.tripReport.title ?? t('threads:untitledTripReport') },
+                  thread.trail && { label: thread.trail.name ?? t('threads:unnamedTrail') },
+                  thread.spot && { label: thread.spot.name },
+                  thread.adventurePage && { label: thread.adventurePage.title },
+                ].filter((a): a is { label: string } => Boolean(a));
+                const canDeleteThisThread = canDeleteThreads || thread.authorId === currentUserId;
+                return (
+                  <div key={thread.id} className="p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {thread.isPinned && <Pin className="h-3.5 w-3.5 text-primary-700 dark:text-primary-400" />}
+                        <Badge tone="neutral">{t(`threads:tags.${thread.tag}`)}</Badge>
+                      </div>
+                      {(canPinThreads || canDeleteThisThread) && (
+                        <div className="flex items-center gap-2">
+                          {canPinThreads && (
+                            <button
+                              type="button"
+                              onClick={() => togglePinThread(thread)}
+                              disabled={busy}
+                              className="text-xs text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"
+                            >
+                              {thread.isPinned ? t('threads:unpin') : t('threads:pin')}
+                            </button>
+                          )}
+                          {canDeleteThisThread && (
+                            <button
+                              type="button"
+                              onClick={() => deleteThread(thread.id)}
+                              disabled={busy}
+                              className="text-stone-400 hover:text-red-600 dark:hover:text-red-400"
+                              aria-label={t('threads:delete')}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                  {report.description && (
-                    <p className="mt-1 text-sm text-stone-600 dark:text-stone-300">{report.description}</p>
-                  )}
-
-                  <div className="mt-3 flex items-center justify-between gap-2">
                     <Link
-                      to="/users/$id"
-                      params={{ id: report.authorId }}
-                      className="flex items-center gap-2 text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"
+                      to="/clubs/$clubId/threads/$threadId"
+                      params={{ clubId: club.id, threadId: thread.id }}
+                      className="mt-2 block text-sm text-stone-700 hover:text-primary-700 dark:text-stone-300 dark:hover:text-primary-400"
                     >
-                      <Avatar label={report.authorName} size="sm" />
-                      {report.authorName}
+                      <p className="line-clamp-3 whitespace-pre-wrap">{thread.content}</p>
                     </Link>
-                    <span className="flex items-center gap-1 text-sm text-stone-500 dark:text-stone-400">
-                      <Heart className="h-3.5 w-3.5" /> {report.kudosCount}
-                    </span>
+
+                    {attachments.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {attachments.map((a, i) => (
+                          <Badge key={i} tone="neutral">
+                            {a.label}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <Link
+                        to="/users/$id"
+                        params={{ id: thread.authorId }}
+                        className="flex items-center gap-2 text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"
+                      >
+                        <Avatar label={thread.authorName} size="sm" />
+                        {thread.authorName}
+                      </Link>
+                      <Link
+                        to="/clubs/$clubId/threads/$threadId"
+                        params={{ clubId: club.id, threadId: thread.id }}
+                        className="flex items-center gap-1 text-sm text-stone-500 hover:text-primary-700 dark:text-stone-400 dark:hover:text-primary-400"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" /> {thread.replyCount}
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </Card>
           )}
         </section>

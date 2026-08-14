@@ -14,6 +14,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ReportsModule } from './reports/reports.module';
 import { SettingsModule } from './settings/settings.module';
 import { TracksModule } from './tracks/tracks.module';
+import { ThreadsModule } from './threads/threads.module';
 import { TripReportsModule } from './trip-reports/trip-reports.module';
 import { TripGroupsModule } from './trip-groups/trip-groups.module';
 import { UploadsModule } from './uploads/uploads.module';
@@ -35,6 +36,7 @@ import { HealthController } from './health/health.controller';
     TripReportsModule,
     TripGroupsModule,
     ClubsModule,
+    ThreadsModule,
     GuideProfilesModule,
     UploadsModule,
     TracksModule,

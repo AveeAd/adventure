@@ -40,6 +40,13 @@ export class SpotsController {
     return this.spotsService.listAll(Number(page) || 1, Number(pageSize) || 20);
   }
 
+  // must come before ':id' - otherwise Nest would match "search" as an :id
+  @Public()
+  @Get('search')
+  search(@Query('q') q: string) {
+    return this.spotsService.search(q ?? '');
+  }
+
   // must come before ':id' - otherwise Nest would match "bbox" as an :id
   @Public()
   @Get('bbox')

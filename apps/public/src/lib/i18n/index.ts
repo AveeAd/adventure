@@ -12,6 +12,7 @@ import common from '../../locales/en/common.json';
 import discover from '../../locales/en/discover.json';
 import groups from '../../locales/en/groups.json';
 import guides from '../../locales/en/guides.json';
+import threads from '../../locales/en/threads.json';
 import tripReports from '../../locales/en/tripReports.json';
 
 export const defaultNS = 'common';
@@ -25,9 +26,9 @@ if (!i18next.isInitialized) {
     lng: 'en',
     fallbackLng: 'en',
     defaultNS,
-    ns: ['common', 'discover', 'guides', 'adventurePage', 'groups', 'tripReports', 'account', 'clubs'],
+    ns: ['common', 'discover', 'guides', 'adventurePage', 'groups', 'tripReports', 'account', 'clubs', 'threads'],
     resources: {
-      en: { common, discover, guides, adventurePage, groups, tripReports, account, clubs },
+      en: { common, discover, guides, adventurePage, groups, tripReports, account, clubs, threads },
     },
     interpolation: { escapeValue: false }, // React already escapes
     react: { useSuspense: false },

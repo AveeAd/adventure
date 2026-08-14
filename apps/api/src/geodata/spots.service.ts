@@ -73,6 +73,16 @@ export class SpotsService {
     `;
   }
 
+  // Minimal id+name lookup backing the club-thread attachment picker - not a
+  // general search service, just enough for a search-as-you-type combobox.
+  async search(q: string) {
+    return this.prisma.spot.findMany({
+      where: { isActive: true, name: { contains: q, mode: 'insensitive' } },
+      select: { id: true, name: true },
+      take: 10,
+    });
+  }
+
   async get(id: string): Promise<SpotRow & { approvedRevision: SpotRevisionDetail | null }> {
     const rows = await this.prisma.$queryRaw<SpotRow[]>`
       SELECT s.id, s."adventurePageId", s."spotTypeId", st.name AS "spotTypeName", s.name, s.description,

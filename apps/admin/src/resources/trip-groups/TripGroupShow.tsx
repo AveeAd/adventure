@@ -14,7 +14,7 @@ interface TripGroupMember {
 interface TripGroupDetail {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   dateStart: string;
   dateEnd: string;
   members: TripGroupMember[];
@@ -41,7 +41,7 @@ export const TripGroupShow = () => {
           <Typography.Title level={5} style={{ marginTop: 24 }}>
             {t('trip-groups.fields.description')}
           </Typography.Title>
-          <Typography.Paragraph type="secondary">{record.description ?? t('trip-groups.noDescription')}</Typography.Paragraph>
+          <Typography.Paragraph type="secondary">{record.description}</Typography.Paragraph>
 
           <Typography.Title level={5} style={{ marginTop: 24 }}>
             {t('trip-groups.membersHeading', { count: record.members.length })}

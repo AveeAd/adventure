@@ -1,5 +1,7 @@
 {
   "listTitle": "Trip groups — {{title}}",
+  "allListTitle": "Trip Groups",
+  "allSubheading": "Browse companion-finding trip groups across every adventure page.",
   "startGroup": "Start a group",
   "subheading": "Find companions doing this route in the same window.",
   "noneYet": "No trip groups yet — be the first to start one.",
@@ -17,7 +19,7 @@
     "startDate": "Start date",
     "endDate": "End date",
     "description": "Description",
-    "optional": "Optional"
+    "descriptionHint": "Markdown supported"
   },
   "actions": {
     "creating": "Creating...",

@@ -16,7 +16,9 @@ export type ReportTargetType =
   | 'SPOT_REVISION'
   | 'MEDIA'
   | 'TRIP_REPORT'
-  | 'COMMENT';
+  | 'COMMENT'
+  | 'THREAD'
+  | 'THREAD_REPLY';
 
 const REASONS = ['FAKE_OR_FALSE', 'INAPPROPRIATE', 'COPYRIGHT', 'DUPLICATE', 'SAFETY_RISK', 'OTHER'] as const;
 

@@ -1,10 +1,11 @@
 // Fake demo content for a fresh local dev DB - users, adventure pages (with
 // revisions/districts/seasons/tags), trails/spots, trip reports (with
-// media/kudos/comments), a trip group, and guide profiles - so the app
-// doesn't feel empty during local development. Not a source of truth for
-// anything; safe to run against an empty DB after seed-master-data and
-// import-locations. Re-running upserts by unique keys where practical, but
-// this is dev-only fixture data, not idempotent production seeding.
+// media/kudos/comments), a trip group, a club (with threads/replies), and
+// guide profiles - so the app doesn't feel empty during local development.
+// Not a source of truth for anything; safe to run against an empty DB after
+// seed-master-data and import-locations. Re-running upserts by unique keys
+// where practical, but this is dev-only fixture data, not idempotent
+// production seeding.
 //
 // Users here have fake `googleId`s since there's no way to pre-create a real
 // Google-authenticated account (see ARCHITECTURE.md Sec 8) - fine for local
@@ -164,7 +165,7 @@ async function main() {
     return rows[0].id;
   }
 
-  await upsertTrail(
+  const abcTrailId = await upsertTrail(
     abc.id,
     'Nayapul to ABC',
     [
@@ -209,7 +210,7 @@ async function main() {
     return rows[0].id;
   }
 
-  await upsertSpot(abc.id, viewpoint.id, 'Annapurna Base Camp Viewpoint', [83.88, 28.53], 4130);
+  const abcViewpointId = await upsertSpot(abc.id, viewpoint.id, 'Annapurna Base Camp Viewpoint', [83.88, 28.53], 4130);
   await upsertSpot(abc.id, teahouseSpot.id, 'Machhapuchhre Base Camp Teahouse', [83.87, 28.52], 3700);
   await upsertSpot(manaslu.id, viewpoint.id, 'Larkya La Pass', [84.52, 28.63], 5106);
 
@@ -288,6 +289,112 @@ async function main() {
         },
       },
     });
+  }
+
+  // --- Club, with threads and replies (see THREAD_PLAN.md) ---
+  // No natural unique key on Club (name isn't unique), so re-runs guard on
+  // name, same pattern as the trip-group block above.
+  async function getOrCreateClub(data: Parameters<typeof prisma.club.create>[0]['data'] & { name: string }) {
+    const existing = await prisma.club.findFirst({ where: { name: data.name } });
+    if (existing) return { club: existing, created: false };
+    return { club: await prisma.club.create({ data }), created: true };
+  }
+
+  const { club: hikersClub, created: hikersClubCreated } = await getOrCreateClub({
+    name: 'Kathmandu Hikers Club',
+    description: 'Weekend hikers and trekkers based in and around Kathmandu Valley.',
+    visibility: 'PUBLIC',
+    createdById: alice.id,
+  });
+  await prisma.clubMember.upsert({
+    where: { clubId_userId: { clubId: hikersClub.id, userId: alice.id } },
+    update: {},
+    create: { clubId: hikersClub.id, userId: alice.id, role: 'OWNER', status: 'APPROVED' },
+  });
+  await prisma.clubMember.upsert({
+    where: { clubId_userId: { clubId: hikersClub.id, userId: carol.id } },
+    update: {},
+    create: { clubId: hikersClub.id, userId: carol.id, role: 'MODERATOR', status: 'APPROVED' },
+  });
+  for (const member of [bob, dawa]) {
+    await prisma.clubMember.upsert({
+      where: { clubId_userId: { clubId: hikersClub.id, userId: member.id } },
+      update: {},
+      create: { clubId: hikersClub.id, userId: member.id, role: 'MEMBER', status: 'APPROVED' },
+    });
+  }
+
+  async function getOrCreateThread(data: Parameters<typeof prisma.thread.create>[0]['data']) {
+    const existing = await prisma.thread.findFirst({
+      where: { clubId: data.clubId as string, authorId: data.authorId as string, content: data.content as string },
+    });
+    if (existing) return { thread: existing, created: false };
+    return { thread: await prisma.thread.create({ data }), created: true };
+  }
+
+  async function getOrCreateThreadReply(data: Parameters<typeof prisma.threadReply.create>[0]['data']) {
+    const existing = await prisma.threadReply.findFirst({
+      where: { threadId: data.threadId as string, authorId: data.authorId as string, content: data.content as string },
+    });
+    if (existing) return { reply: existing, created: false };
+    return { reply: await prisma.threadReply.create({ data }), created: true };
+  }
+
+  const { thread: abcShareThread, created: abcShareThreadCreated } = await getOrCreateThread({
+    clubId: hikersClub.id,
+    authorId: bob.id,
+    content: 'Just posted my trip report from ABC - weather was perfect, highly recommend October!',
+    tag: 'TRIP_SHARE',
+    isPinned: true,
+    tripReportId: abcReport.id,
+  });
+  if (abcShareThreadCreated) {
+    const { reply: abcShareReply } = await getOrCreateThreadReply({
+      threadId: abcShareThread.id,
+      authorId: alice.id,
+      content: 'Amazing photos! Did you need microspikes anywhere?',
+    });
+    await getOrCreateThreadReply({
+      threadId: abcShareThread.id,
+      authorId: bob.id,
+      content: 'Not this time, trail was dry the whole way up.',
+      parentReplyId: abcShareReply.id,
+    });
+  }
+
+  const { thread: manasluQuestionThread, created: manasluQuestionThreadCreated } = await getOrCreateThread({
+    clubId: hikersClub.id,
+    authorId: carol.id,
+    content: 'Anyone been to Manaslu recently? How far ahead do you need to sort the restricted-area permit?',
+    tag: 'QUESTION',
+    adventurePageId: manaslu.id,
+  });
+  if (manasluQuestionThreadCreated) {
+    await getOrCreateThreadReply({
+      threadId: manasluQuestionThread.id,
+      authorId: dawa.id,
+      content: 'At least a week - your agency needs your passport details to file the MRAP in advance.',
+    });
+  }
+
+  await getOrCreateThread({
+    clubId: hikersClub.id,
+    authorId: dawa.id,
+    content: 'Scouted the Nayapul trail and the base camp viewpoint again this week - both in great shape for the season.',
+    tag: 'DISCUSSION',
+    trailId: abcTrailId,
+    spotId: abcViewpointId,
+  });
+
+  await getOrCreateThread({
+    clubId: hikersClub.id,
+    authorId: alice.id,
+    content: 'Random question - does anyone have a spare 4-season sleeping bag they could lend out for a Manaslu trip?',
+    tag: 'RANDOM',
+  });
+
+  if (hikersClubCreated) {
+    console.log('Seeded club "Kathmandu Hikers Club" with 4 members, 4 threads, 3 replies.');
   }
 
   // --- Guide profiles (manual-review-only trust, see CLAUDE.md) ---
@@ -398,7 +505,9 @@ async function main() {
     linkUrl: `/guides/${carolGuide.id}`,
   });
 
-  console.log('Dev data seeded: 4 users, 2 adventure pages, trails/spots, trip reports, 1 trip group, 2 guide profiles.');
+  console.log(
+    'Dev data seeded: 4 users, 2 adventure pages, trails/spots, trip reports, 1 trip group, 1 club (4 members, 4 threads, 3 replies), 2 guide profiles.',
+  );
 }
 
 main()

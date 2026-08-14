@@ -21,6 +21,7 @@ import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as GuidesIdRouteImport } from './routes/guides/$id'
 import { Route as ReportsIndexRouteImport } from './routes/reports/index'
 import { Route as ReviewQueueIndexRouteImport } from './routes/review-queue/index'
+import { Route as TripGroupsIndexRouteImport } from './routes/trip-groups/index'
 import { Route as UsersIdRouteImport } from './routes/users/$id'
 import { Route as AdventuresSlugIndexRouteImport } from './routes/adventures/$slug/index'
 import { Route as AdventuresSlugEditRouteImport } from './routes/adventures/$slug/edit'
@@ -37,6 +38,8 @@ import { Route as AdventuresSlugHistoryVersionRouteImport } from './routes/adven
 import { Route as AdventuresSlugSpotsNewRouteImport } from './routes/adventures/$slug/spots/new'
 import { Route as AdventuresSlugTrailsNewRouteImport } from './routes/adventures/$slug/trails/new'
 import { Route as AdventuresSlugTripsTripReportIdRouteImport } from './routes/adventures/$slug/trips/$tripReportId'
+import { Route as ClubsClubIdThreadsNewRouteImport } from './routes/clubs/$clubId/threads/new'
+import { Route as ClubsClubIdThreadsThreadIdIndexRouteImport } from './routes/clubs/$clubId/threads/$threadId/index'
 import { Route as AdventuresSlugSpotsSpotIdHistoryIndexRouteImport } from './routes/adventures/$slug/spots/$spotId/history/index'
 import { Route as AdventuresSlugSpotsSpotIdHistoryVersionRouteImport } from './routes/adventures/$slug/spots/$spotId/history/$version'
 import { Route as AdventuresSlugTrailsTrailIdHistoryIndexRouteImport } from './routes/adventures/$slug/trails/$trailId/history/index'
@@ -100,6 +103,11 @@ const ReportsIndexRoute = ReportsIndexRouteImport.update({
 const ReviewQueueIndexRoute = ReviewQueueIndexRouteImport.update({
   id: '/review-queue/',
   path: '/review-queue/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TripGroupsIndexRoute = TripGroupsIndexRouteImport.update({
+  id: '/trip-groups/',
+  path: '/trip-groups/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UsersIdRoute = UsersIdRouteImport.update({
@@ -187,6 +195,17 @@ const AdventuresSlugTripsTripReportIdRoute =
     path: '/adventures/$slug/trips/$tripReportId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ClubsClubIdThreadsNewRoute = ClubsClubIdThreadsNewRouteImport.update({
+  id: '/clubs/$clubId/threads/new',
+  path: '/clubs/$clubId/threads/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubsClubIdThreadsThreadIdIndexRoute =
+  ClubsClubIdThreadsThreadIdIndexRouteImport.update({
+    id: '/clubs/$clubId/threads/$threadId/',
+    path: '/clubs/$clubId/threads/$threadId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdventuresSlugSpotsSpotIdHistoryIndexRoute =
   AdventuresSlugSpotsSpotIdHistoryIndexRouteImport.update({
     id: '/adventures/$slug/spots/$spotId/history/',
@@ -226,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/guides/': typeof GuidesIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
+  '/trip-groups/': typeof TripGroupsIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/clubs/$clubId/edit': typeof ClubsClubIdEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
@@ -239,8 +259,10 @@ export interface FileRoutesByFullPath {
   '/adventures/$slug/spots/new': typeof AdventuresSlugSpotsNewRoute
   '/adventures/$slug/trails/new': typeof AdventuresSlugTrailsNewRoute
   '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
+  '/clubs/$clubId/threads/new': typeof ClubsClubIdThreadsNewRoute
   '/adventures/$slug/groups/': typeof AdventuresSlugGroupsIndexRoute
   '/adventures/$slug/history/': typeof AdventuresSlugHistoryIndexRoute
+  '/clubs/$clubId/threads/$threadId/': typeof ClubsClubIdThreadsThreadIdIndexRoute
   '/adventures/$slug/spots/$spotId/history/$version': typeof AdventuresSlugSpotsSpotIdHistoryVersionRoute
   '/adventures/$slug/trails/$trailId/history/$version': typeof AdventuresSlugTrailsTrailIdHistoryVersionRoute
   '/adventures/$slug/spots/$spotId/history/': typeof AdventuresSlugSpotsSpotIdHistoryIndexRoute
@@ -260,6 +282,7 @@ export interface FileRoutesByTo {
   '/guides': typeof GuidesIndexRoute
   '/reports': typeof ReportsIndexRoute
   '/review-queue': typeof ReviewQueueIndexRoute
+  '/trip-groups': typeof TripGroupsIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/clubs/$clubId/edit': typeof ClubsClubIdEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
@@ -273,8 +296,10 @@ export interface FileRoutesByTo {
   '/adventures/$slug/spots/new': typeof AdventuresSlugSpotsNewRoute
   '/adventures/$slug/trails/new': typeof AdventuresSlugTrailsNewRoute
   '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
+  '/clubs/$clubId/threads/new': typeof ClubsClubIdThreadsNewRoute
   '/adventures/$slug/groups': typeof AdventuresSlugGroupsIndexRoute
   '/adventures/$slug/history': typeof AdventuresSlugHistoryIndexRoute
+  '/clubs/$clubId/threads/$threadId': typeof ClubsClubIdThreadsThreadIdIndexRoute
   '/adventures/$slug/spots/$spotId/history/$version': typeof AdventuresSlugSpotsSpotIdHistoryVersionRoute
   '/adventures/$slug/trails/$trailId/history/$version': typeof AdventuresSlugTrailsTrailIdHistoryVersionRoute
   '/adventures/$slug/spots/$spotId/history': typeof AdventuresSlugSpotsSpotIdHistoryIndexRoute
@@ -295,6 +320,7 @@ export interface FileRoutesById {
   '/guides/': typeof GuidesIndexRoute
   '/reports/': typeof ReportsIndexRoute
   '/review-queue/': typeof ReviewQueueIndexRoute
+  '/trip-groups/': typeof TripGroupsIndexRoute
   '/adventures/$slug/edit': typeof AdventuresSlugEditRoute
   '/clubs/$clubId/edit': typeof ClubsClubIdEditRoute
   '/me/activity-tracks/$trackId': typeof MeActivityTracksTrackIdRoute
@@ -308,8 +334,10 @@ export interface FileRoutesById {
   '/adventures/$slug/spots/new': typeof AdventuresSlugSpotsNewRoute
   '/adventures/$slug/trails/new': typeof AdventuresSlugTrailsNewRoute
   '/adventures/$slug/trips/$tripReportId': typeof AdventuresSlugTripsTripReportIdRoute
+  '/clubs/$clubId/threads/new': typeof ClubsClubIdThreadsNewRoute
   '/adventures/$slug/groups/': typeof AdventuresSlugGroupsIndexRoute
   '/adventures/$slug/history/': typeof AdventuresSlugHistoryIndexRoute
+  '/clubs/$clubId/threads/$threadId/': typeof ClubsClubIdThreadsThreadIdIndexRoute
   '/adventures/$slug/spots/$spotId/history/$version': typeof AdventuresSlugSpotsSpotIdHistoryVersionRoute
   '/adventures/$slug/trails/$trailId/history/$version': typeof AdventuresSlugTrailsTrailIdHistoryVersionRoute
   '/adventures/$slug/spots/$spotId/history/': typeof AdventuresSlugSpotsSpotIdHistoryIndexRoute
@@ -331,6 +359,7 @@ export interface FileRouteTypes {
     | '/guides/'
     | '/reports/'
     | '/review-queue/'
+    | '/trip-groups/'
     | '/adventures/$slug/edit'
     | '/clubs/$clubId/edit'
     | '/me/activity-tracks/$trackId'
@@ -344,8 +373,10 @@ export interface FileRouteTypes {
     | '/adventures/$slug/spots/new'
     | '/adventures/$slug/trails/new'
     | '/adventures/$slug/trips/$tripReportId'
+    | '/clubs/$clubId/threads/new'
     | '/adventures/$slug/groups/'
     | '/adventures/$slug/history/'
+    | '/clubs/$clubId/threads/$threadId/'
     | '/adventures/$slug/spots/$spotId/history/$version'
     | '/adventures/$slug/trails/$trailId/history/$version'
     | '/adventures/$slug/spots/$spotId/history/'
@@ -365,6 +396,7 @@ export interface FileRouteTypes {
     | '/guides'
     | '/reports'
     | '/review-queue'
+    | '/trip-groups'
     | '/adventures/$slug/edit'
     | '/clubs/$clubId/edit'
     | '/me/activity-tracks/$trackId'
@@ -378,8 +410,10 @@ export interface FileRouteTypes {
     | '/adventures/$slug/spots/new'
     | '/adventures/$slug/trails/new'
     | '/adventures/$slug/trips/$tripReportId'
+    | '/clubs/$clubId/threads/new'
     | '/adventures/$slug/groups'
     | '/adventures/$slug/history'
+    | '/clubs/$clubId/threads/$threadId'
     | '/adventures/$slug/spots/$spotId/history/$version'
     | '/adventures/$slug/trails/$trailId/history/$version'
     | '/adventures/$slug/spots/$spotId/history'
@@ -399,6 +433,7 @@ export interface FileRouteTypes {
     | '/guides/'
     | '/reports/'
     | '/review-queue/'
+    | '/trip-groups/'
     | '/adventures/$slug/edit'
     | '/clubs/$clubId/edit'
     | '/me/activity-tracks/$trackId'
@@ -412,8 +447,10 @@ export interface FileRouteTypes {
     | '/adventures/$slug/spots/new'
     | '/adventures/$slug/trails/new'
     | '/adventures/$slug/trips/$tripReportId'
+    | '/clubs/$clubId/threads/new'
     | '/adventures/$slug/groups/'
     | '/adventures/$slug/history/'
+    | '/clubs/$clubId/threads/$threadId/'
     | '/adventures/$slug/spots/$spotId/history/$version'
     | '/adventures/$slug/trails/$trailId/history/$version'
     | '/adventures/$slug/spots/$spotId/history/'
@@ -434,6 +471,7 @@ export interface RootRouteChildren {
   GuidesIndexRoute: typeof GuidesIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
   ReviewQueueIndexRoute: typeof ReviewQueueIndexRoute
+  TripGroupsIndexRoute: typeof TripGroupsIndexRoute
   AdventuresSlugEditRoute: typeof AdventuresSlugEditRoute
   ClubsClubIdEditRoute: typeof ClubsClubIdEditRoute
   MeActivityTracksTrackIdRoute: typeof MeActivityTracksTrackIdRoute
@@ -447,8 +485,10 @@ export interface RootRouteChildren {
   AdventuresSlugSpotsNewRoute: typeof AdventuresSlugSpotsNewRoute
   AdventuresSlugTrailsNewRoute: typeof AdventuresSlugTrailsNewRoute
   AdventuresSlugTripsTripReportIdRoute: typeof AdventuresSlugTripsTripReportIdRoute
+  ClubsClubIdThreadsNewRoute: typeof ClubsClubIdThreadsNewRoute
   AdventuresSlugGroupsIndexRoute: typeof AdventuresSlugGroupsIndexRoute
   AdventuresSlugHistoryIndexRoute: typeof AdventuresSlugHistoryIndexRoute
+  ClubsClubIdThreadsThreadIdIndexRoute: typeof ClubsClubIdThreadsThreadIdIndexRoute
   AdventuresSlugSpotsSpotIdHistoryVersionRoute: typeof AdventuresSlugSpotsSpotIdHistoryVersionRoute
   AdventuresSlugTrailsTrailIdHistoryVersionRoute: typeof AdventuresSlugTrailsTrailIdHistoryVersionRoute
   AdventuresSlugSpotsSpotIdHistoryIndexRoute: typeof AdventuresSlugSpotsSpotIdHistoryIndexRoute
@@ -539,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/review-queue'
       fullPath: '/review-queue/'
       preLoaderRoute: typeof ReviewQueueIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trip-groups/': {
+      id: '/trip-groups/'
+      path: '/trip-groups'
+      fullPath: '/trip-groups/'
+      preLoaderRoute: typeof TripGroupsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/users/$id': {
@@ -653,6 +700,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdventuresSlugTripsTripReportIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/clubs/$clubId/threads/new': {
+      id: '/clubs/$clubId/threads/new'
+      path: '/clubs/$clubId/threads/new'
+      fullPath: '/clubs/$clubId/threads/new'
+      preLoaderRoute: typeof ClubsClubIdThreadsNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubs/$clubId/threads/$threadId/': {
+      id: '/clubs/$clubId/threads/$threadId/'
+      path: '/clubs/$clubId/threads/$threadId'
+      fullPath: '/clubs/$clubId/threads/$threadId/'
+      preLoaderRoute: typeof ClubsClubIdThreadsThreadIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/adventures/$slug/spots/$spotId/history/': {
       id: '/adventures/$slug/spots/$spotId/history/'
       path: '/adventures/$slug/spots/$spotId/history'
@@ -698,6 +759,7 @@ const rootRouteChildren: RootRouteChildren = {
   GuidesIndexRoute: GuidesIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,
   ReviewQueueIndexRoute: ReviewQueueIndexRoute,
+  TripGroupsIndexRoute: TripGroupsIndexRoute,
   AdventuresSlugEditRoute: AdventuresSlugEditRoute,
   ClubsClubIdEditRoute: ClubsClubIdEditRoute,
   MeActivityTracksTrackIdRoute: MeActivityTracksTrackIdRoute,
@@ -711,8 +773,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdventuresSlugSpotsNewRoute: AdventuresSlugSpotsNewRoute,
   AdventuresSlugTrailsNewRoute: AdventuresSlugTrailsNewRoute,
   AdventuresSlugTripsTripReportIdRoute: AdventuresSlugTripsTripReportIdRoute,
+  ClubsClubIdThreadsNewRoute: ClubsClubIdThreadsNewRoute,
   AdventuresSlugGroupsIndexRoute: AdventuresSlugGroupsIndexRoute,
   AdventuresSlugHistoryIndexRoute: AdventuresSlugHistoryIndexRoute,
+  ClubsClubIdThreadsThreadIdIndexRoute: ClubsClubIdThreadsThreadIdIndexRoute,
   AdventuresSlugSpotsSpotIdHistoryVersionRoute:
     AdventuresSlugSpotsSpotIdHistoryVersionRoute,
   AdventuresSlugTrailsTrailIdHistoryVersionRoute:

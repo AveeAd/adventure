@@ -5,6 +5,7 @@
     "discover": "Discover",
     "guides": "Guides",
     "clubs": "Clubs",
+    "tripGroups": "Trip Groups",
     "startClub": "Start a club",
     "toggleMenu": "Toggle menu",
     "accountMenu": "Account menu",
@@ -81,7 +82,9 @@
       "SPOT_REVISION": "Spot revision",
       "MEDIA": "Photo",
       "TRIP_REPORT": "Trip report",
-      "COMMENT": "Comment"
+      "COMMENT": "Comment",
+      "THREAD": "Club thread",
+      "THREAD_REPLY": "Club thread reply"
     }
   }
 }

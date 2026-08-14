@@ -68,6 +68,16 @@ export class TripReportsService {
     return { data, total, page, pageSize };
   }
 
+  // Minimal id+title lookup backing the club-thread attachment picker - not
+  // a general search service, just enough for a search-as-you-type combobox.
+  async search(q: string) {
+    return this.prisma.tripReport.findMany({
+      where: { isActive: true, title: { contains: q, mode: 'insensitive' } },
+      select: { id: true, title: true },
+      take: 10,
+    });
+  }
+
   async get(id: string, currentUserId?: string) {
     const report = await this.prisma.tripReport.findUnique({
       where: { id },

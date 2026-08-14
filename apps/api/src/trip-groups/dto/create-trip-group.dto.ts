@@ -1,13 +1,14 @@
-import { IsDateString, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsDateString, IsString, MinLength } from 'class-validator';
 
 export class CreateTripGroupDto {
   @IsString()
   @MinLength(1)
   title: string;
 
-  @IsOptional()
+  // Markdown, rendered like TripReport.content - see schema.prisma.
   @IsString()
-  description?: string;
+  @MinLength(1)
+  description: string;
 
   @IsDateString()
   dateStart: string;

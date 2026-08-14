@@ -100,6 +100,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <PrimaryNavLink to="/">{t('nav.discover')}</PrimaryNavLink>
               <PrimaryNavLink to="/guides">{t('nav.guides')}</PrimaryNavLink>
               <PrimaryNavLink to="/clubs">{t('nav.clubs')}</PrimaryNavLink>
+              <PrimaryNavLink to="/trip-groups">{t('nav.tripGroups')}</PrimaryNavLink>
               <span className="mx-1.5 h-6 w-px bg-stone-200 dark:bg-stone-800" aria-hidden="true" />
               <AuthStatus />
             </nav>
@@ -125,6 +126,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 </PrimaryNavLink>
                 <PrimaryNavLink to="/clubs" onClick={() => setMenuOpen(false)}>
                   {t('nav.clubs')}
+                </PrimaryNavLink>
+                <PrimaryNavLink to="/trip-groups" onClick={() => setMenuOpen(false)}>
+                  {t('nav.tripGroups')}
                 </PrimaryNavLink>
               </nav>
               <div className="border-t border-[color:var(--glass-border)] pt-4">

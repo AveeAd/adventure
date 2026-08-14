@@ -38,6 +38,14 @@ export class TripReportsController {
     return this.tripReportsService.listAll(Number(page) || 1, Number(pageSize) || 20);
   }
 
+  // Static route, registered before ":id" so Nest doesn't try to match
+  // "search" as an :id param.
+  @Public()
+  @Get('search')
+  search(@Query('q') q: string) {
+    return this.tripReportsService.search(q ?? '');
+  }
+
   @Public()
   @Get(':id')
   get(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {

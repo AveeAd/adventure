@@ -1,14 +1,7 @@
 import type { ReactNode } from 'react';
 
-export function Container({
-  children,
-  size = 'default',
-  className = '',
-}: {
-  children: ReactNode;
-  size?: 'default' | 'wide';
-  className?: string;
-}) {
-  const maxWidth = size === 'wide' ? 'max-w-5xl' : 'max-w-3xl';
-  return <main className={`mx-auto w-full ${maxWidth} px-4 py-8 sm:px-6 ${className}`}>{children}</main>;
+// Every page uses the same max width (matching the header/Discover page)
+// so container width stays consistent across the app.
+export function Container({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <main className={`mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 ${className}`}>{children}</main>;
 }

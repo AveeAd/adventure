@@ -418,7 +418,9 @@ export class ClubsService {
     return this.isMember(clubId, currentUser.userId);
   }
 
-  private async getActingTier(id: string, currentUser: AuthenticatedUser): Promise<'STAFF' | 'OWNER' | 'MODERATOR' | null> {
+  // Not private: ThreadsService reuses this for club-thread pin/lock/delete
+  // moderation tiering, the same STAFF/OWNER/MODERATOR split used here.
+  async getActingTier(id: string, currentUser: AuthenticatedUser): Promise<'STAFF' | 'OWNER' | 'MODERATOR' | null> {
     if (currentUser.role === Role.ADMIN || currentUser.role === Role.MODERATOR) {
       return 'STAFF';
     }

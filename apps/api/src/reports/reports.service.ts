@@ -187,6 +187,14 @@ export class ReportsService {
         const comment = await this.prisma.comment.findUnique({ where: { id: targetId }, select: { authorId: true } });
         return comment?.authorId ?? null;
       }
+      case 'THREAD': {
+        const thread = await this.prisma.thread.findUnique({ where: { id: targetId }, select: { authorId: true } });
+        return thread?.authorId ?? null;
+      }
+      case 'THREAD_REPLY': {
+        const reply = await this.prisma.threadReply.findUnique({ where: { id: targetId }, select: { authorId: true } });
+        return reply?.authorId ?? null;
+      }
     }
   }
 
@@ -229,6 +237,10 @@ export class ReportsService {
         return this.upholdTripReport(targetId, resolverId);
       case 'COMMENT':
         return this.upholdComment(targetId, resolverId);
+      case 'THREAD':
+        return this.upholdThread(targetId, resolverId);
+      case 'THREAD_REPLY':
+        return this.upholdThreadReply(targetId, resolverId);
     }
   }
 
@@ -347,6 +359,34 @@ export class ReportsService {
       resolverId,
       NotificationType.REPORT_UPHELD_AGAINST_YOU,
       'One of your comments was removed after a report was upheld',
+    );
+  }
+
+  private async upholdThread(threadId: string, resolverId: string): Promise<void> {
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    if (!thread) {
+      return;
+    }
+    await this.prisma.thread.update({ where: { id: threadId }, data: { isActive: false } });
+    await this.notifications.notify(
+      thread.authorId,
+      resolverId,
+      NotificationType.REPORT_UPHELD_AGAINST_YOU,
+      'One of your threads was removed after a report was upheld',
+    );
+  }
+
+  private async upholdThreadReply(replyId: string, resolverId: string): Promise<void> {
+    const reply = await this.prisma.threadReply.findUnique({ where: { id: replyId } });
+    if (!reply) {
+      return;
+    }
+    await this.prisma.threadReply.update({ where: { id: replyId }, data: { isActive: false } });
+    await this.notifications.notify(
+      reply.authorId,
+      resolverId,
+      NotificationType.REPORT_UPHELD_AGAINST_YOU,
+      'One of your replies was removed after a report was upheld',
     );
   }
 }

@@ -10,6 +10,7 @@ import { Avatar } from '../../../../components/Avatar';
 import { Button } from '../../../../components/Button';
 import { Card } from '../../../../components/Card';
 import { Container } from '../../../../components/Container';
+import { MarkdownContent } from '../../../../components/MarkdownContent';
 
 interface TripGroupMember {
   id: string;
@@ -21,7 +22,7 @@ interface TripGroupMember {
 interface TripGroupDetail {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   dateStart: string;
   dateEnd: string;
   createdById: string;
@@ -121,7 +122,9 @@ function TripGroupDetailPage() {
         {formatDate(group.dateStart)} – {formatDate(group.dateEnd)}
       </p>
 
-      {group.description && <p className="mt-4 whitespace-pre-wrap text-stone-700 dark:text-stone-300">{group.description}</p>}
+      <div className="mt-4">
+        <MarkdownContent content={group.description} />
+      </div>
 
       <div className="mt-4 flex gap-2">
         {currentUserId &&

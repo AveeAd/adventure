@@ -26,10 +26,16 @@ export const dataProvider: DataProvider = {
     // everything" - fine at Nepal's real scale (~838 location rows total)
     const page = pagination?.mode === 'off' ? 1 : (pagination?.currentPage ?? 1);
     const pageSize = pagination?.mode === 'off' ? 1000 : (pagination?.pageSize ?? 20);
-    // "clubs" is the one resource whose flat admin listing isn't at its own
-    // root - GET /clubs is the public (visibility-scoped) list, so the
+    // "clubs", "threads", and "trip-groups" are resources whose flat admin
+    // listing isn't at their own root - GET /clubs, GET /clubs/:clubId/threads,
+    // and GET /trip-groups are all public (scoped or unscoped) lists, so the
     // ADMIN/MODERATOR listing lives at a separate static path instead.
-    const path = resource === 'clubs' ? 'clubs/admin/all' : resource;
+    const ADMIN_ALL_PATHS: Record<string, string> = {
+      clubs: 'clubs/admin/all',
+      threads: 'threads/admin/all',
+      'trip-groups': 'trip-groups/admin/all',
+    };
+    const path = ADMIN_ALL_PATHS[resource] ?? resource;
     const { data } = await axiosInstance.get(`${apiUrl}/${path}`, {
       params: { page, pageSize },
     });
