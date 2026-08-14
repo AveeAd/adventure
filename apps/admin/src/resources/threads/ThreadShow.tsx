@@ -57,7 +57,7 @@ export const ThreadShow = () => {
       isLoading={query.isLoading}
       headerButtons={
         <>
-          <Button onClick={togglePin} loading={mutation.isLoading}>
+          <Button onClick={togglePin} loading={mutation.isPending}>
             {record?.isPinned ? t('threads.unpin') : t('threads.pin')}
           </Button>
           <DeleteButton resource="threads" recordItemId={record?.id} />
