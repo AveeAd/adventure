@@ -6,6 +6,7 @@ import { Profile, Strategy, VerifyCallback } from 'passport-google-oauth20';
 export interface GoogleProfile {
   googleId: string;
   email: string;
+  emailVerified: boolean;
   name?: string;
   avatarUrl?: string;
 }
@@ -32,9 +33,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       done(new UnauthorizedException('Google account has no email'), false);
       return;
     }
+    // passport-google-oauth20's typings don't surface email_verified, but
+    // Google's raw profile payload always includes it - see AuthService's
+    // auto-link check, which only trusts a provider-asserted verified email.
+    const emailVerified = (profile._json as { email_verified?: boolean })?.email_verified ?? false;
     const googleProfile: GoogleProfile = {
       googleId: profile.id,
       email,
+      emailVerified,
       name: profile.displayName,
       avatarUrl: profile.photos?.[0]?.value,
     };

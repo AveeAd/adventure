@@ -242,15 +242,38 @@ export class TracksService {
     return { data: isOwner ? page : page.map((r) => this.trimForNonOwner(r)), nextCursor };
   }
 
-  // Delta sync for a future client (MOBILE_CLIENT.md) - not paginated, since
-  // "everything changed since X" is expected to be a small set for one user.
-  async listSince(userId: string, since?: string) {
+  // Delta sync for apps/mobile (MOBILE_PLAN.md Phase 0 fixed two bugs here):
+  //  - tombstones: deletes are soft (isActive=false), so a naive
+  //    "isActive = true" filter meant a track deleted on one device never
+  //    disappeared on another. Deleted rows now come back trimmed to the
+  //    minimal {id, isActive, updatedAt} shape a client needs to evict its
+  //    local copy - full geometry/samples serve no purpose for a tombstone.
+  //  - bounded: unpaginated was fine for a small delta, but unbounded on a
+  //    fresh install where since=epoch. Cursor-paginated like
+  //    listForUser, ordered by (updatedAt, id) so ties don't drop rows.
+  async listSince(userId: string, since?: string, cursor?: string, limit = 200) {
+    const capped = Math.min(Math.max(limit, 1), 500);
     const sinceDate = since ? new Date(since) : new Date(0);
-    return this.prisma.$queryRawUnsafe<ActivityTrackRow[]>(
-      `SELECT ${ROW_COLUMNS} FROM activity_tracks WHERE "userId" = $1 AND "updatedAt" > $2 ORDER BY "updatedAt" ASC`,
+    const cursorClause = cursor ? decodeSyncCursor(cursor) : null;
+
+    const rows = await this.prisma.$queryRawUnsafe<ActivityTrackRow[]>(
+      `SELECT ${ROW_COLUMNS} FROM activity_tracks
+       WHERE "userId" = $1 AND "updatedAt" > $2
+         AND ($3::timestamp IS NULL OR ("updatedAt", id) > ($3::timestamp, $4))
+       ORDER BY "updatedAt" ASC, id ASC
+       LIMIT $5`,
       userId,
       sinceDate,
+      cursorClause?.updatedAt ?? null,
+      cursorClause?.id ?? null,
+      capped + 1,
     );
+
+    const hasMore = rows.length > capped;
+    const page = rows.slice(0, capped);
+    const nextCursor = hasMore ? encodeSyncCursor(page[page.length - 1]) : null;
+
+    return { data: page.map((r) => (r.isActive ? r : toTombstone(r))), nextCursor };
   }
 
   // admin-only flat listing across all users, for the read + moderate admin
@@ -334,4 +357,19 @@ function encodeCursor(row: ActivityTrackRow): string {
 function decodeCursor(cursor: string): { startedAt: Date; id: string } {
   const [startedAt, id] = Buffer.from(cursor, 'base64').toString('utf-8').split('|');
   return { startedAt: new Date(startedAt), id };
+}
+
+// Deleted rows carry no useful geometry/samples for a sync client - just
+// enough to evict the local copy.
+function toTombstone(row: ActivityTrackRow): Pick<ActivityTrackRow, 'id' | 'isActive' | 'updatedAt'> {
+  return { id: row.id, isActive: row.isActive, updatedAt: row.updatedAt };
+}
+
+function encodeSyncCursor(row: ActivityTrackRow): string {
+  return Buffer.from(`${row.updatedAt.toISOString()}|${row.id}`).toString('base64');
+}
+
+function decodeSyncCursor(cursor: string): { updatedAt: Date; id: string } {
+  const [updatedAt, id] = Buffer.from(cursor, 'base64').toString('utf-8').split('|');
+  return { updatedAt: new Date(updatedAt), id };
 }

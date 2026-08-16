@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, Role } from '@prisma/client';
+import { AuthProvider, Prisma, Role } from '@prisma/client';
 import { levelProgress } from '../contributions/guide-level.util';
 import { sanitizeUsernameSeed } from '../common/username';
 import { PrismaService } from '../prisma/prisma.service';
@@ -118,27 +118,68 @@ export class UsersService {
     };
   }
 
+  // MOBILE_PLAN.md Phase 0: resolves a third-party sign-in to a User via
+  // AuthIdentity, replacing the old googleId-only upsert now that a user can
+  // hold both a Google and an Apple identity. Lookup order:
+  //   1. AuthIdentity(provider, providerId) already exists -> that user.
+  //   2. No identity yet, but the provider asserts the email is verified ->
+  //      attach a new identity to the existing User with that email
+  //      (auto-link). Linking on an *unverified* email is an
+  //      account-takeover vector, so emailVerified=false never reaches here.
+  //   3. Neither -> create a brand-new User + identity.
   // role only applies on create - an existing user's role is never touched
   // here. Explicit find-then-create (not a Prisma upsert) so an existing
   // user's login is a single lookup, not a wasted username-collision check
   // on every sign-in - only a brand-new account needs one.
-  async upsertGoogleUser(
-    params: { email: string; googleId: string; roleOnCreate: Role; usernameSeed: string },
+  async resolveIdentity(
+    params: {
+      provider: AuthProvider;
+      providerId: string;
+      email: string;
+      emailVerified: boolean;
+      roleOnCreate: Role;
+      usernameSeed: string;
+    },
     tx: Prisma.TransactionClient | PrismaService = this.prisma,
   ) {
-    const existing = await tx.user.findUnique({ where: { email: params.email } });
-    if (existing) {
-      return existing;
+    const identity = await tx.authIdentity.findUnique({
+      where: { provider_providerId: { provider: params.provider, providerId: params.providerId } },
+      include: { user: true },
+    });
+    if (identity) {
+      if (identity.email !== params.email) {
+        await tx.authIdentity.update({ where: { id: identity.id }, data: { email: params.email } });
+      }
+      return identity.user;
     }
+
+    const existingByEmail = params.emailVerified
+      ? await tx.user.findUnique({ where: { email: params.email } })
+      : null;
+    if (existingByEmail) {
+      await tx.authIdentity.create({
+        data: {
+          userId: existingByEmail.id,
+          provider: params.provider,
+          providerId: params.providerId,
+          email: params.email,
+        },
+      });
+      return existingByEmail;
+    }
+
     const username = await this.generateUniqueUsername(params.usernameSeed, tx);
-    return tx.user.create({
+    const user = await tx.user.create({
       data: {
         email: params.email,
-        googleId: params.googleId,
         role: params.roleOnCreate,
         username,
+        authIdentities: {
+          create: { provider: params.provider, providerId: params.providerId, email: params.email },
+        },
       },
     });
+    return user;
   }
 
   // Same slugify-then-collision-loop shape as AdventurePagesService's

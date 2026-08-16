@@ -13,10 +13,14 @@ enum Role {
   USER
 }
 
+enum AuthProvider {
+  GOOGLE
+  APPLE
+}
+
 model User {
-  id       String @id @default(uuid())
-  email    String @unique
-  googleId String @unique
+  id    String @id @default(uuid())
+  email String @unique
 
   // Public-facing identity, distinct from Profile.name (a freeform display
   // name re-synced from Google on every login - see ProfilesService). Set
@@ -34,6 +38,7 @@ model User {
 
   profile       Profile?
   refreshTokens RefreshToken[]
+  authIdentities AuthIdentity[]
 
   revisions           PageRevision[]
   pageConfirmations   PageConfirmation[]
@@ -97,6 +102,27 @@ model Profile {
   updatedAt DateTime @updatedAt
 
   @@map("profiles")
+}
+
+// Replaces the old User.googleId column - lets one User hold both a Google
+// and an Apple identity (Apple sign-in is App Store-mandated, see
+// MOBILE_PLAN.md Phase 0). email is per-provider (Apple private-relay
+// addresses differ from User.email) and only informs auto-linking when the
+// provider asserts it's verified - AuthService owns that check, not this
+// column.
+model AuthIdentity {
+  id         String       @id @default(uuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   AuthProvider
+  providerId String
+  email      String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@unique([provider, providerId])
+  @@index([userId])
+  @@map("auth_identities")
 }
 
 model RefreshToken {

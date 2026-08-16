@@ -11,6 +11,12 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
+  // Caddy proxies every request (see docker-compose.prod.yml) - without
+  // this, req.ip is Caddy's container IP, turning ThrottlerGuard's per-IP
+  // limiter into a global lockout for all users at once. Must ship in the
+  // same change as the throttler, not after (MOBILE_PLAN.md Phase 0).
+  app.set('trust proxy', 1);
+
   app.setGlobalPrefix('api/v1', {
     exclude: ['health'],
   });

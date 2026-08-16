@@ -123,7 +123,12 @@ export class MyActivityTracksController {
   constructor(private readonly tracksService: TracksService) {}
 
   @Get()
-  listMine(@CurrentUser() user: AuthenticatedUser, @Query('since') since?: string) {
-    return this.tracksService.listSince(user.userId, since);
+  listMine(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('since') since?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.tracksService.listSince(user.userId, since, cursor, Number(limit) || undefined);
   }
 }

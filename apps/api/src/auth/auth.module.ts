@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { GuideProfilesModule } from '../guide-profiles/guide-profiles.module';
 import { ProfilesModule } from '../profiles/profiles.module';
 import { UsersModule } from '../users/users.module';
@@ -14,7 +15,18 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
-  imports: [PassportModule, JwtModule.register({}), UsersModule, ProfilesModule, GuideProfilesModule],
+  imports: [
+    PassportModule,
+    JwtModule.register({}),
+    UsersModule,
+    ProfilesModule,
+    GuideProfilesModule,
+    // Registered here (not bound globally via APP_GUARD) and applied only
+    // to AuthController - MOBILE_PLAN.md Phase 0 wants login/refresh rate
+    // limited specifically, not a budget shared with map-panning-heavy
+    // endpoints like /trails/bbox or /spots/bbox.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 20 }]),
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,

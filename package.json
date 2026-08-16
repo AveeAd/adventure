@@ -2,6 +2,7 @@
   "name": "adventure",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ]
 }

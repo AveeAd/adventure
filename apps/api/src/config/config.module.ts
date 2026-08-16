@@ -12,6 +12,13 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1, 'GOOGLE_CLIENT_ID is required'),
   GOOGLE_CLIENT_SECRET: z.string().min(1, 'GOOGLE_CLIENT_SECRET is required'),
   GOOGLE_CALLBACK_URL: z.string().min(1, 'GOOGLE_CALLBACK_URL is required'),
+  // MOBILE_PLAN.md Phase 0: the native Google Sign-In SDKs mint ID tokens
+  // audienced to their own OAuth client, not GOOGLE_CLIENT_ID (the web
+  // client used by the browser flow) - POST /auth/google/mobile has to
+  // accept all three as valid audiences. Optional until apps/mobile exists;
+  // unset in production until then means the mobile endpoint 401s safely.
+  GOOGLE_IOS_CLIENT_ID: z.string().min(1).optional(),
+  GOOGLE_ANDROID_CLIENT_ID: z.string().min(1).optional(),
   ADMIN_EMAILS: z.string().default(''),
   ALLOWED_REDIRECT_URLS: z.string().min(1, 'ALLOWED_REDIRECT_URLS is required'),
   UPLOAD_DIR: z.string().min(1).default('/app/uploads'),
