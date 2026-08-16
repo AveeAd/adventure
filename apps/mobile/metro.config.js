@@ -26,4 +26,10 @@ config.resolver.nodeModulesPaths = [
 // two copies of React in one bundle is an "Invalid hook call" bug otherwise.
 config.resolver.disableHierarchicalLookup = true;
 
+// expo-sqlite's web implementation loads a wasm binary; without this, Metro
+// doesn't know how to resolve `.wasm` imports and `expo export --platform
+// web` fails outright (used only as a smoke test - apps/mobile isn't
+// shipped to web, see AdventureMap.web.tsx's similar note).
+config.resolver.assetExts.push('wasm');
+
 module.exports = withNativeWind(config, { input: './src/global.css' });

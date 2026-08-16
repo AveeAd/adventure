@@ -5,6 +5,8 @@
 // CurrentUser) can follow opportunistically rather than as a big-bang
 // refactor. Kept in sync with the API by hand - there is no codegen step.
 
+export * from './content';
+
 export type Role = 'ADMIN' | 'MODERATOR' | 'USER';
 
 export type AuthProvider = 'GOOGLE' | 'APPLE';
