@@ -48,7 +48,13 @@
       ],
       "expo-secure-store",
       "@react-native-google-signin/google-signin",
-      "@sentry/react-native",
+      [
+        "@sentry/react-native",
+        {
+          "organization": "kumar-adhikari",
+          "project": "react-native"
+        }
+      ],
       "expo-sqlite",
       "@maplibre/maplibre-react-native",
       [
