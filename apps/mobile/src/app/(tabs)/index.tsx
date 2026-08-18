@@ -1,10 +1,11 @@
 import type { AdventurePageSummary } from '@adventure/api-types';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Text, TextInput, View } from 'react-native';
 
 import { Badge } from '@/components/Badge';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -58,15 +59,19 @@ function AdventureCard({ page }: { page: AdventurePageSummary }) {
 }
 
 export default function Discover() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 300);
   const { data, isLoading, isError, refetch } = useAdventurePages(debouncedQuery);
 
   return (
     <Screen scroll={false}>
-      <Text className="mb-4 text-2xl font-bold text-primary-900 dark:text-primary-100">
-        Discover
-      </Text>
+      <View className="mb-4 flex-row items-center justify-between">
+        <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">Discover</Text>
+        <Button size="sm" onPress={() => router.push('/adventures/new')}>
+          New adventure
+        </Button>
+      </View>
       <TextInput
         value={query}
         onChangeText={setQuery}

@@ -14,6 +14,8 @@ import { Screen } from '@/components/Screen';
 import {
   useAdventurePage,
   useSpots,
+  useToggleLike,
+  useToggleVisit,
   useTrails,
   useTripReports,
 } from '@/lib/resources/adventure-pages';
@@ -31,6 +33,8 @@ export default function AdventureDetail() {
   const { data: trails } = useTrails(page?.id);
   const { data: spots } = useSpots(page?.id);
   const { data: tripReports } = useTripReports(page?.id);
+  const toggleLike = useToggleLike(page?.id ?? '', slug);
+  const toggleVisit = useToggleVisit(page?.id ?? '', slug);
 
   if (isLoading) return <LoadingState />;
   if (isError || !page) return <ErrorState onRetry={() => refetch()} />;
@@ -49,12 +53,18 @@ export default function AdventureDetail() {
           <Text className="flex-1 text-2xl font-bold text-primary-900 dark:text-primary-100">
             {page.title}
           </Text>
-          <OfflineDownloadButton slug={slug} />
+          <View className="flex-row items-center gap-2">
+            <Button size="sm" variant="secondary" onPress={() => router.push(`/adventures/${slug}/edit`)}>
+              Edit
+            </Button>
+            <OfflineDownloadButton slug={slug} />
+          </View>
         </View>
 
         <View className="flex-row flex-wrap gap-1.5">
           {page.activityType ? <Badge>{page.activityType.name}</Badge> : null}
           {page.difficultyLevel ? <Badge tone="warning">{page.difficultyLevel.name}</Badge> : null}
+          {!page.approvedRevision ? <Badge tone="warning">Unapproved</Badge> : null}
           {page.districts.map((d) => (
             <Badge key={d.district.name} tone="neutral">
               {d.district.name}
@@ -65,6 +75,25 @@ export default function AdventureDetail() {
               {s.season.name}
             </Badge>
           ))}
+        </View>
+
+        <View className="flex-row gap-2">
+          <Button
+            size="sm"
+            variant={page.likedByMe ? 'accent' : 'secondary'}
+            disabled={toggleLike.isPending}
+            onPress={() => toggleLike.mutate(page.likedByMe)}
+          >
+            {page.likedByMe ? 'Liked' : 'Like'} · {page.likeCount}
+          </Button>
+          <Button
+            size="sm"
+            variant={page.visitedByMe ? 'accent' : 'secondary'}
+            disabled={toggleVisit.isPending}
+            onPress={() => toggleVisit.mutate(page.visitedByMe)}
+          >
+            {page.visitedByMe ? "Been here" : "Mark as been here"} · {page.visitCount}
+          </Button>
         </View>
 
         <View className="flex-row flex-wrap gap-4">
@@ -84,11 +113,19 @@ export default function AdventureDetail() {
           <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">
             Trails &amp; spots
           </Text>
-          {trails?.length || spots?.length ? (
-            <Button size="sm" onPress={() => router.push(`/adventures/${slug}/map`)}>
-              View map
+          <View className="flex-row gap-2">
+            {trails?.length || spots?.length ? (
+              <Button size="sm" onPress={() => router.push(`/adventures/${slug}/map`)}>
+                View map
+              </Button>
+            ) : null}
+            <Button size="sm" variant="secondary" onPress={() => router.push(`/adventures/${slug}/trails/new`)}>
+              {trails?.length ? 'Edit trail' : 'Add trail'}
             </Button>
-          ) : null}
+            <Button size="sm" variant="secondary" onPress={() => router.push(`/adventures/${slug}/spots/new`)}>
+              Add spot
+            </Button>
+          </View>
         </View>
         {trails?.length || spots?.length ? (
           <View className="gap-2">
@@ -117,9 +154,14 @@ export default function AdventureDetail() {
           <EmptyState>No trails or spots yet.</EmptyState>
         )}
 
-        <Text className="mt-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
-          Trip reports
-        </Text>
+        <View className="mt-2 flex-row items-center justify-between">
+          <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">
+            Trip reports
+          </Text>
+          <Button size="sm" onPress={() => router.push(`/adventures/${slug}/trips/new`)}>
+            Share a trip report
+          </Button>
+        </View>
         {tripReports?.data.length ? (
           <View className="gap-2">
             {tripReports.data.map((report) => (

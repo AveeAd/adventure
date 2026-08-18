@@ -1,22 +1,32 @@
-import { Link, useLocalSearchParams } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { Badge } from '@/components/Badge';
+import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { LoadingState } from '@/components/LoadingState';
 import { Screen } from '@/components/Screen';
 import { UserRef } from '@/components/UserRef';
-import { useClub, useClubThreads } from '@/lib/resources/clubs';
+import { useClub, useClubThreads, useJoinClub, useLeaveClub, useRequestClubJoin } from '@/lib/resources/clubs';
 
 export default function ClubDetail() {
   const { clubId } = useLocalSearchParams<{ clubId: string }>();
+  const router = useRouter();
   const { data: club, isLoading, isError, refetch } = useClub(clubId);
   const { data: threads } = useClubThreads(clubId);
+  const join = useJoinClub(clubId);
+  const leave = useLeaveClub(clubId);
+  const requestJoin = useRequestClubJoin(clubId);
 
   if (isLoading) return <LoadingState />;
   if (isError || !club) return <ErrorState onRetry={() => refetch()} />;
+
+  const membership = club.viewerMembership;
+  const isOwner = membership?.status === 'APPROVED' && membership.role === 'OWNER';
+  const isApprovedMember = membership?.status === 'APPROVED';
+  const isPendingRequest = membership?.status === 'PENDING';
 
   return (
     <Screen contentContainerClassName="gap-4 px-4 py-4">
@@ -28,9 +38,37 @@ export default function ClubDetail() {
         <Badge tone="neutral">
           {club.memberCount} member{club.memberCount === 1 ? '' : 's'}
         </Badge>
-        {club.viewerMembership ? (
-          <Badge tone="success">{club.viewerMembership.status}</Badge>
+        {membership ? <Badge tone="success">{membership.status}</Badge> : null}
+      </View>
+
+      <View className="flex-row flex-wrap gap-2">
+        {isApprovedMember ? (
+          !isOwner ? (
+            <Button size="sm" variant="secondary" disabled={leave.isPending} onPress={() => leave.mutate()}>
+              Leave club
+            </Button>
+          ) : null
+        ) : isPendingRequest ? (
+          <Button size="sm" variant="secondary" disabled>
+            Request pending
+          </Button>
+        ) : club.visibility === 'PUBLIC' ? (
+          <Button size="sm" disabled={join.isPending} onPress={() => join.mutate()}>
+            Join club
+          </Button>
+        ) : (
+          <Button size="sm" disabled={requestJoin.isPending} onPress={() => requestJoin.mutate()}>
+            Request to join
+          </Button>
+        )}
+        {isOwner ? (
+          <Button size="sm" variant="secondary" onPress={() => router.push(`/clubs/${clubId}/join-requests`)}>
+            Join requests
+          </Button>
         ) : null}
+        <Button size="sm" variant="accent" onPress={() => router.push(`/clubs/${clubId}/threads/new`)}>
+          New thread
+        </Button>
       </View>
 
       {club.members?.length ? (

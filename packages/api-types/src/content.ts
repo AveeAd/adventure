@@ -163,3 +163,144 @@ export interface ThreadReply {
   createdAt: string;
   replies: ThreadReply[];
 }
+
+// Phase 5 (MOBILE_PLAN.md "Contribute/write flows") request DTOs - mirrored
+// 1:1 off the NestJS DTOs in apps/api/src/{adventure-pages,geodata,
+// trip-reports,clubs,threads,uploads}. Response shapes above are read from
+// actual service code; these are read from the actual class-validator DTOs,
+// same "hand-written, no codegen" convention as the rest of this file.
+
+export interface CreateCommentRequest {
+  content: string;
+  parentCommentId?: string;
+}
+
+export interface CreateThreadReplyRequest {
+  content: string;
+  parentReplyId?: string;
+}
+
+export type ThreadTag = 'DISCUSSION' | 'TRIP_SHARE' | 'QUESTION' | 'ANNOUNCEMENT' | 'RANDOM';
+
+export interface CreateThreadRequest {
+  content: string;
+  tag?: ThreadTag;
+  tripReportId?: string;
+  trailId?: string;
+  spotId?: string;
+  adventurePageId?: string;
+}
+
+export interface CreateClubRequest {
+  name: string;
+  description?: string;
+  coverImageUrl?: string;
+  visibility?: 'PUBLIC' | 'PRIVATE';
+}
+
+export interface DecideClubJoinRequestRequest {
+  decision: 'APPROVED' | 'DECLINED';
+}
+
+// GET /clubs/:id/join-requests - owner/site-mod only.
+export interface ClubJoinRequest {
+  id: string;
+  status: 'PENDING' | 'APPROVED' | 'DECLINED';
+  user: { id: string; username: string };
+}
+
+export interface CreateTripReportRequest {
+  title?: string;
+  description?: string;
+  content?: string;
+  dateCompleted: string;
+  durationDays?: number;
+  actualCostAmount?: number;
+  currency?: 'NPR' | 'USD' | 'EUR' | 'INR';
+  activityTrackIds?: string[];
+  clubId?: string;
+}
+
+export interface AddMediaRequest {
+  url: string;
+  caption?: string;
+  altText?: string;
+  sortOrder?: number;
+}
+
+// POST /uploads/images response.
+export interface UploadImageResponse {
+  url: string;
+}
+
+// GeoJSON, [lng, lat] order end-to-end - matches apps/api's geometry.dto.ts
+// and apps/public's DrawMap.tsx convention.
+export interface PointGeometry {
+  type: 'Point';
+  coordinates: [number, number];
+}
+
+export interface LineStringGeometry {
+  type: 'LineString';
+  coordinates: [number, number][];
+}
+
+export interface CreateTrailRequest {
+  name?: string;
+  geometry: LineStringGeometry;
+  distanceMeters?: number;
+}
+
+export interface UpdateTrailRequest extends Partial<CreateTrailRequest> {
+  isSafetyCriticalEdit?: boolean;
+  editSummary?: string;
+}
+
+export interface CreateSpotRequest {
+  spotTypeId: string;
+  name: string;
+  description?: string;
+  geometry: PointGeometry;
+  elevationMeters?: number;
+}
+
+export interface UpdateSpotRequest extends Partial<CreateSpotRequest> {
+  isSafetyCriticalEdit?: boolean;
+  editSummary?: string;
+}
+
+export interface CreateAdventurePageRequest {
+  title: string;
+  summary?: string;
+  activityTypeId: string;
+  difficultyLevelId?: string;
+  durationMinDays?: number;
+  durationMaxDays?: number;
+  maxAltitudeMeters?: number;
+  districtIds?: string[];
+  seasonIds?: string[];
+  tagIds?: string[];
+  content: string;
+  trail?: CreateTrailRequest;
+  spots?: CreateSpotRequest[];
+}
+
+export type UpdateAdventurePageMetadataRequest = Partial<
+  Omit<CreateAdventurePageRequest, 'content' | 'trail' | 'spots'>
+>;
+
+export interface SubmitRevisionRequest {
+  content: string;
+  editSummary?: string;
+  isSafetyCriticalEdit?: boolean;
+}
+
+// POST /adventure-pages/:id/revisions response - the created PageRevision.
+export interface PageRevisionSummary {
+  id: string;
+  version: number;
+  content: string;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  isSafetyCriticalEdit: boolean;
+  editSummary: string | null;
+}

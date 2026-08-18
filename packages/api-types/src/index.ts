@@ -89,3 +89,14 @@ export interface ActivityTrackSyncResponse {
   data: ActivityTrackSyncItem[];
   nextCursor: string | null;
 }
+
+// POST /activity-tracks body - see CreateActivityTrackDto. `points` needs at
+// least 2 for the API's @ArrayMinSize(2) to accept it.
+export interface CreateActivityTrackRequest {
+  activityTypeId: string;
+  name?: string;
+  notes?: string;
+  visibility?: 'PRIVATE' | 'PUBLIC';
+  clientUuid?: string;
+  points: Array<{ lng: number; lat: number; ele?: number; t: string }>;
+}

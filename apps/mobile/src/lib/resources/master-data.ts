@@ -16,3 +16,7 @@ function useMasterDataOptions(path: string) {
 export const useActivityTypes = () => useMasterDataOptions('activity-types');
 export const useDistricts = () => useMasterDataOptions('districts');
 export const useLanguages = () => useMasterDataOptions('languages');
+export const useDifficultyLevels = () => useMasterDataOptions('difficulty-levels');
+export const useSeasons = () => useMasterDataOptions('seasons');
+export const useTags = () => useMasterDataOptions('tags');
+export const useSpotTypes = () => useMasterDataOptions('spot-types');

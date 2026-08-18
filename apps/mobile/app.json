@@ -8,7 +8,12 @@
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "UIBackgroundModes": ["location"],
+        "NSLocationWhenInUseUsageDescription": "Adventure uses your location to trace your route while you record a hike.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Adventure records your route in the background so tracking continues when your phone is locked or the app isn't in view."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +23,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.dolposcript.mobile"
+      "package": "com.dolposcript.mobile",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -38,7 +50,16 @@
       "@react-native-google-signin/google-signin",
       "@sentry/react-native",
       "expo-sqlite",
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Adventure records your route in the background so tracking continues when your phone is locked or the app isn't in view.",
+          "locationWhenInUsePermission": "Adventure uses your location to trace your route while you record a hike.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

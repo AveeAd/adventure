@@ -8,6 +8,11 @@ import { useColorScheme } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
 import { queryClient } from '@/lib/query-client';
+// Registers the background location TaskManager task (MOBILE_PLAN.md Phase
+// 4) - must be imported at module scope somewhere the app always loads, so
+// `TaskManager.defineTask` has run before the OS can invoke it, including a
+// cold relaunch purely to deliver a background location batch.
+import '@/lib/recording/location-task';
 import { Sentry } from '@/lib/sentry';
 
 SplashScreen.preventAutoHideAsync();
@@ -31,9 +36,17 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={status === 'signed-in'}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="adventures/new" />
         <Stack.Screen name="adventures/[slug]/index" />
+        <Stack.Screen name="adventures/[slug]/edit" />
         <Stack.Screen name="adventures/[slug]/map" />
         <Stack.Screen name="adventures/[slug]/trips/[tripReportId]" />
+        <Stack.Screen name="adventures/[slug]/trips/new" />
+        <Stack.Screen name="adventures/[slug]/trails/new" />
+        <Stack.Screen name="adventures/[slug]/spots/new" />
+        <Stack.Screen name="tracks/index" />
+        <Stack.Screen name="tracks/new" />
+        <Stack.Screen name="tracks/record" />
       </Stack.Protected>
       <Stack.Protected guard={status !== 'signed-in'}>
         <Stack.Screen name="sign-in" />

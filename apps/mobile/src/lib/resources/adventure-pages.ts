@@ -1,14 +1,21 @@
 import type {
   AdventurePageDetail,
   AdventurePageSummary,
+  CreateAdventurePageRequest,
+  CreateSpotRequest,
+  CreateTrailRequest,
   ListResponse,
+  PageRevisionSummary,
   Spot,
+  SubmitRevisionRequest,
   Trail,
   TripReportSummary,
+  UpdateSpotRequest,
+  UpdateTrailRequest,
 } from '@adventure/api-types';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { authGet } from '@/lib/auth-fetch';
+import { authDelete, authGet, authPatch, authPost } from '@/lib/auth-fetch';
 import { isConnected } from '@/lib/offline/connectivity';
 import { getOfflinePage, getOfflineSpots, getOfflineTrails, isStale, saveOfflineAdventure } from '@/lib/offline/store';
 
@@ -100,6 +107,97 @@ export function useSpots(pageId: string | undefined) {
       }
     },
     enabled: !!pageId,
+  });
+}
+
+// `id` is the page's own id (what the API route needs); `slug` is the
+// query key useAdventurePage is cached under - both are needed since the
+// two don't share a key space.
+export function useToggleLike(id: string, slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (liked: boolean) =>
+      liked
+        ? authDelete<{ likeCount: number }>(`/adventure-pages/${id}/likes`)
+        : authPost<{ likeCount: number }>(`/adventure-pages/${id}/likes`),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adventure-page', slug] });
+    },
+  });
+}
+
+export function useToggleVisit(id: string, slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (visited: boolean) =>
+      visited
+        ? authDelete(`/adventure-pages/${id}/visits`)
+        : authPost(`/adventure-pages/${id}/visits`),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adventure-page', slug] });
+    },
+  });
+}
+
+export function useCreateAdventurePage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateAdventurePageRequest) =>
+      authPost<AdventurePageDetail>('/adventure-pages', body),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adventure-pages'] });
+    },
+  });
+}
+
+export function useSubmitPageRevision(pageId: string, slug: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: SubmitRevisionRequest) =>
+      authPost<PageRevisionSummary>(`/adventure-pages/${pageId}/revisions`, body),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adventure-page', slug] });
+    },
+  });
+}
+
+export function useCreateTrail(pageId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateTrailRequest) => authPost<Trail>(`/adventure-pages/${pageId}/trails`, body),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adventure-page-trails', pageId] });
+    },
+  });
+}
+
+export function useUpdateTrail(trailId: string, pageId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateTrailRequest) => authPatch<Trail>(`/trails/${trailId}`, body),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adventure-page-trails', pageId] });
+    },
+  });
+}
+
+export function useCreateSpot(pageId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateSpotRequest) => authPost<Spot>(`/adventure-pages/${pageId}/spots`, body),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adventure-page-spots', pageId] });
+    },
+  });
+}
+
+export function useUpdateSpot(spotId: string, pageId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateSpotRequest) => authPatch<Spot>(`/spots/${spotId}`, body),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['adventure-page-spots', pageId] });
+    },
   });
 }
 
