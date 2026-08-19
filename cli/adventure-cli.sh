@@ -194,7 +194,12 @@ seed_database_menu() {
             if [[ "$needs_confirm" == "1" ]] && ! confirm "Are you sure you want to run: $label?"; then
                 continue
             fi
-            run_cmd "npm run $name --workspace=apps/api" npm run "$name" --workspace=apps/api
+            # Runs inside the api container, not on the host: DATABASE_URL
+            # (.env) points at the docker-compose network hostname `db`,
+            # which only resolves inside the compose network, and nothing
+            # here loads .env into the host shell either way.
+            run_cmd "docker compose exec api npm run $name --workspace=apps/api" \
+                docker compose exec api npm run "$name" --workspace=apps/api
         elif [[ $status -eq 1 ]]; then
             break
         fi
@@ -210,7 +215,10 @@ ops_menu() {
         if [[ $status -eq 0 ]]; then
             case "$CHOICE" in
                 1)
-                    run_cmd "npx prisma migrate deploy" npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+                    # Same reasoning as Seed Database above - needs the
+                    # container's DATABASE_URL, not the host's (nonexistent) one.
+                    run_cmd "docker compose exec api npx prisma migrate deploy" \
+                        docker compose exec api npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
                     ;;
                 2)
                     if confirm "Are you sure you want to run: Docker Image Prune?"; then

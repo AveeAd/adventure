@@ -27,3 +27,5 @@ Numbered menu, type the number and press enter. `b` goes back a level, `q` quits
 - **Operational Commands** — `prisma migrate deploy`, `docker image prune`.
 
 Destructive actions (`down`, `seed:all`, image prune) prompt for confirmation first.
+
+Seed Database and "Migrate Deploy" run inside the dev `api` container (`docker compose exec api ...`), not on the host — `DATABASE_URL` in `.env` points at the compose network hostname `db`, which only resolves inside the containers. **The dev `api` container must already be up** (Run Application → Dev → Up) before using either of those menus.
