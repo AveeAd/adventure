@@ -64,7 +64,17 @@ export const SETTING_DEFAULTS: Record<string, { value: string; description: stri
     description: 'Longer description for future meta/SEO use',
     public: true,
   },
-  'app.contactEmail': { value: '', description: 'Public contact email (not yet rendered)', public: true },
+  // Sourced from CONTACT_EMAIL directly (not ConfigService - this module is
+  // a plain constant object evaluated before Nest's DI container exists, so
+  // there's no injection point available yet) so the privacy policy
+  // (docs/privacy.md) and the App Store/Play Store listings' support email
+  // can all point at one changeable value instead of being hand-edited in
+  // three places whenever it changes.
+  'app.contactEmail': {
+    value: process.env.CONTACT_EMAIL ?? '',
+    description: 'Public/support contact email (privacy policy, store listings)',
+    public: true,
+  },
   'app.social.twitter': { value: '', description: 'Twitter/X profile URL (not yet rendered)', public: true },
   'app.social.instagram': { value: '', description: 'Instagram profile URL (not yet rendered)', public: true },
   'app.social.github': { value: '', description: 'GitHub org/repo URL (not yet rendered)', public: true },
