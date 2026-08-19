@@ -15,6 +15,7 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import ms from 'ms';
 import { AuthService } from './auth.service';
+import { ProfilesService } from '../profiles/profiles.service';
 import { CurrentUser, AuthenticatedUser } from './decorators/current-user.decorator';
 import { AppleMobileLoginDto } from './dto/apple-mobile-login.dto';
 import { GoogleMobileLoginDto } from './dto/google-mobile-login.dto';
@@ -35,6 +36,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly profilesService: ProfilesService,
   ) {}
 
   @Public()
@@ -129,8 +131,14 @@ export class AuthController {
   }
 
   @Get('me')
-  me(@CurrentUser() user: AuthenticatedUser) {
-    return user;
+  async me(@CurrentUser() user: AuthenticatedUser) {
+    // avatarUrl isn't in the JWT payload (see ProfilesService.getAvatarUrl's
+    // comment), so this is the one deliberate DB hit on an otherwise
+    // stateless-JWT auth path - acceptable since /auth/me is a session
+    // bootstrap call, not something hit on every request the way the guard
+    // itself is.
+    const avatarUrl = await this.profilesService.getAvatarUrl(user.userId);
+    return { ...user, avatarUrl };
   }
 
   @Get('identities')

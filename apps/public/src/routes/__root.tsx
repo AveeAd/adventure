@@ -297,9 +297,13 @@ function AccountMenu({
         type="button"
         onClick={() => setOpen((wasOpen) => !wasOpen)}
         aria-label={t('nav.accountMenu')}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white transition-colors hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600"
+        className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary-600 text-sm font-semibold text-white transition-colors hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600"
       >
-        {initial}
+        {user.avatarUrl ? (
+          <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+        ) : (
+          initial
+        )}
       </button>
 
       {open && (

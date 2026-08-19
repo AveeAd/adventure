@@ -139,7 +139,14 @@ function ContributorProfilePage() {
     <Container>
       <div className="flex items-center gap-4">
         {profile.avatarUrl ? (
-          <img src={profile.avatarUrl} alt="" width={64} height={64} className="rounded-full" />
+          <img
+            src={profile.avatarUrl}
+            alt=""
+            width={64}
+            height={64}
+            className="rounded-full"
+            referrerPolicy="no-referrer"
+          />
         ) : (
           <Avatar label={profile.displayName} size="lg" />
         )}
