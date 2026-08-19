@@ -83,6 +83,9 @@ model User {
 
   notifications Notification[]
 
+  deviceTokens           DeviceToken[]
+  notificationPreference NotificationPreference?
+
   reportsFiled    ContentReport[] @relation("ReportsFiled")
   reportsResolved ContentReport[] @relation("ReportsResolved")
 
@@ -1184,6 +1187,45 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+}
+
+// Phase 6: an Expo push token is per-install, not per-account - unique on
+// token (re-registering under a different signed-in user re-parents it),
+// hard-deleted on unregister or an Expo DeviceNotRegistered receipt rather
+// than soft-deleted, since a stale token has no reason to stick around.
+model DeviceToken {
+  id        String         @id @default(uuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String         @unique
+  platform  DevicePlatform
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId])
+  @@map("device_tokens")
+}
+
+// Phase 6: one row per user, four flat booleans rather than a category join
+// table - the category set is small and fixed (see notification-category.ts
+// for the NotificationType -> category grouping), not open-ended.
+model NotificationPreference {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  socialEnabled        Boolean  @default(true)
+  contributionsEnabled Boolean  @default(true)
+  moderationEnabled    Boolean  @default(true)
+  clubsEnabled         Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("notification_preferences")
 }
 
 // MILESTONE_3.md §6: runtime-tunable economy/threshold values (approval

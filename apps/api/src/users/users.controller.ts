@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Param, Patch, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Query, Res } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import type { Response } from 'express';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
+import { REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_PATH } from '../auth/refresh-cookie';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ContributionsService } from '../contributions/contributions.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -54,6 +56,22 @@ export class UsersController {
   @Get(':id/contributions')
   listContributions(@Param('id') id: string, @Query('page') page?: string, @Query('pageSize') pageSize?: string) {
     return this.contributions.list(id, Number(page) || 1, Number(pageSize) || 20);
+  }
+
+  // Single-segment route, but registered after "me/username" above and
+  // there's no other DELETE route to collide with anyway. Clears the
+  // refresh cookie itself (not just the DB rows behind it) for the same
+  // reason AuthController.logout does - a web caller's browser should stop
+  // sending a now-pointless cookie immediately, not just fail silently on
+  // the next refresh attempt.
+  @Delete('me')
+  async deleteOwnAccount(
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.usersService.deleteOwnAccount(user.userId);
+    res.clearCookie(REFRESH_TOKEN_COOKIE, { path: REFRESH_TOKEN_PATH });
+    return { success: true };
   }
 
   @Roles(Role.ADMIN)

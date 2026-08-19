@@ -1,10 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NotificationType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService } from './push.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pushService: PushService,
+  ) {}
 
   // one-way system messages - never notifies a user about their own action
   async notify(userId: string, actorId: string | undefined, type: NotificationType, message: string, linkUrl?: string) {
@@ -12,6 +18,7 @@ export class NotificationsService {
       return;
     }
     await this.prisma.notification.create({ data: { userId, type, message, linkUrl } });
+    this.firePush(userId, type, message, linkUrl);
   }
 
   async notifyMany(userIds: string[], actorId: string | undefined, type: NotificationType, message: string, linkUrl?: string) {
@@ -22,6 +29,15 @@ export class NotificationsService {
     await this.prisma.notification.createMany({
       data: recipients.map((userId) => ({ userId, type, message, linkUrl })),
     });
+    recipients.forEach((userId) => this.firePush(userId, type, message, linkUrl));
+  }
+
+  // Fire-and-forget: push delivery must never add latency to, or fail, the
+  // caller's own transaction (approval/report/comment flows etc).
+  private firePush(userId: string, type: NotificationType, message: string, linkUrl?: string) {
+    this.pushService
+      .sendToUser(userId, type, message, linkUrl)
+      .catch((err) => this.logger.error(`Push delivery failed for user ${userId}`, err instanceof Error ? err.stack : String(err)));
   }
 
   async listForUser(userId: string, page = 1, pageSize = 20) {

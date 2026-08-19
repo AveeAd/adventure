@@ -28,6 +28,11 @@ export const SETTING_DEFAULTS: Record<string, { value: string; description: stri
   'points.mediaReportUpheld': { value: '-3', description: 'Points for MEDIA_REPORT_UPHELD' },
   'points.geoReportUpheld': { value: '-30', description: 'Points for GEO_REPORT_UPHELD' },
 
+  // Phase 6: admin-only kill switch for the Expo push delivery channel -
+  // in-app Notification rows keep writing regardless, this only gates the
+  // push send.
+  'push.enabled': { value: 'true', description: 'Master kill switch for push notification delivery' },
+
   // Public branding keys - readable via GET /settings/public (no auth) so
   // apps/public and apps/admin can render the app's name/tagline without
   // hardcoding it, and it can be changed later without a deploy.

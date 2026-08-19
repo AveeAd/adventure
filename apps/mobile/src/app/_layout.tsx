@@ -7,6 +7,11 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
+// Registers the foreground notification handler + Android channel (Phase 6)
+// - same "register before the OS can need it" convention as location-task.ts
+// below.
+import '@/lib/notifications/handler';
+import { useNotificationTapHandler, usePushRegistration } from '@/lib/notifications/push';
 import { queryClient } from '@/lib/query-client';
 // Registers the background location TaskManager task (MOBILE_PLAN.md Phase
 // 4) - must be imported at module scope somewhere the app always loads, so
@@ -19,6 +24,8 @@ SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
   const { status } = useAuth();
+  usePushRegistration();
+  useNotificationTapHandler();
 
   useEffect(() => {
     if (status !== 'loading') {

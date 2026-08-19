@@ -16,15 +16,15 @@ import { Request, Response } from 'express';
 import ms from 'ms';
 import { AuthService } from './auth.service';
 import { CurrentUser, AuthenticatedUser } from './decorators/current-user.decorator';
+import { AppleMobileLoginDto } from './dto/apple-mobile-login.dto';
 import { GoogleMobileLoginDto } from './dto/google-mobile-login.dto';
+import { LinkAppleDto } from './dto/link-apple.dto';
 import { RefreshTokenBodyDto } from './dto/refresh-token-body.dto';
 import { Public } from './decorators/public.decorator';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_PATH } from './refresh-cookie';
 import { GoogleProfile } from './strategies/google.strategy';
 import { decodeState } from './state.util';
-
-const REFRESH_TOKEN_COOKIE = 'refresh_token';
-const REFRESH_TOKEN_PATH = '/api/v1/auth';
 
 // ThrottlerGuard applied here rather than globally (see AuthModule) - the
 // budget belongs to login/refresh, not to unrelated high-traffic endpoints
@@ -72,6 +72,28 @@ export class AuthController {
     return this.authService.handleGoogleMobileLogin(dto.idToken);
   }
 
+  // Sign in with Apple - MOBILE_PLAN.md Phase 7. iOS-only on the client
+  // side (no Apple sign-in requirement exists for Android/web), but nothing
+  // here is iOS-specific: it's the same JSON-login shape as
+  // POST /auth/google/mobile.
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('apple/mobile')
+  async appleMobileLogin(@Body() dto: AppleMobileLoginDto) {
+    return this.authService.handleAppleMobileLogin(dto.identityToken, dto.fullName);
+  }
+
+  // Attaches Apple as a second identity on the caller's own account -
+  // requires auth (not @Public), since this is "link", not "log in as".
+  // See AuthService.linkAppleIdentity for why the private-relay email case
+  // needs an explicit flow instead of resolveIdentity's auto-link.
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('link/apple')
+  async linkApple(@CurrentUser() user: AuthenticatedUser, @Body() dto: LinkAppleDto) {
+    await this.authService.linkAppleIdentity(user.userId, dto.identityToken);
+    return { success: true };
+  }
+
   @Public()
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('refresh')
@@ -109,6 +131,11 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: AuthenticatedUser) {
     return user;
+  }
+
+  @Get('identities')
+  async identities(@CurrentUser() user: AuthenticatedUser) {
+    return { providers: await this.authService.listIdentities(user.userId) };
   }
 
   private setRefreshCookie(res: Response, refreshToken: string) {

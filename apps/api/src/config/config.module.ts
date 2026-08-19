@@ -19,6 +19,12 @@ const envSchema = z.object({
   // unset in production until then means the mobile endpoint 401s safely.
   GOOGLE_IOS_CLIENT_ID: z.string().min(1).optional(),
   GOOGLE_ANDROID_CLIENT_ID: z.string().min(1).optional(),
+  // Sign in with Apple (MOBILE_PLAN.md Phase 7 - App Store Guideline 4.8).
+  // The audience an Apple identity token carries for a native app is the
+  // bundle id itself, not a "client id" the way Google's mobile flow needs
+  // one - same optional-until-mobile-needs-it pattern as the GOOGLE_*_CLIENT_ID
+  // pair above.
+  APPLE_BUNDLE_ID: z.string().min(1).optional(),
   ADMIN_EMAILS: z.string().default(''),
   ALLOWED_REDIRECT_URLS: z.string().min(1, 'ALLOWED_REDIRECT_URLS is required'),
   UPLOAD_DIR: z.string().min(1).default('/app/uploads'),

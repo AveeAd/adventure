@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { AuthProvider, Role } from '@prisma/client';
@@ -9,6 +9,7 @@ import { GuideProfilesService } from '../guide-profiles/guide-profiles.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProfilesService } from '../profiles/profiles.service';
 import { UsersService } from '../users/users.service';
+import { verifyAppleIdentityToken } from './apple-identity';
 import { GoogleProfile } from './strategies/google.strategy';
 
 interface TokenPair {
@@ -95,6 +96,72 @@ export class AuthService {
 
     const tokens = await this.issueTokenPair(user);
     return { ...tokens, user };
+  }
+
+  private get appleBundleId(): string {
+    const bundleId = this.configService.get<string>('APPLE_BUNDLE_ID');
+    if (!bundleId) {
+      throw new UnauthorizedException('Apple sign-in is not configured');
+    }
+    return bundleId;
+  }
+
+  // POST /auth/apple/mobile - Sign in with Apple (MOBILE_PLAN.md Phase 7,
+  // App Store Guideline 4.8). No browser-redirect flow exists for Apple the
+  // way Google has one, since this is only required for the iOS app; the
+  // native AuthenticationServices sheet hands the identity token straight
+  // to this endpoint. Same loginWithIdentity resolution as Google, so
+  // account auto-linking on a provider-verified email applies here too -
+  // though real-email Apple sign-ins are the exception, not the rule, see
+  // linkAppleIdentity below for the private-relay case.
+  async handleAppleMobileLogin(identityToken: string, fullName?: string): Promise<TokenPairWithUser> {
+    const profile = await verifyAppleIdentityToken(identityToken, this.appleBundleId);
+
+    const user = await this.loginWithIdentity({
+      provider: AuthProvider.APPLE,
+      providerId: profile.appleId,
+      email: profile.email,
+      emailVerified: profile.emailVerified,
+      name: fullName,
+    });
+
+    const tokens = await this.issueTokenPair(user);
+    return { ...tokens, user };
+  }
+
+  // POST /auth/link/apple - an Apple private-relay email (the common case:
+  // the user chose "Hide My Email") never matches the email on an existing
+  // Google-created account, so resolveIdentity's auto-link-on-verified-email
+  // path can't fire for it. This is the manual alternative: an already
+  // signed-in user explicitly attaches Apple as a second identity on their
+  // own account rather than accidentally creating a duplicate one.
+  async linkAppleIdentity(userId: string, identityToken: string): Promise<void> {
+    const profile = await verifyAppleIdentityToken(identityToken, this.appleBundleId);
+
+    const existing = await this.prisma.authIdentity.findUnique({
+      where: { provider_providerId: { provider: AuthProvider.APPLE, providerId: profile.appleId } },
+    });
+    if (existing) {
+      if (existing.userId !== userId) {
+        throw new ConflictException('This Apple ID is already linked to a different account');
+      }
+      return;
+    }
+
+    await this.prisma.authIdentity.create({
+      data: { userId, provider: AuthProvider.APPLE, providerId: profile.appleId, email: profile.email },
+    });
+  }
+
+  // GET /auth/identities - backs the "Connected accounts" section on
+  // apps/mobile's Account tab, so it can render "Link Apple ID" vs. "Apple
+  // ID linked" instead of guessing from session-only state.
+  async listIdentities(userId: string): Promise<AuthProvider[]> {
+    const identities = await this.prisma.authIdentity.findMany({
+      where: { userId },
+      select: { provider: true },
+    });
+    return identities.map((i) => i.provider);
   }
 
   // Shared by the browser OAuth callback and the JSON mobile login endpoint

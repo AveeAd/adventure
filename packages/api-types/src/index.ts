@@ -43,6 +43,12 @@ export interface RefreshResponse {
   refreshToken: string;
 }
 
+// GET /auth/identities response - which providers the current user has
+// linked (MOBILE_PLAN.md Phase 7's "Connected accounts" section).
+export interface AuthIdentitiesResponse {
+  providers: AuthProvider[];
+}
+
 // GET /me/activity-tracks response item - either a full row or, for a
 // soft-deleted track, a tombstone the client uses to evict its local copy.
 // See TracksService.listSince.
@@ -100,3 +106,28 @@ export interface CreateActivityTrackRequest {
   clientUuid?: string;
   points: Array<{ lng: number; lat: number; ele?: number; t: string }>;
 }
+
+// Phase 6: push notifications.
+
+export type DevicePlatform = 'IOS' | 'ANDROID';
+
+// POST /device-tokens body - see RegisterDeviceTokenDto.
+export interface RegisterDeviceTokenRequest {
+  token: string;
+  platform: DevicePlatform;
+}
+
+// DELETE /device-tokens body - see UnregisterDeviceTokenDto.
+export interface UnregisterDeviceTokenRequest {
+  token: string;
+}
+
+// GET/PATCH /notification-preferences - see PushService.getPreferences/updatePreferences.
+export interface NotificationPreferences {
+  socialEnabled: boolean;
+  contributionsEnabled: boolean;
+  moderationEnabled: boolean;
+  clubsEnabled: boolean;
+}
+
+export type UpdateNotificationPreferencesRequest = Partial<NotificationPreferences>;
