@@ -1,0 +1,8 @@
+{
+  "title": "Guides",
+  "empty": "No guides match these filters.",
+  "rate": "Rate: {{rateMin}}–{{rateMax}} {{currency}} / {{rateUnit}}",
+  "specialties": "Specialties",
+  "regions": "Regions",
+  "languages": "Languages"
+}

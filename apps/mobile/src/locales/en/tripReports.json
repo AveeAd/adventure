@@ -1,0 +1,38 @@
+{
+  "reply": "Reply",
+  "commentComposer": {
+    "placeholder": "Write a comment…",
+    "postError": "Could not post comment."
+  },
+  "newTripReport": {
+    "title": "Share a trip report",
+    "uploadError": "Could not upload photo.",
+    "dateRequiredError": "Date completed is required (YYYY-MM-DD).",
+    "createError": "Could not create trip report.",
+    "titleLabel": "Title",
+    "titlePlaceholder": "Trip title",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "How did it go?",
+    "dateCompletedLabel": "Date completed (YYYY-MM-DD)",
+    "dateCompletedPlaceholder": "2026-05-01",
+    "durationLabel": "Duration (days)",
+    "costLabel": "Cost",
+    "currencyLabel": "Currency",
+    "attachTracksLabel": "Attach your activity tracks",
+    "untitledRecording": "Untitled recording",
+    "photosLabel": "Photos",
+    "takePhoto": "Take photo",
+    "choosePhoto": "Choose photo",
+    "sharing": "Sharing…",
+    "shareButton": "Share trip report"
+  },
+  "detail": {
+    "by": "By",
+    "durationDays_one": "{{count}} day",
+    "durationDays_other": "{{count}} days",
+    "kudosGiven": "Kudos given",
+    "giveKudos": "Give kudos",
+    "comments": "Comments",
+    "emptyComments": "No comments yet."
+  }
+}

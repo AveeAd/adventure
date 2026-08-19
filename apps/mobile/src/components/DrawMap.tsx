@@ -2,6 +2,7 @@ import type { PressEvent } from '@maplibre/maplibre-react-native';
 import { Camera, GeoJSONSource, Layer, Map } from '@maplibre/maplibre-react-native';
 import type { NativeSyntheticEvent } from 'react-native';
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import type { LngLatBounds } from '@/lib/map/bbox';
@@ -28,6 +29,7 @@ export function DrawMap({
   mode: 'point' | 'line';
   center?: LngLat;
 }) {
+  const { t } = useTranslation('adventurePage');
   const handlePress = (event: NativeSyntheticEvent<PressEvent>) => {
     const { lngLat } = event.nativeEvent;
     if (mode === 'point') {
@@ -92,7 +94,7 @@ export function DrawMap({
           disabled={!points.length}
           onPress={() => onPointsChange(points.slice(0, -1))}
         >
-          Undo point
+          {t('map.undoPoint')}
         </Button>
         <Button
           variant="secondary"
@@ -100,7 +102,7 @@ export function DrawMap({
           disabled={!points.length}
           onPress={() => onPointsChange([])}
         >
-          Clear
+          {t('map.clear')}
         </Button>
       </View>
     </View>

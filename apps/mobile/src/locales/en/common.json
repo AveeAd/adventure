@@ -1,0 +1,43 @@
+{
+  "errorState": {
+    "defaultMessage": "Something went wrong loading this.",
+    "retry": "Try again"
+  },
+  "offline": {
+    "downloading": "Downloading…",
+    "downloadedRemove": "Downloaded · Remove",
+    "failedRetry": "Failed · Retry",
+    "download": "Download for offline"
+  },
+  "updateRequired": {
+    "title": "Update required",
+    "message": "This version of the app is no longer supported{{minVersionSuffix}}. Please update to continue.",
+    "minVersionSuffix": " (minimum version: {{minVersion}})",
+    "openStore": "Open app store",
+    "checkStore": "Check the App Store or Play Store for the latest version."
+  },
+  "tabs": {
+    "discover": "Discover",
+    "guides": "Guides",
+    "clubs": "Clubs",
+    "account": "Account"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "post": "Post",
+    "posting": "Posting…",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "edit": "Edit",
+    "delete": "Delete",
+    "signOut": "Sign out",
+    "checkingSignIn": "Checking sign-in…"
+  },
+  "select": {
+    "placeholder": "Select…"
+  },
+  "attachmentPicker": {
+    "searchPlaceholder": "Search {{label}}…"
+  }
+}

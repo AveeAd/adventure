@@ -1,0 +1,22 @@
+{
+  "title": "Clubs",
+  "searchPlaceholder": "Search clubs",
+  "empty": "No clubs found.",
+  "memberCount_one": "{{count}} member",
+  "memberCount_other": "{{count}} members",
+  "leaveClub": "Leave club",
+  "requestPending": "Request pending",
+  "joinClub": "Join club",
+  "requestToJoin": "Request to join",
+  "joinRequests": "Join requests",
+  "newThread": "New thread",
+  "members": "Members",
+  "threads": "Threads",
+  "pinned": "Pinned",
+  "replyCount_one": "{{count}} reply",
+  "replyCount_other": "{{count}} replies",
+  "emptyThreads": "No threads yet.",
+  "approve": "Approve",
+  "decline": "Decline",
+  "emptyJoinRequests": "No pending requests."
+}

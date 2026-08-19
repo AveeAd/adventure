@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FlatList, Modal, Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 // No native <select> in RN - this is a modal list picker over a fixed
 // option set, standing in for apps/public's FormField.tsx `Select`. Options
@@ -10,7 +11,7 @@ export function Select({
   value,
   options,
   onChange,
-  placeholder = 'Select…',
+  placeholder,
 }: {
   label: string;
   value: string | null;
@@ -18,6 +19,7 @@ export function Select({
   onChange: (id: string) => void;
   placeholder?: string;
 }) {
+  const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.id === value);
 
@@ -35,7 +37,7 @@ export function Select({
               : 'text-base text-stone-400 dark:text-stone-500'
           }
         >
-          {selected?.label ?? placeholder}
+          {selected?.label ?? placeholder ?? t('select.placeholder')}
         </Text>
       </Pressable>
       <Modal visible={open} animationType="slide" transparent onRequestClose={() => setOpen(false)}>

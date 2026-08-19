@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { DrawMap } from '@/components/DrawMap';
@@ -15,6 +16,7 @@ type LngLat = [number, number];
 // Doubles as the edit flow when the page already has a trail - same
 // "Add trail" / "Update trail" copy-branch as apps/public's trails/new.tsx.
 export default function NewOrEditTrail() {
+  const { t } = useTranslation('adventurePage');
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { data: page, isLoading: isPageLoading, isError, refetch } = useAdventurePage(slug);
@@ -38,7 +40,7 @@ export default function NewOrEditTrail() {
 
   const handleSubmit = async () => {
     if (points.length < 2) {
-      setError('Draw at least two points to form a trail.');
+      setError(t('newTrail.minPointsError'));
       return;
     }
     setSubmitting(true);
@@ -57,7 +59,7 @@ export default function NewOrEditTrail() {
       }
       router.replace(`/adventures/${slug}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save trail.');
+      setError(err instanceof Error ? err.message : t('newTrail.saveError'));
     } finally {
       setSubmitting(false);
     }
@@ -66,30 +68,30 @@ export default function NewOrEditTrail() {
   return (
     <Screen scroll={false} contentContainerClassName="gap-3">
       <Text className="px-4 pt-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
-        {isEdit ? 'Update trail' : 'Add trail'}
+        {isEdit ? t('newTrail.updateTitle') : t('newTrail.addTitle')}
       </Text>
       <View className="flex-1">
         <DrawMap points={points} onPointsChange={setPoints} mode="line" />
       </View>
       <View className="gap-2 px-4 pb-2">
-        <Field label="Trail name">
-          <TextInput value={name} onChangeText={setName} placeholder="Trail name (optional)" />
+        <Field label={t('newTrail.nameLabel')}>
+          <TextInput value={name} onChangeText={setName} placeholder={t('newTrail.namePlaceholder')} />
         </Field>
         {isEdit ? (
           <>
-            <Field label="Edit summary">
-              <TextInput value={editSummary} onChangeText={setEditSummary} placeholder="What changed?" />
+            <Field label={t('newTrail.editSummaryLabel')}>
+              <TextInput value={editSummary} onChangeText={setEditSummary} placeholder={t('newTrail.editSummaryPlaceholder')} />
             </Field>
             <Pressable onPress={() => setIsSafetyCriticalEdit((v) => !v)} className="flex-row items-center gap-2">
               <Text className="text-sm text-primary-900 dark:text-primary-100">
-                {isSafetyCriticalEdit ? '☑' : '☐'} This edit affects safety-critical information
+                {isSafetyCriticalEdit ? '☑' : '☐'} {t('newTrail.safetyCriticalLabel')}
               </Text>
             </Pressable>
           </>
         ) : null}
         {error ? <Text className="text-sm text-red-600 dark:text-red-400">{error}</Text> : null}
         <Button disabled={submitting || points.length < 2} onPress={handleSubmit}>
-          {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Add trail'}
+          {submitting ? t('newTrail.saving') : isEdit ? t('newTrail.saveChanges') : t('newTrail.addButton')}
         </Button>
       </View>
     </Screen>

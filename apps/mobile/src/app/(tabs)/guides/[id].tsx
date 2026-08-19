@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Badge, StatusBadge } from '@/components/Badge';
 import { ErrorState } from '@/components/ErrorState';
@@ -9,6 +10,7 @@ import { UserRef } from '@/components/UserRef';
 import { useGuideProfile } from '@/lib/resources/guide-profiles';
 
 export default function GuideDetail() {
+  const { t } = useTranslation('guides');
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: guide, isLoading, isError, refetch } = useGuideProfile(id);
 
@@ -29,14 +31,19 @@ export default function GuideDetail() {
 
       {guide.rateMin || guide.rateMax ? (
         <Text className="text-sm text-stone-600 dark:text-stone-400">
-          Rate: {guide.rateMin ?? '?'}–{guide.rateMax ?? '?'} {guide.currency} / {guide.rateUnit}
+          {t('rate', {
+            rateMin: guide.rateMin ?? '?',
+            rateMax: guide.rateMax ?? '?',
+            currency: guide.currency,
+            rateUnit: guide.rateUnit,
+          })}
         </Text>
       ) : null}
 
       {guide.specialties.length ? (
         <View className="gap-2">
           <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">
-            Specialties
+            {t('specialties')}
           </Text>
           <View className="flex-row flex-wrap gap-1.5">
             {guide.specialties.map((s) => (
@@ -49,7 +56,7 @@ export default function GuideDetail() {
       {guide.regions.length ? (
         <View className="gap-2">
           <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">
-            Regions
+            {t('regions')}
           </Text>
           <View className="flex-row flex-wrap gap-1.5">
             {guide.regions.map((r) => (
@@ -64,7 +71,7 @@ export default function GuideDetail() {
       {guide.languages.length ? (
         <View className="gap-2">
           <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">
-            Languages
+            {t('languages')}
           </Text>
           <View className="flex-row flex-wrap gap-1.5">
             {guide.languages.map((l) => (

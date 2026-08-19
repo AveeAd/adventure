@@ -1,5 +1,6 @@
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -12,6 +13,7 @@ import { UserRef } from '@/components/UserRef';
 import { useClub, useClubThreads, useJoinClub, useLeaveClub, useRequestClubJoin } from '@/lib/resources/clubs';
 
 export default function ClubDetail() {
+  const { t } = useTranslation('clubs');
   const { clubId } = useLocalSearchParams<{ clubId: string }>();
   const router = useRouter();
   const { data: club, isLoading, isError, refetch } = useClub(clubId);
@@ -35,9 +37,7 @@ export default function ClubDetail() {
         <Text className="text-base text-stone-700 dark:text-stone-300">{club.description}</Text>
       ) : null}
       <View className="flex-row flex-wrap gap-1.5">
-        <Badge tone="neutral">
-          {club.memberCount} member{club.memberCount === 1 ? '' : 's'}
-        </Badge>
+        <Badge tone="neutral">{t('memberCount', { count: club.memberCount })}</Badge>
         {membership ? <Badge tone="success">{membership.status}</Badge> : null}
       </View>
 
@@ -45,35 +45,35 @@ export default function ClubDetail() {
         {isApprovedMember ? (
           !isOwner ? (
             <Button size="sm" variant="secondary" disabled={leave.isPending} onPress={() => leave.mutate()}>
-              Leave club
+              {t('leaveClub')}
             </Button>
           ) : null
         ) : isPendingRequest ? (
           <Button size="sm" variant="secondary" disabled>
-            Request pending
+            {t('requestPending')}
           </Button>
         ) : club.visibility === 'PUBLIC' ? (
           <Button size="sm" disabled={join.isPending} onPress={() => join.mutate()}>
-            Join club
+            {t('joinClub')}
           </Button>
         ) : (
           <Button size="sm" disabled={requestJoin.isPending} onPress={() => requestJoin.mutate()}>
-            Request to join
+            {t('requestToJoin')}
           </Button>
         )}
         {isOwner ? (
           <Button size="sm" variant="secondary" onPress={() => router.push(`/clubs/${clubId}/join-requests`)}>
-            Join requests
+            {t('joinRequests')}
           </Button>
         ) : null}
         <Button size="sm" variant="accent" onPress={() => router.push(`/clubs/${clubId}/threads/new`)}>
-          New thread
+          {t('newThread')}
         </Button>
       </View>
 
       {club.members?.length ? (
         <View className="gap-2">
-          <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">Members</Text>
+          <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">{t('members')}</Text>
           {club.members.map((member) => (
             <Text key={member.user.id} className="text-sm text-stone-700 dark:text-stone-300">
               {member.user.username} · {member.role}
@@ -82,7 +82,7 @@ export default function ClubDetail() {
         </View>
       ) : null}
 
-      <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">Threads</Text>
+      <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">{t('threads')}</Text>
       {threads?.data.length ? (
         <View className="gap-2">
           {threads.data.map((thread) => (
@@ -90,20 +90,20 @@ export default function ClubDetail() {
               <Card className="p-3" onPress={() => {}}>
                 <View className="flex-row items-center gap-2">
                   <UserRef userId={thread.authorId} className="text-sm font-medium text-primary-700 dark:text-primary-400" />
-                  {thread.isPinned ? <Badge tone="warning">Pinned</Badge> : null}
+                  {thread.isPinned ? <Badge tone="warning">{t('pinned')}</Badge> : null}
                 </View>
                 <Text className="mt-1 text-sm text-stone-700 dark:text-stone-300" numberOfLines={2}>
                   {thread.content}
                 </Text>
                 <Text className="mt-1 text-xs text-stone-500 dark:text-stone-500">
-                  {thread.replyCount} repl{thread.replyCount === 1 ? 'y' : 'ies'}
+                  {t('replyCount', { count: thread.replyCount })}
                 </Text>
               </Card>
             </Link>
           ))}
         </View>
       ) : (
-        <EmptyState>No threads yet.</EmptyState>
+        <EmptyState>{t('emptyThreads')}</EmptyState>
       )}
     </Screen>
   );

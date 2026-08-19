@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { LoadingState } from '@/components/LoadingState';
@@ -26,6 +27,7 @@ function formatDistance(meters: number): string {
 // task, and polling the same store both write paths already update is
 // simpler than plumbing an event bus between them.
 export default function RecordScreen() {
+  const { t } = useTranslation('tracks');
   const router = useRouter();
   const [session, setSession] = useState<RecordingSession | null | undefined>(undefined);
 
@@ -54,9 +56,9 @@ export default function RecordScreen() {
     return (
       <Screen contentContainerClassName="items-center justify-center gap-4" scroll={false}>
         <Text className="text-center text-base text-stone-600 dark:text-stone-400">
-          No recording in progress.
+          {t('recordScreen.noneInProgress')}
         </Text>
-        <Button onPress={() => router.replace('/tracks/new')}>Start a recording</Button>
+        <Button onPress={() => router.replace('/tracks/new')}>{t('recordScreen.startRecording')}</Button>
       </Screen>
     );
   }
@@ -72,10 +74,10 @@ export default function RecordScreen() {
   };
 
   const handleStop = () => {
-    Alert.alert('Finish recording?', 'This will save the track and stop tracking your location.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('recordScreen.finishConfirmTitle'), t('recordScreen.finishConfirmMessage'), [
+      { text: t('recordScreen.cancel'), style: 'cancel' },
       {
-        text: 'Finish',
+        text: t('recordScreen.finish'),
         onPress: async () => {
           await stopRecording(session.id);
           router.replace('/tracks');
@@ -85,10 +87,10 @@ export default function RecordScreen() {
   };
 
   const handleDiscard = () => {
-    Alert.alert('Discard recording?', 'This deletes everything recorded so far. This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('recordScreen.discardConfirmTitle'), t('recordScreen.discardConfirmMessage'), [
+      { text: t('recordScreen.cancel'), style: 'cancel' },
       {
-        text: 'Discard',
+        text: t('recordScreen.discard'),
         style: 'destructive',
         onPress: async () => {
           await discardRecording(session.id);
@@ -105,18 +107,18 @@ export default function RecordScreen() {
           {formatElapsed(session.startedAt)}
         </Text>
         <Text className="text-lg text-stone-600 dark:text-stone-400">{formatDistance(session.distanceMeters)}</Text>
-        {isPaused && <Text className="text-sm font-semibold text-amber-600 dark:text-amber-400">PAUSED</Text>}
+        {isPaused && <Text className="text-sm font-semibold text-amber-600 dark:text-amber-400">{t('recordScreen.paused')}</Text>}
       </View>
 
       <View className="w-full gap-3 px-8">
         <Button size="md" variant={isPaused ? 'primary' : 'secondary'} onPress={handlePauseResume}>
-          {isPaused ? 'Resume' : 'Pause'}
+          {isPaused ? t('recordScreen.resume') : t('recordScreen.pause')}
         </Button>
         <Button size="md" variant="accent" onPress={handleStop}>
-          Finish
+          {t('recordScreen.finish')}
         </Button>
         <Button size="md" variant="danger" onPress={handleDiscard}>
-          Discard
+          {t('recordScreen.discard')}
         </Button>
       </View>
     </Screen>

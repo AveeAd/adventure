@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -22,6 +23,7 @@ function CommentComposer({
   onSubmit: (content: string) => Promise<void>;
   onCancel?: () => void;
 }) {
+  const { t } = useTranslation(['tripReports', 'common']);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ function CommentComposer({
       setContent('');
       onCancel?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not post comment.');
+      setError(err instanceof Error ? err.message : t('tripReports:commentComposer.postError'));
     } finally {
       setSubmitting(false);
     }
@@ -46,17 +48,17 @@ function CommentComposer({
       <TextArea
         value={content}
         onChangeText={setContent}
-        placeholder="Write a comment…"
+        placeholder={t('tripReports:commentComposer.placeholder')}
         numberOfLines={3}
       />
       {error ? <Text className="text-xs text-red-600 dark:text-red-400">{error}</Text> : null}
       <View className="flex-row gap-2">
         <Button size="sm" disabled={submitting || !content.trim()} onPress={handleSubmit}>
-          {submitting ? 'Posting…' : 'Post'}
+          {submitting ? t('common:actions.posting') : t('common:actions.post')}
         </Button>
         {onCancel ? (
           <Button size="sm" variant="secondary" onPress={onCancel}>
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
         ) : null}
       </View>
@@ -71,6 +73,7 @@ function CommentItem({
   comment: TripReportComment;
   onReply: (parentCommentId: string, content: string) => Promise<void>;
 }) {
+  const { t } = useTranslation('tripReports');
   const [replying, setReplying] = useState(false);
   return (
     <View className="gap-2">
@@ -81,7 +84,7 @@ function CommentItem({
         />
         <Text className="mt-1 text-sm text-stone-700 dark:text-stone-300">{comment.content}</Text>
         <Button size="sm" variant="secondary" className="mt-2 self-start" onPress={() => setReplying((r) => !r)}>
-          Reply
+          {t('reply')}
         </Button>
       </Card>
       {replying ? (
@@ -104,6 +107,7 @@ function CommentItem({
 }
 
 export default function TripReportDetail() {
+  const { t } = useTranslation('tripReports');
   const { tripReportId } = useLocalSearchParams<{ tripReportId: string }>();
   const { data: report, isLoading, isError, refetch } = useTripReport(tripReportId);
   const { data: comments } = useTripReportComments(tripReportId);
@@ -121,7 +125,7 @@ export default function TripReportDetail() {
     <Screen contentContainerClassName="gap-4 px-4 py-4">
       <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">{report.title}</Text>
       <View className="flex-row items-center gap-2">
-        <Text className="text-sm text-stone-600 dark:text-stone-400">By</Text>
+        <Text className="text-sm text-stone-600 dark:text-stone-400">{t('detail.by')}</Text>
         <UserRef userId={report.authorId} />
         {report.club ? (
           <Text className="text-sm text-stone-600 dark:text-stone-400"> · {report.club.name}</Text>
@@ -129,7 +133,7 @@ export default function TripReportDetail() {
       </View>
       <Text className="text-sm text-stone-600 dark:text-stone-400">
         {new Date(report.dateCompleted).toLocaleDateString()}
-        {report.durationDays ? ` · ${report.durationDays} day${report.durationDays === 1 ? '' : 's'}` : ''}
+        {report.durationDays ? ` · ${t('detail.durationDays', { count: report.durationDays })}` : ''}
       </Text>
 
       <Button
@@ -139,7 +143,7 @@ export default function TripReportDetail() {
         disabled={kudos.isPending}
         onPress={() => kudos.mutate(report.kudosByMe)}
       >
-        {report.kudosByMe ? 'Kudos given' : 'Give kudos'} · {report.kudosCount}
+        {report.kudosByMe ? t('detail.kudosGiven') : t('detail.giveKudos')} · {report.kudosCount}
       </Button>
 
       {report.activityTracks.length ? (
@@ -169,7 +173,7 @@ export default function TripReportDetail() {
       <Markdown>{report.description}</Markdown>
 
       <Text className="mt-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
-        Comments
+        {t('detail.comments')}
       </Text>
       <CommentComposer onSubmit={async (content) => { await createComment.mutateAsync({ content }); }} />
       {comments?.length ? (
@@ -179,7 +183,7 @@ export default function TripReportDetail() {
           ))}
         </View>
       ) : (
-        <EmptyState>No comments yet.</EmptyState>
+        <EmptyState>{t('detail.emptyComments')}</EmptyState>
       )}
     </Screen>
   );

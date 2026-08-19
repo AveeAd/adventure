@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { useDeleteOfflineAdventure, useDownloadAdventure, useOfflineStatus } from '@/lib/resources/offline';
 import { Button } from './Button';
 
@@ -5,6 +7,7 @@ import { Button } from './Button';
 // downloaded / downloading / downloaded / failed. No "stale" UI state yet;
 // staleness is handled silently inside useAdventurePage's query function.
 export function OfflineDownloadButton({ slug }: { slug: string }) {
+  const { t } = useTranslation('common');
   const { data: status } = useOfflineStatus(slug);
   const download = useDownloadAdventure(slug);
   const remove = useDeleteOfflineAdventure(slug);
@@ -12,7 +15,7 @@ export function OfflineDownloadButton({ slug }: { slug: string }) {
   if (download.isPending) {
     return (
       <Button size="sm" variant="secondary" disabled>
-        Downloading…
+        {t('offline.downloading')}
       </Button>
     );
   }
@@ -20,7 +23,7 @@ export function OfflineDownloadButton({ slug }: { slug: string }) {
   if (status === 'downloaded') {
     return (
       <Button size="sm" variant="accent" onPress={() => remove.mutate()}>
-        Downloaded · Remove
+        {t('offline.downloadedRemove')}
       </Button>
     );
   }
@@ -28,14 +31,14 @@ export function OfflineDownloadButton({ slug }: { slug: string }) {
   if (download.isError) {
     return (
       <Button size="sm" variant="danger" onPress={() => download.mutate()}>
-        Failed · Retry
+        {t('offline.failedRetry')}
       </Button>
     );
   }
 
   return (
     <Button size="sm" variant="secondary" onPress={() => download.mutate()}>
-      Download for offline
+      {t('offline.download')}
     </Button>
   );
 }

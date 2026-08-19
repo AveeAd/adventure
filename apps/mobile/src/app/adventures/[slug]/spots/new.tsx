@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { DrawMap } from '@/components/DrawMap';
@@ -15,6 +16,7 @@ import { useSpotTypes } from '@/lib/resources/master-data';
 type LngLat = [number, number];
 
 export default function NewSpot() {
+  const { t } = useTranslation('adventurePage');
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { data: page, isLoading, isError, refetch } = useAdventurePage(slug);
@@ -34,7 +36,7 @@ export default function NewSpot() {
 
   const handleSubmit = async () => {
     if (!points.length || !name.trim() || !spotTypeId) {
-      setError('Tap the map to place the spot, then set a name and type.');
+      setError(t('newSpot.requiredFieldsError'));
       return;
     }
     setSubmitting(true);
@@ -49,7 +51,7 @@ export default function NewSpot() {
       });
       router.replace(`/adventures/${slug}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save spot.');
+      setError(err instanceof Error ? err.message : t('newSpot.saveError'));
     } finally {
       setSubmitting(false);
     }
@@ -57,29 +59,31 @@ export default function NewSpot() {
 
   return (
     <Screen scroll={false} contentContainerClassName="gap-3">
-      <Text className="px-4 pt-2 text-lg font-semibold text-primary-900 dark:text-primary-100">Add spot</Text>
+      <Text className="px-4 pt-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
+        {t('newSpot.title')}
+      </Text>
       <View className="flex-1">
         <DrawMap points={points} onPointsChange={setPoints} mode="point" />
       </View>
       <View className="gap-2 px-4 pb-2">
-        <Field label="Name">
-          <TextInput value={name} onChangeText={setName} placeholder="Spot name" />
+        <Field label={t('newSpot.nameLabel')}>
+          <TextInput value={name} onChangeText={setName} placeholder={t('newSpot.namePlaceholder')} />
         </Field>
         <Select
-          label="Spot type"
+          label={t('newSpot.spotTypeLabel')}
           value={spotTypeId}
           options={(spotTypes?.data ?? []).map((o) => ({ id: o.id, label: o.name }))}
           onChange={setSpotTypeId}
         />
-        <Field label="Description">
+        <Field label={t('newSpot.descriptionLabel')}>
           <TextArea value={description} onChangeText={setDescription} numberOfLines={2} />
         </Field>
-        <Field label="Elevation (m)">
+        <Field label={t('newSpot.elevationLabel')}>
           <TextInput value={elevationMeters} onChangeText={setElevationMeters} keyboardType="numeric" />
         </Field>
         {error ? <Text className="text-sm text-red-600 dark:text-red-400">{error}</Text> : null}
         <Button disabled={submitting || !points.length} onPress={handleSubmit}>
-          {submitting ? 'Saving…' : 'Add spot'}
+          {submitting ? t('newSpot.saving') : t('newSpot.addButton')}
         </Button>
       </View>
     </Screen>

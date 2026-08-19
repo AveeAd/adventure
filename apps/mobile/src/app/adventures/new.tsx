@@ -2,6 +2,7 @@ import type { CreateSpotRequest } from '@adventure/api-types';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { DrawMap } from '@/components/DrawMap';
@@ -25,6 +26,7 @@ type LngLat = [number, number];
 // plus an optional inline trail and repeatable spots all submit in one
 // POST /adventure-pages call, since the API creates them transactionally.
 export default function NewAdventurePage() {
+  const { t } = useTranslation('adventurePage');
   const router = useRouter();
   const createPage = useCreateAdventurePage();
 
@@ -74,7 +76,7 @@ export default function NewAdventurePage() {
 
   const handleSubmit = async () => {
     if (!title.trim() || !activityTypeId || !content.trim()) {
-      setError('Title, activity type, and content are required.');
+      setError(t('newPage.requiredFieldsError'));
       return;
     }
     setSubmitting(true);
@@ -100,7 +102,7 @@ export default function NewAdventurePage() {
       });
       router.replace(`/adventures/${page.slug}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create adventure page.');
+      setError(err instanceof Error ? err.message : t('newPage.createError'));
     } finally {
       setSubmitting(false);
     }
@@ -110,15 +112,15 @@ export default function NewAdventurePage() {
     return (
       <Screen scroll={false} contentContainerClassName="gap-3">
         <Text className="px-4 pt-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
-          Draw the trail
+          {t('newPage.drawTrailTitle')}
         </Text>
         <View className="flex-1">
           <DrawMap points={trailPoints} onPointsChange={setTrailPoints} mode="line" />
         </View>
         <View className="gap-2 px-4 pb-2">
-          <TextInput value={trailName} onChangeText={setTrailName} placeholder="Trail name (optional)" />
+          <TextInput value={trailName} onChangeText={setTrailName} placeholder={t('newPage.trailNamePlaceholder')} />
           <Button disabled={trailPoints.length < 2} onPress={() => setDrawTrail(false)}>
-            Done ({trailPoints.length} points)
+            {t('newPage.doneWithPoints', { count: trailPoints.length })}
           </Button>
         </View>
       </Screen>
@@ -129,21 +131,21 @@ export default function NewAdventurePage() {
     return (
       <Screen scroll={false} contentContainerClassName="gap-3">
         <Text className="px-4 pt-2 text-lg font-semibold text-primary-900 dark:text-primary-100">
-          Place the spot
+          {t('newPage.placeSpotTitle')}
         </Text>
         <View className="flex-1">
           <DrawMap points={spotPoint} onPointsChange={setSpotPoint} mode="point" />
         </View>
         <View className="gap-2 px-4 pb-2">
-          <TextInput value={spotName} onChangeText={setSpotName} placeholder="Spot name" />
+          <TextInput value={spotName} onChangeText={setSpotName} placeholder={t('newPage.spotNamePlaceholder')} />
           <Select
-            label="Spot type"
+            label={t('newPage.spotTypeLabel')}
             value={spotTypeId}
             options={(spotTypes?.data ?? []).map((o) => ({ id: o.id, label: o.name }))}
             onChange={setSpotTypeId}
           />
           <Button disabled={!spotPoint.length || !spotName.trim() || !spotTypeId} onPress={addPendingSpot}>
-            Add spot
+            {t('newPage.addSpot')}
           </Button>
         </View>
       </Screen>
@@ -152,77 +154,77 @@ export default function NewAdventurePage() {
 
   return (
     <Screen contentContainerClassName="gap-4 px-4 py-4">
-      <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">New adventure</Text>
+      <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">{t('newPage.title')}</Text>
 
-      <Field label="Title">
-        <TextInput value={title} onChangeText={setTitle} placeholder="Adventure title" />
+      <Field label={t('newPage.titleLabel')}>
+        <TextInput value={title} onChangeText={setTitle} placeholder={t('newPage.titlePlaceholder')} />
       </Field>
-      <Field label="Summary">
-        <TextArea value={summary} onChangeText={setSummary} numberOfLines={2} placeholder="One-line summary" />
+      <Field label={t('newPage.summaryLabel')}>
+        <TextArea value={summary} onChangeText={setSummary} numberOfLines={2} placeholder={t('newPage.summaryPlaceholder')} />
       </Field>
       <Select
-        label="Activity type"
+        label={t('newPage.activityTypeLabel')}
         value={activityTypeId}
         options={(activityTypes?.data ?? []).map((o) => ({ id: o.id, label: o.name }))}
         onChange={setActivityTypeId}
       />
       <Select
-        label="Difficulty level"
+        label={t('newPage.difficultyLevelLabel')}
         value={difficultyLevelId}
         options={(difficultyLevels?.data ?? []).map((o) => ({ id: o.id, label: o.name }))}
         onChange={setDifficultyLevelId}
       />
       <View className="flex-row gap-3">
         <View className="flex-1">
-          <Field label="Min days">
+          <Field label={t('newPage.minDaysLabel')}>
             <TextInput value={durationMinDays} onChangeText={setDurationMinDays} keyboardType="numeric" />
           </Field>
         </View>
         <View className="flex-1">
-          <Field label="Max days">
+          <Field label={t('newPage.maxDaysLabel')}>
             <TextInput value={durationMaxDays} onChangeText={setDurationMaxDays} keyboardType="numeric" />
           </Field>
         </View>
       </View>
-      <Field label="Max altitude (m)">
+      <Field label={t('newPage.maxAltitudeLabel')}>
         <TextInput value={maxAltitudeMeters} onChangeText={setMaxAltitudeMeters} keyboardType="numeric" />
       </Field>
 
-      <MultiSelectChips label="Districts" options={districts?.data ?? []} selectedIds={districtIds} onChange={setDistrictIds} />
-      <MultiSelectChips label="Seasons" options={seasons?.data ?? []} selectedIds={seasonIds} onChange={setSeasonIds} />
-      <MultiSelectChips label="Tags" options={tags?.data ?? []} selectedIds={tagIds} onChange={setTagIds} />
+      <MultiSelectChips label={t('newPage.districtsLabel')} options={districts?.data ?? []} selectedIds={districtIds} onChange={setDistrictIds} />
+      <MultiSelectChips label={t('newPage.seasonsLabel')} options={seasons?.data ?? []} selectedIds={seasonIds} onChange={setSeasonIds} />
+      <MultiSelectChips label={t('newPage.tagsLabel')} options={tags?.data ?? []} selectedIds={tagIds} onChange={setTagIds} />
 
-      <Field label="Content (Markdown)">
-        <TextArea value={content} onChangeText={setContent} numberOfLines={8} placeholder="Write the full page content…" />
+      <Field label={t('newPage.contentLabel')}>
+        <TextArea value={content} onChangeText={setContent} numberOfLines={8} placeholder={t('newPage.contentPlaceholder')} />
       </Field>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-primary-900 dark:text-primary-100">Trail (optional)</Text>
+        <Text className="text-sm font-medium text-primary-900 dark:text-primary-100">{t('newPage.trailSectionTitle')}</Text>
         {trailPoints.length >= 2 ? (
           <Text className="text-sm text-stone-600 dark:text-stone-400">
-            {trailName.trim() || 'Unnamed trail'} · {trailPoints.length} points
+            {t('newPage.trailSummary', { name: trailName.trim() || t('newPage.unnamedTrail'), count: trailPoints.length })}
           </Text>
         ) : null}
         <Button variant="secondary" size="sm" className="self-start" onPress={() => setDrawTrail(true)}>
-          {trailPoints.length >= 2 ? 'Edit trail' : 'Draw a trail'}
+          {trailPoints.length >= 2 ? t('newPage.editTrail') : t('newPage.drawTrail')}
         </Button>
       </View>
 
       <View className="gap-2">
-        <Text className="text-sm font-medium text-primary-900 dark:text-primary-100">Spots (optional)</Text>
+        <Text className="text-sm font-medium text-primary-900 dark:text-primary-100">{t('newPage.spotsSectionTitle')}</Text>
         {pendingSpots.map((spot, index) => (
           <Text key={index} className="text-sm text-stone-600 dark:text-stone-400">
             {spot.name}
           </Text>
         ))}
         <Button variant="secondary" size="sm" className="self-start" onPress={() => setDrawSpot(true)}>
-          Add a spot
+          {t('newPage.addSpotButton')}
         </Button>
       </View>
 
       {error ? <Text className="text-sm text-red-600 dark:text-red-400">{error}</Text> : null}
       <Button disabled={submitting} onPress={handleSubmit}>
-        {submitting ? 'Creating…' : 'Create adventure'}
+        {submitting ? t('newPage.creating') : t('newPage.createButton')}
       </Button>
     </Screen>
   );

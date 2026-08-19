@@ -1,6 +1,7 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { Screen } from '@/components/Screen';
@@ -8,6 +9,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { isAppleSignInAvailable } from '@/lib/auth/apple-signin';
 
 export default function SignIn() {
+  const { t } = useTranslation('auth');
   const { signIn, signInWithApple } = useAuth();
   const [appleAvailable, setAppleAvailable] = useState(false);
 
@@ -18,12 +20,12 @@ export default function SignIn() {
   return (
     <Screen contentContainerClassName="items-center justify-center gap-6 px-8" scroll={false}>
       <Text className="text-center text-3xl font-bold text-primary-900 dark:text-primary-100">
-        Adventure
+        {t('appName')}
       </Text>
       <Text className="text-center text-base text-primary-700 dark:text-primary-300">
-        Sign in to browse trails, spots, and trip reports.
+        {t('tagline')}
       </Text>
-      <Button onPress={signIn}>Sign in with Google</Button>
+      <Button onPress={signIn}>{t('signInWithGoogle')}</Button>
       {appleAvailable && (
         // Apple's HIG requires its own branded button for Sign in with
         // Apple rather than a generic styled one (App Store Guideline 4.8).

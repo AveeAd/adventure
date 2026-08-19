@@ -2,6 +2,7 @@ import type { ThreadReply } from '@adventure/api-types';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -21,6 +22,7 @@ function ReplyComposer({
   onSubmit: (content: string) => Promise<void>;
   onCancel?: () => void;
 }) {
+  const { t } = useTranslation(['threads', 'common']);
   const [content, setContent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ function ReplyComposer({
       setContent('');
       onCancel?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not post reply.');
+      setError(err instanceof Error ? err.message : t('threads:replyComposer.postError'));
     } finally {
       setSubmitting(false);
     }
@@ -42,15 +44,20 @@ function ReplyComposer({
 
   return (
     <View className="gap-2">
-      <TextArea value={content} onChangeText={setContent} placeholder="Write a reply…" numberOfLines={3} />
+      <TextArea
+        value={content}
+        onChangeText={setContent}
+        placeholder={t('threads:replyComposer.placeholder')}
+        numberOfLines={3}
+      />
       {error ? <Text className="text-xs text-red-600 dark:text-red-400">{error}</Text> : null}
       <View className="flex-row gap-2">
         <Button size="sm" disabled={submitting || !content.trim()} onPress={handleSubmit}>
-          {submitting ? 'Posting…' : 'Post'}
+          {submitting ? t('common:actions.posting') : t('common:actions.post')}
         </Button>
         {onCancel ? (
           <Button size="sm" variant="secondary" onPress={onCancel}>
-            Cancel
+            {t('common:actions.cancel')}
           </Button>
         ) : null}
       </View>
@@ -65,6 +72,7 @@ function ReplyItem({
   reply: ThreadReply;
   onReply: (parentReplyId: string, content: string) => Promise<void>;
 }) {
+  const { t } = useTranslation('threads');
   const [replying, setReplying] = useState(false);
   return (
     <View className="gap-2">
@@ -72,7 +80,7 @@ function ReplyItem({
         <UserRef userId={reply.authorId} className="text-sm font-medium text-primary-700 dark:text-primary-400" />
         <Text className="mt-1 text-sm text-stone-700 dark:text-stone-300">{reply.content}</Text>
         <Button size="sm" variant="secondary" className="mt-2 self-start" onPress={() => setReplying((r) => !r)}>
-          Reply
+          {t('reply')}
         </Button>
       </Card>
       {replying ? (
@@ -92,6 +100,7 @@ function ReplyItem({
 }
 
 export default function ThreadDetail() {
+  const { t } = useTranslation('threads');
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   const { data: thread, isLoading, isError, refetch } = useThread(threadId);
   const { data: replies } = useThreadReplies(threadId);
@@ -109,11 +118,11 @@ export default function ThreadDetail() {
       <View className="flex-row items-center gap-2">
         <UserRef userId={thread.authorId} className="text-base font-semibold text-primary-900 dark:text-primary-100" />
         <Badge tone="neutral">{thread.tag}</Badge>
-        {thread.isPinned ? <Badge tone="warning">Pinned</Badge> : null}
+        {thread.isPinned ? <Badge tone="warning">{t('pinned')}</Badge> : null}
       </View>
       <Text className="text-base text-stone-700 dark:text-stone-300">{thread.content}</Text>
 
-      <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">Replies</Text>
+      <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">{t('replies')}</Text>
       <ReplyComposer onSubmit={async (content) => { await createReply.mutateAsync({ content }); }} />
       {replies?.length ? (
         <View className="gap-2">
@@ -122,7 +131,7 @@ export default function ThreadDetail() {
           ))}
         </View>
       ) : (
-        <EmptyState>No replies yet.</EmptyState>
+        <EmptyState>{t('emptyReplies')}</EmptyState>
       )}
     </Screen>
   );

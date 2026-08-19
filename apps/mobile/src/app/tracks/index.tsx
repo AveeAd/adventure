@@ -1,6 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -32,6 +33,7 @@ function formatDistance(meters: number): string {
 // here is read straight from SQLite, not a server query, since a session
 // only exists server-side once its outbox entry has synced.
 export default function TracksScreen() {
+  const { t } = useTranslation('tracks');
   const router = useRouter();
   const [sessions, setSessions] = useState<RecordingSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -46,19 +48,19 @@ export default function TracksScreen() {
   return (
     <Screen scroll={false} contentContainerClassName="gap-4">
       <View className="flex-row items-center justify-between px-4 pt-2">
-        <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">Activity Tracks</Text>
+        <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">{t('title')}</Text>
         <Button
           size="sm"
           onPress={() => (activeId ? router.push('/tracks/record') : router.push('/tracks/new'))}
         >
-          {activeId ? 'Resume' : 'Record'}
+          {activeId ? t('resume') : t('recordButton')}
         </Button>
       </View>
 
       {sessions.some((s) => s.syncStatus === 'pending' || s.syncStatus === 'failed') && (
         <View className="px-4">
           <Button variant="secondary" size="sm" onPress={() => void syncOutbox().then(reload)}>
-            Sync now
+            {t('syncNow')}
           </Button>
         </View>
       )}
@@ -68,12 +70,7 @@ export default function TracksScreen() {
         data={sessions}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
-        ListEmptyComponent={
-          <EmptyState>
-            No recordings yet. Start a recording to trace your route as you hike - it syncs automatically once you
-            finish.
-          </EmptyState>
-        }
+        ListEmptyComponent={<EmptyState>{t('empty')}</EmptyState>}
         renderItem={({ item }) => (
           <Card className="gap-1 p-4">
             <View className="flex-row items-center justify-between">
@@ -86,7 +83,7 @@ export default function TracksScreen() {
             </View>
             <Text className="text-sm text-stone-600 dark:text-stone-400">
               {formatDistance(item.distanceMeters)} · {formatDuration(item.startedAt, item.finishedAt)} ·{' '}
-              {item.pointCount} points
+              {t('pointCount', { count: item.pointCount })}
             </Text>
             {item.syncError && item.syncStatus === 'failed' && (
               <Text className="text-xs text-red-600 dark:text-red-400">{item.syncError}</Text>

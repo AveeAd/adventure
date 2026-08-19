@@ -2,6 +2,7 @@ import type { MasterDataOption } from '@adventure/api-types';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
@@ -46,6 +47,7 @@ function FilterChips({
 }
 
 export default function GuidesList() {
+  const { t } = useTranslation('guides');
   const [activityTypeId, setActivityTypeId] = useState<string>();
   const [districtId, setDistrictId] = useState<string>();
   const [languageId, setLanguageId] = useState<string>();
@@ -61,7 +63,7 @@ export default function GuidesList() {
 
   return (
     <Screen scroll={false}>
-      <Text className="mb-4 text-2xl font-bold text-primary-900 dark:text-primary-100">Guides</Text>
+      <Text className="mb-4 text-2xl font-bold text-primary-900 dark:text-primary-100">{t('title')}</Text>
 
       {activityTypes?.data.length ? (
         <FilterChips options={activityTypes.data} selectedId={activityTypeId} onSelect={setActivityTypeId} />
@@ -101,7 +103,7 @@ export default function GuidesList() {
               </Card>
             </Link>
           )}
-          ListEmptyComponent={<EmptyState>No guides match these filters.</EmptyState>}
+          ListEmptyComponent={<EmptyState>{t('empty')}</EmptyState>}
         />
       )}
     </Screen>

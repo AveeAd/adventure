@@ -1,4 +1,8 @@
 import '@/global.css';
+// Side-effect: initializes the shared i18next instance (mirrors
+// apps/public/src/routes/__root.tsx importing lib/i18n first) - must run
+// before any screen calls useTranslation().
+import '@/lib/i18n';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';

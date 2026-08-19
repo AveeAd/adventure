@@ -1,0 +1,28 @@
+{
+  "title": "Activity Tracks",
+  "resume": "Resume",
+  "recordButton": "Record",
+  "syncNow": "Sync now",
+  "empty": "No recordings yet. Start a recording to trace your route as you hike - it syncs automatically once you finish.",
+  "pointCount_one": "{{count}} point",
+  "pointCount_other": "{{count}} points",
+  "newRecording": {
+    "title": "What are you doing?",
+    "starting": "Starting…",
+    "startError": "Could not start recording."
+  },
+  "recordScreen": {
+    "noneInProgress": "No recording in progress.",
+    "startRecording": "Start a recording",
+    "finishConfirmTitle": "Finish recording?",
+    "finishConfirmMessage": "This will save the track and stop tracking your location.",
+    "cancel": "Cancel",
+    "finish": "Finish",
+    "discardConfirmTitle": "Discard recording?",
+    "discardConfirmMessage": "This deletes everything recorded so far. This cannot be undone.",
+    "discard": "Discard",
+    "paused": "PAUSED",
+    "resume": "Resume",
+    "pause": "Pause"
+  }
+}

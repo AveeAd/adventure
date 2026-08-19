@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -20,13 +21,14 @@ import {
   useTripReports,
 } from '@/lib/resources/adventure-pages';
 
-function formatDuration(minDays: number | null, maxDays: number | null) {
+function formatDuration(t: (key: string, opts?: Record<string, unknown>) => string, minDays: number | null, maxDays: number | null) {
   if (!minDays && !maxDays) return null;
-  if (minDays === maxDays) return `${minDays} day${minDays === 1 ? '' : 's'}`;
-  return `${minDays ?? '?'}–${maxDays ?? '?'} days`;
+  if (minDays === maxDays) return t('detail.durationDays', { count: minDays ?? 0 });
+  return t('detail.durationRange', { minDays: minDays ?? '?', maxDays: maxDays ?? '?' });
 }
 
 export default function AdventureDetail() {
+  const { t } = useTranslation('adventurePage');
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { data: page, isLoading, isError, refetch } = useAdventurePage(slug);
@@ -40,7 +42,7 @@ export default function AdventureDetail() {
   if (isError || !page) return <ErrorState onRetry={() => refetch()} />;
 
   const cover = page.media[0];
-  const duration = formatDuration(page.durationMinDays, page.durationMaxDays);
+  const duration = formatDuration(t, page.durationMinDays, page.durationMaxDays);
 
   return (
     <Screen scroll className="px-0 py-0" contentContainerClassName="gap-4 px-4 py-4">
@@ -55,7 +57,7 @@ export default function AdventureDetail() {
           </Text>
           <View className="flex-row items-center gap-2">
             <Button size="sm" variant="secondary" onPress={() => router.push(`/adventures/${slug}/edit`)}>
-              Edit
+              {t('detail.edit')}
             </Button>
             <OfflineDownloadButton slug={slug} />
           </View>
@@ -64,7 +66,7 @@ export default function AdventureDetail() {
         <View className="flex-row flex-wrap gap-1.5">
           {page.activityType ? <Badge>{page.activityType.name}</Badge> : null}
           {page.difficultyLevel ? <Badge tone="warning">{page.difficultyLevel.name}</Badge> : null}
-          {!page.approvedRevision ? <Badge tone="warning">Unapproved</Badge> : null}
+          {!page.approvedRevision ? <Badge tone="warning">{t('detail.unapproved')}</Badge> : null}
           {page.districts.map((d) => (
             <Badge key={d.district.name} tone="neutral">
               {d.district.name}
@@ -84,7 +86,7 @@ export default function AdventureDetail() {
             disabled={toggleLike.isPending}
             onPress={() => toggleLike.mutate(page.likedByMe)}
           >
-            {page.likedByMe ? 'Liked' : 'Like'} · {page.likeCount}
+            {page.likedByMe ? t('detail.liked') : t('detail.like')} · {page.likeCount}
           </Button>
           <Button
             size="sm"
@@ -92,17 +94,17 @@ export default function AdventureDetail() {
             disabled={toggleVisit.isPending}
             onPress={() => toggleVisit.mutate(page.visitedByMe)}
           >
-            {page.visitedByMe ? "Been here" : "Mark as been here"} · {page.visitCount}
+            {page.visitedByMe ? t('detail.beenHere') : t('detail.markBeenHere')} · {page.visitCount}
           </Button>
         </View>
 
         <View className="flex-row flex-wrap gap-4">
           {duration ? (
-            <Text className="text-sm text-stone-600 dark:text-stone-400">Duration: {duration}</Text>
+            <Text className="text-sm text-stone-600 dark:text-stone-400">{t('detail.duration', { duration })}</Text>
           ) : null}
           {page.maxAltitudeMeters ? (
             <Text className="text-sm text-stone-600 dark:text-stone-400">
-              Max altitude: {page.maxAltitudeMeters}m
+              {t('detail.maxAltitude', { meters: page.maxAltitudeMeters })}
             </Text>
           ) : null}
         </View>
@@ -111,19 +113,19 @@ export default function AdventureDetail() {
 
         <View className="mt-2 flex-row items-center justify-between">
           <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">
-            Trails &amp; spots
+            {t('detail.trailsAndSpots')}
           </Text>
           <View className="flex-row gap-2">
             {trails?.length || spots?.length ? (
               <Button size="sm" onPress={() => router.push(`/adventures/${slug}/map`)}>
-                View map
+                {t('detail.viewMap')}
               </Button>
             ) : null}
             <Button size="sm" variant="secondary" onPress={() => router.push(`/adventures/${slug}/trails/new`)}>
-              {trails?.length ? 'Edit trail' : 'Add trail'}
+              {trails?.length ? t('detail.editTrail') : t('detail.addTrail')}
             </Button>
             <Button size="sm" variant="secondary" onPress={() => router.push(`/adventures/${slug}/spots/new`)}>
-              Add spot
+              {t('detail.addSpot')}
             </Button>
           </View>
         </View>
@@ -132,7 +134,7 @@ export default function AdventureDetail() {
             {trails?.map((trail) => (
               <Card key={trail.id} className="p-3">
                 <Text className="font-medium text-primary-900 dark:text-primary-100">
-                  {trail.name ?? 'Unnamed trail'}
+                  {trail.name ?? t('detail.unnamedTrail')}
                 </Text>
                 <Text className="text-sm text-stone-600 dark:text-stone-400">
                   {trail.distanceMeters ? `${(trail.distanceMeters / 1000).toFixed(1)} km` : null}
@@ -151,15 +153,15 @@ export default function AdventureDetail() {
             ))}
           </View>
         ) : (
-          <EmptyState>No trails or spots yet.</EmptyState>
+          <EmptyState>{t('detail.emptyTrailsAndSpots')}</EmptyState>
         )}
 
         <View className="mt-2 flex-row items-center justify-between">
           <Text className="text-lg font-semibold text-primary-900 dark:text-primary-100">
-            Trip reports
+            {t('detail.tripReports')}
           </Text>
           <Button size="sm" onPress={() => router.push(`/adventures/${slug}/trips/new`)}>
-            Share a trip report
+            {t('detail.shareTripReport')}
           </Button>
         </View>
         {tripReports?.data.length ? (
@@ -171,14 +173,14 @@ export default function AdventureDetail() {
                     {report.title}
                   </Text>
                   <Text className="text-sm text-stone-600 dark:text-stone-400">
-                    {new Date(report.dateCompleted).toLocaleDateString()} · {report.kudosCount} kudos
+                    {new Date(report.dateCompleted).toLocaleDateString()} · {t('detail.kudosCount', { count: report.kudosCount })}
                   </Text>
                 </Card>
               </Link>
             ))}
           </View>
         ) : (
-          <EmptyState>No trip reports yet. Be the first to share one.</EmptyState>
+          <EmptyState>{t('detail.emptyTripReports')}</EmptyState>
         )}
       </View>
     </Screen>

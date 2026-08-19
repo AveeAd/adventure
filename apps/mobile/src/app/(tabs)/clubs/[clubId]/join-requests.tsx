@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -13,6 +14,7 @@ import { useClubJoinRequests, useDecideJoinRequest } from '@/lib/resources/clubs
 // button on the club detail screen, itself gated on isOwner, but the API
 // re-checks this server-side too (ensureOwnerOrSiteModerator).
 export default function ClubJoinRequests() {
+  const { t } = useTranslation('clubs');
   const { clubId } = useLocalSearchParams<{ clubId: string }>();
   const { data: requests, isLoading, isError, refetch } = useClubJoinRequests(clubId);
   const decide = useDecideJoinRequest(clubId);
@@ -22,7 +24,7 @@ export default function ClubJoinRequests() {
 
   return (
     <Screen contentContainerClassName="gap-4 px-4 py-4">
-      <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">Join requests</Text>
+      <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">{t('joinRequests')}</Text>
       {requests?.length ? (
         <View className="gap-2">
           {requests.map((request) => (
@@ -36,7 +38,7 @@ export default function ClubJoinRequests() {
                   disabled={decide.isPending}
                   onPress={() => decide.mutate({ requestId: request.id, decision: 'APPROVED' })}
                 >
-                  Approve
+                  {t('approve')}
                 </Button>
                 <Button
                   size="sm"
@@ -44,14 +46,14 @@ export default function ClubJoinRequests() {
                   disabled={decide.isPending}
                   onPress={() => decide.mutate({ requestId: request.id, decision: 'DECLINED' })}
                 >
-                  Decline
+                  {t('decline')}
                 </Button>
               </View>
             </Card>
           ))}
         </View>
       ) : (
-        <EmptyState>No pending requests.</EmptyState>
+        <EmptyState>{t('emptyJoinRequests')}</EmptyState>
       )}
     </Screen>
   );

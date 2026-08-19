@@ -2,6 +2,7 @@ import type { NotificationPreferences } from '@adventure/api-types';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Switch, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -11,23 +12,26 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { useNotificationPreferences, useUpdateNotificationPreferences } from '@/lib/resources/notification-preferences';
 import { useAuthIdentities, useLinkAppleIdentity } from '@/lib/resources/auth-identities';
 
-const PREFERENCE_ROWS: { key: keyof NotificationPreferences; label: string }[] = [
-  { key: 'socialEnabled', label: 'Comments, replies & kudos' },
-  { key: 'contributionsEnabled', label: 'Edit approvals & verifications' },
-  { key: 'moderationEnabled', label: 'Reports & moderator applications' },
-  { key: 'clubsEnabled', label: 'Club join requests' },
+const PREFERENCE_KEYS: { key: keyof NotificationPreferences; labelKey: string }[] = [
+  { key: 'socialEnabled', labelKey: 'notifications.social' },
+  { key: 'contributionsEnabled', labelKey: 'notifications.contributions' },
+  { key: 'moderationEnabled', labelKey: 'notifications.moderation' },
+  { key: 'clubsEnabled', labelKey: 'notifications.clubs' },
 ];
 
 function NotificationSettings() {
+  const { t } = useTranslation('account');
   const { data: preferences } = useNotificationPreferences();
   const updatePreferences = useUpdateNotificationPreferences();
 
   return (
     <Card className="w-full gap-4 p-4">
-      <Text className="text-base font-semibold text-primary-900 dark:text-primary-100">Notifications</Text>
-      {PREFERENCE_ROWS.map((row) => (
+      <Text className="text-base font-semibold text-primary-900 dark:text-primary-100">
+        {t('notifications.title')}
+      </Text>
+      {PREFERENCE_KEYS.map((row) => (
         <View key={row.key} className="flex-row items-center justify-between gap-3">
-          <Text className="flex-1 text-sm text-stone-700 dark:text-stone-200">{row.label}</Text>
+          <Text className="flex-1 text-sm text-stone-700 dark:text-stone-200">{t(row.labelKey)}</Text>
           <Switch
             value={preferences?.[row.key] ?? true}
             onValueChange={(value) => updatePreferences.mutate({ [row.key]: value })}
@@ -43,6 +47,7 @@ function NotificationSettings() {
 // AuthService.linkAppleIdentity for why an Apple private-relay email can't
 // auto-link the way a real Google email does.
 function ConnectedAccounts() {
+  const { t } = useTranslation('account');
   const [appleAvailable, setAppleAvailable] = useState(false);
   const { data } = useAuthIdentities();
   const linkApple = useLinkAppleIdentity();
@@ -60,12 +65,16 @@ function ConnectedAccounts() {
   return (
     <Card className="w-full gap-3 p-4">
       <Text className="text-base font-semibold text-primary-900 dark:text-primary-100">
-        Connected accounts
+        {t('connectedAccounts.title')}
       </Text>
       <View className="flex-row items-center justify-between gap-3">
-        <Text className="flex-1 text-sm text-stone-700 dark:text-stone-200">Apple ID</Text>
+        <Text className="flex-1 text-sm text-stone-700 dark:text-stone-200">
+          {t('connectedAccounts.appleId')}
+        </Text>
         {appleLinked ? (
-          <Text className="text-sm text-primary-700 dark:text-primary-300">Linked</Text>
+          <Text className="text-sm text-primary-700 dark:text-primary-300">
+            {t('connectedAccounts.linked')}
+          </Text>
         ) : (
           <Button
             variant="secondary"
@@ -77,7 +86,7 @@ function ConnectedAccounts() {
               }
             }}
           >
-            Link Apple ID
+            {t('connectedAccounts.linkButton')}
           </Button>
         )}
       </View>
@@ -86,16 +95,17 @@ function ConnectedAccounts() {
 }
 
 export default function Account() {
+  const { t } = useTranslation('account');
   const { user, signOut, deleteAccount } = useAuth();
   const router = useRouter();
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete account?',
-      "This permanently deletes your recorded activity tracks and signs you out. Your trip reports, edits, and comments stay attributed to \"[deleted user]\" rather than being removed, since other people's content links to them.",
+      t('deleteAccount.confirmTitle'),
+      t('deleteAccount.confirmMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete account', style: 'destructive', onPress: deleteAccount },
+        { text: t('deleteAccount.cancel'), style: 'cancel' },
+        { text: t('deleteAccount.confirmButton'), style: 'destructive', onPress: deleteAccount },
       ],
     );
   };
@@ -106,15 +116,15 @@ export default function Account() {
         {user?.username}
       </Text>
       <Button variant="primary" onPress={() => router.push('/tracks')}>
-        Activity Tracks
+        {t('activityTracksButton')}
       </Button>
       <ConnectedAccounts />
       <NotificationSettings />
       <Button variant="accent" onPress={signOut}>
-        Sign out
+        {t('signOut')}
       </Button>
       <Button variant="danger" size="sm" onPress={handleDeleteAccount}>
-        Delete account
+        {t('deleteAccount.button')}
       </Button>
     </Screen>
   );

@@ -1,0 +1,33 @@
+{
+  "pinned": "Pinned",
+  "replies": "Replies",
+  "emptyReplies": "No replies yet.",
+  "reply": "Reply",
+  "replyComposer": {
+    "placeholder": "Write a reply…",
+    "postError": "Could not post reply."
+  },
+  "newThread": {
+    "title": "New thread",
+    "tagLabel": "Tag",
+    "contentLabel": "Content",
+    "contentPlaceholder": "What's on your mind?",
+    "attachmentsLabel": "Attachments (optional)",
+    "attachments": {
+      "tripReport": "Trip report",
+      "trail": "Trail",
+      "spot": "Spot",
+      "adventurePage": "Adventure page"
+    },
+    "posting": "Posting…",
+    "postButton": "Post thread",
+    "postError": "Could not post thread.",
+    "tags": {
+      "DISCUSSION": "Discussion",
+      "TRIP_SHARE": "Trip share",
+      "QUESTION": "Question",
+      "ANNOUNCEMENT": "Announcement",
+      "RANDOM": "Random"
+    }
+  }
+}

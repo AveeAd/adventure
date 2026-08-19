@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/Button';
 import { Field, TextArea, TextInput } from '@/components/FormField';
@@ -21,6 +22,7 @@ const CURRENCIES = [
 ];
 
 export default function NewTripReport() {
+  const { t } = useTranslation('tripReports');
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const { data: page } = useAdventurePage(slug);
@@ -54,7 +56,7 @@ export default function NewTripReport() {
         setPhotos((prev) => [...prev, { url: uploaded.url }]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not upload photo.');
+      setError(err instanceof Error ? err.message : t('newTripReport.uploadError'));
     } finally {
       setUploadingPhoto(false);
     }
@@ -66,7 +68,7 @@ export default function NewTripReport() {
 
   const handleSubmit = async () => {
     if (!dateCompleted.trim()) {
-      setError('Date completed is required (YYYY-MM-DD).');
+      setError(t('newTripReport.dateRequiredError'));
       return;
     }
     setSubmitting(true);
@@ -90,7 +92,7 @@ export default function NewTripReport() {
 
       router.replace(`/adventures/${slug}/trips/${report.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create trip report.');
+      setError(err instanceof Error ? err.message : t('newTripReport.createError'));
     } finally {
       setSubmitting(false);
     }
@@ -98,34 +100,36 @@ export default function NewTripReport() {
 
   return (
     <Screen contentContainerClassName="gap-4 px-4 py-4">
-      <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">Share a trip report</Text>
+      <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">{t('newTripReport.title')}</Text>
 
-      <Field label="Title">
-        <TextInput value={title} onChangeText={setTitle} placeholder="Trip title" />
+      <Field label={t('newTripReport.titleLabel')}>
+        <TextInput value={title} onChangeText={setTitle} placeholder={t('newTripReport.titlePlaceholder')} />
       </Field>
-      <Field label="Description">
-        <TextArea value={description} onChangeText={setDescription} placeholder="How did it go?" />
+      <Field label={t('newTripReport.descriptionLabel')}>
+        <TextArea value={description} onChangeText={setDescription} placeholder={t('newTripReport.descriptionPlaceholder')} />
       </Field>
-      <Field label="Date completed (YYYY-MM-DD)">
-        <TextInput value={dateCompleted} onChangeText={setDateCompleted} placeholder="2026-05-01" />
+      <Field label={t('newTripReport.dateCompletedLabel')}>
+        <TextInput value={dateCompleted} onChangeText={setDateCompleted} placeholder={t('newTripReport.dateCompletedPlaceholder')} />
       </Field>
-      <Field label="Duration (days)">
+      <Field label={t('newTripReport.durationLabel')}>
         <TextInput value={durationDays} onChangeText={setDurationDays} keyboardType="numeric" />
       </Field>
       <View className="flex-row gap-3">
         <View className="flex-1">
-          <Field label="Cost">
+          <Field label={t('newTripReport.costLabel')}>
             <TextInput value={cost} onChangeText={setCost} keyboardType="numeric" />
           </Field>
         </View>
         <View className="flex-1">
-          <Select label="Currency" value={currency} options={CURRENCIES} onChange={setCurrency} />
+          <Select label={t('newTripReport.currencyLabel')} value={currency} options={CURRENCIES} onChange={setCurrency} />
         </View>
       </View>
 
       {ownTracks.length ? (
         <View className="gap-1.5">
-          <Text className="text-sm font-medium text-primary-900 dark:text-primary-100">Attach your activity tracks</Text>
+          <Text className="text-sm font-medium text-primary-900 dark:text-primary-100">
+            {t('newTripReport.attachTracksLabel')}
+          </Text>
           {ownTracks.map((track) => (
             <Pressable key={track.id} onPress={() => toggleTrack(track.id)} className="flex-row items-center gap-2">
               <Text
@@ -135,7 +139,7 @@ export default function NewTripReport() {
                     : 'text-sm text-stone-600 dark:text-stone-400'
                 }
               >
-                {selectedTrackIds.includes(track.id) ? '☑' : '☐'} {track.name ?? 'Untitled recording'}
+                {selectedTrackIds.includes(track.id) ? '☑' : '☐'} {track.name ?? t('newTripReport.untitledRecording')}
               </Text>
             </Pressable>
           ))}
@@ -143,7 +147,7 @@ export default function NewTripReport() {
       ) : null}
 
       <View className="gap-1.5">
-        <Text className="text-sm font-medium text-primary-900 dark:text-primary-100">Photos</Text>
+        <Text className="text-sm font-medium text-primary-900 dark:text-primary-100">{t('newTripReport.photosLabel')}</Text>
         <View className="flex-row flex-wrap gap-2">
           {photos.map((photo, index) => (
             <Image key={index} source={{ uri: photo.url }} style={{ width: 80, height: 80, borderRadius: 8 }} contentFit="cover" />
@@ -151,17 +155,17 @@ export default function NewTripReport() {
         </View>
         <View className="flex-row gap-2">
           <Button size="sm" variant="secondary" disabled={uploadingPhoto} onPress={() => handleAddPhoto('camera')}>
-            Take photo
+            {t('newTripReport.takePhoto')}
           </Button>
           <Button size="sm" variant="secondary" disabled={uploadingPhoto} onPress={() => handleAddPhoto('library')}>
-            Choose photo
+            {t('newTripReport.choosePhoto')}
           </Button>
         </View>
       </View>
 
       {error ? <Text className="text-sm text-red-600 dark:text-red-400">{error}</Text> : null}
       <Button disabled={submitting} onPress={handleSubmit}>
-        {submitting ? 'Sharing…' : 'Share trip report'}
+        {submitting ? t('newTripReport.sharing') : t('newTripReport.shareButton')}
       </Button>
     </Screen>
   );

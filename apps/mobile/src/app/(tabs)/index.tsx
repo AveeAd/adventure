@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { Link, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
@@ -59,6 +60,7 @@ function AdventureCard({ page }: { page: AdventurePageSummary }) {
 }
 
 export default function Discover() {
+  const { t } = useTranslation('discover');
   const router = useRouter();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 300);
@@ -67,15 +69,15 @@ export default function Discover() {
   return (
     <Screen scroll={false}>
       <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">Discover</Text>
+        <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">{t('title')}</Text>
         <Button size="sm" onPress={() => router.push('/adventures/new')}>
-          New adventure
+          {t('newAdventure')}
         </Button>
       </View>
       <TextInput
         value={query}
         onChangeText={setQuery}
-        placeholder="Search adventures"
+        placeholder={t('searchPlaceholder')}
         placeholderTextColor="#8ebe9d"
         className="mb-4 rounded-full border-[3px] border-primary-300 px-4 py-2.5 text-base text-primary-900 dark:border-primary-700 dark:text-primary-100"
       />
@@ -88,7 +90,7 @@ export default function Discover() {
           data={data?.data ?? []}
           keyExtractor={(page) => page.id}
           renderItem={({ item }) => <AdventureCard page={item} />}
-          ListEmptyComponent={<EmptyState>No adventures found.</EmptyState>}
+          ListEmptyComponent={<EmptyState>{t('empty')}</EmptyState>}
         />
       )}
     </Screen>

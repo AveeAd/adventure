@@ -1,0 +1,24 @@
+{
+  "activityTracksButton": "Activity Tracks",
+  "signOut": "Sign out",
+  "notifications": {
+    "title": "Notifications",
+    "social": "Comments, replies & kudos",
+    "contributions": "Edit approvals & verifications",
+    "moderation": "Reports & moderator applications",
+    "clubs": "Club join requests"
+  },
+  "connectedAccounts": {
+    "title": "Connected accounts",
+    "appleId": "Apple ID",
+    "linked": "Linked",
+    "linkButton": "Link Apple ID"
+  },
+  "deleteAccount": {
+    "button": "Delete account",
+    "confirmTitle": "Delete account?",
+    "confirmMessage": "This permanently deletes your recorded activity tracks and signs you out. Your trip reports, edits, and comments stay attributed to \"[deleted user]\" rather than being removed, since other people's content links to them.",
+    "cancel": "Cancel",
+    "confirmButton": "Delete account"
+  }
+}

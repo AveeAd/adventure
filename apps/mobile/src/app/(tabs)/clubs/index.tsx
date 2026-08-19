@@ -1,6 +1,7 @@
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Text, TextInput } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/Badge';
 import { Card } from '@/components/Card';
@@ -20,17 +21,18 @@ function useDebouncedValue(value: string, delayMs: number) {
 }
 
 export default function ClubsList() {
+  const { t } = useTranslation('clubs');
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query, 300);
   const { data, isLoading, isError, refetch } = useClubs(debouncedQuery);
 
   return (
     <Screen scroll={false}>
-      <Text className="mb-4 text-2xl font-bold text-primary-900 dark:text-primary-100">Clubs</Text>
+      <Text className="mb-4 text-2xl font-bold text-primary-900 dark:text-primary-100">{t('title')}</Text>
       <TextInput
         value={query}
         onChangeText={setQuery}
-        placeholder="Search clubs"
+        placeholder={t('searchPlaceholder')}
         placeholderTextColor="#8ebe9d"
         className="mb-4 rounded-full border-[3px] border-primary-300 px-4 py-2.5 text-base text-primary-900 dark:border-primary-700 dark:text-primary-100"
       />
@@ -52,13 +54,11 @@ export default function ClubsList() {
                     {item.description}
                   </Text>
                 ) : null}
-                <Badge tone="neutral">
-                  {item.memberCount} member{item.memberCount === 1 ? '' : 's'}
-                </Badge>
+                <Badge tone="neutral">{t('memberCount', { count: item.memberCount })}</Badge>
               </Card>
             </Link>
           )}
-          ListEmptyComponent={<EmptyState>No clubs found.</EmptyState>}
+          ListEmptyComponent={<EmptyState>{t('empty')}</EmptyState>}
         />
       )}
     </Screen>
