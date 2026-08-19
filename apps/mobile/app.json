@@ -11,6 +11,7 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.dolposcript.mobile",
       "usesAppleSignIn": true,
+      "associatedDomains": ["applinks:adventure.aveead.com"],
       "infoPlist": {
         "UIBackgroundModes": ["location"],
         "NSLocationWhenInUseUsageDescription": "Adventure uses your location to trace your route while you record a hike.",
@@ -33,6 +34,18 @@
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
         "POST_NOTIFICATIONS"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "adventure.aveead.com", "pathPrefix": "/adventures" },
+            { "scheme": "https", "host": "adventure.aveead.com", "pathPrefix": "/clubs" },
+            { "scheme": "https", "host": "adventure.aveead.com", "pathPrefix": "/guides" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {

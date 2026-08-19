@@ -11,7 +11,7 @@
 // Node built-ins (available since Node 18) - no framework-internal APIs.
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, statSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { basename, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import handler from './dist/server/server.js';
 
@@ -81,7 +81,12 @@ function tryServeStatic(req, res) {
   if (!existsSync(filePath) || !statSync(filePath).isFile()) {
     return false;
   }
-  res.setHeader('content-type', MIME_TYPES[extname(filePath)] ?? 'application/octet-stream');
+  // apple-app-site-association (deep links, MOBILE_PLAN.md Phase 7) has no
+  // file extension by Apple's own spec, so it'd otherwise fall through to
+  // application/octet-stream below - special-cased by filename instead.
+  const contentType =
+    basename(filePath) === 'apple-app-site-association' ? 'application/json' : MIME_TYPES[extname(filePath)];
+  res.setHeader('content-type', contentType ?? 'application/octet-stream');
   createReadStream(filePath).pipe(res);
   return true;
 }
