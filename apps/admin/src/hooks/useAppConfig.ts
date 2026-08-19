@@ -7,8 +7,8 @@ export interface AppConfig {
 }
 
 const FALLBACK: AppConfig = {
-  name: 'Adventure Nepal',
-  tagline: 'Adventure Nepal — a non-commercial map, wiki, and activity log for Nepal, built by contributors.',
+  name: 'Hipppie',
+  tagline: 'Hipppie — a non-commercial map, wiki, and activity log for Nepal, built by contributors.',
 };
 
 // Plain fetch, not Refine's useCustom - this needs to work on the

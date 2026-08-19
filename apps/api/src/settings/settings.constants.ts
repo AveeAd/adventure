@@ -49,18 +49,24 @@ export const SETTING_DEFAULTS: Record<string, { value: string; description: stri
   // Public branding keys - readable via GET /settings/public (no auth) so
   // apps/public and apps/admin can render the app's name/tagline without
   // hardcoding it, and it can be changed later without a deploy.
+  // "Hipppie" is a placeholder codename, not the final brand - the user
+  // hasn't settled on a real app name yet. Every place that used to
+  // hardcode "Adventure Nepal" now reads this setting instead (see
+  // apps/admin/src/hooks/useAppConfig.ts, apps/public/src/lib/app-config.ts)
+  // specifically so renaming the app later is a one-value change here, not
+  // a grep-and-replace across three codebases again.
   'app.name': {
-    value: 'Adventure Nepal',
+    value: 'Hipppie',
     description: 'Public-facing app name (header, titles, login screens)',
     public: true,
   },
   'app.tagline': {
-    value: 'Adventure Nepal — a non-commercial map, wiki, and activity log for Nepal, built by contributors.',
+    value: 'Hipppie — a non-commercial map, wiki, and activity log for Nepal, built by contributors.',
     description: 'Short tagline shown in the public site footer',
     public: true,
   },
   'app.description': {
-    value: 'Adventure Nepal — a non-commercial map, wiki, and activity log for Nepal, built by contributors.',
+    value: 'Hipppie — a non-commercial map, wiki, and activity log for Nepal, built by contributors.',
     description: 'Longer description for future meta/SEO use',
     public: true,
   },

@@ -1,4 +1,4 @@
-# Adventure Nepal
+# Hipppie
 
 *A community-built guide to every kind of adventure in Nepal — trekking, biking, motorcycle routes, bungee, paragliding, and more. Free, non-commercial, built by the people who go.*
 
@@ -19,6 +19,10 @@ Nobody currently combines all three, for Nepal, for free. Existing options are n
 - **The Local Contributor** — someone who's out on the trails regularly and wants to keep the map and route info accurate for everyone else.
 - **The Adrenaline Seeker** — someone booking a single activity like paragliding or bungee, not planning an itinerary.
 - **The Guide** — a licensed professional who wants to be found by the people who need them, without paying for placement or giving up a commission.
+
+## On the web, and on your phone
+
+Everything below works on the public website today. A native iOS/Android app is also built and in active development — it carries the same map, wiki, trip-report, guide-directory, and Club experience, plus phone-specific things the website can't do: recording a GPS track of a hike in the background while your phone is locked, downloading an adventure page's content for offline reading on the trail, uploading photos straight from your camera, and push notifications for replies and approvals. The app isn't published to the App Store or Play Store yet, so for now the website is how everyone gets to the project.
 
 ## What you can actually do on the site today
 
@@ -45,9 +49,11 @@ A brand-new website with anonymous editors needs some way to keep information ho
 
 ## What's built so far
 
-The platform is functional today, not just a design document. It has three parts working together: a public-facing website anyone can browse and contribute to, an admin dashboard for moderators and site administrators, and the backend that powers both.
+The platform is functional today, not just a design document. It has four parts working together: a public-facing website anyone can browse and contribute to, a native iOS/Android app, an admin dashboard for moderators and site administrators, and the backend that powers all three.
 
 Live today: the full adventure-page/map/trip-report/guide-directory experience described above, trip-companion groups, persistent Clubs with discussion threads, the points-and-approval trust system, content flagging and moderation, full-text search, in-app notifications, GPS track import (GPX/KML/KMZ/GeoJSON) with elevation profiles, spatially-aware map tagging by district, and a real deployed production environment with automatic HTTPS.
+
+The mobile app carries nearly all of the above (browsing, contributing, trip reports, guides, Clubs, notifications) plus phone-native features the website can't offer: background GPS recording of a hike, offline downloads for reading on the trail without signal, camera upload, and Sign in with Apple alongside Google. It's built and working, just not yet published to an app store.
 
 This is an active, evolving project. Development is ongoing, and the roadmap is driven by what actually turns out to matter once real people are using the map and writing the pages — not a fixed feature list decided in advance.
 

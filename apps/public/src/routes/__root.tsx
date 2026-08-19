@@ -19,9 +19,9 @@ export const Route = createRootRoute({
   loader: async () => ({ locale: await resolveLocale(), appConfig: await fetchAppConfig() }),
   head: ({ loaderData }) => {
     const appConfig = loaderData?.appConfig
-    const name = appConfig?.name ?? 'Adventure Nepal'
+    const name = appConfig?.name ?? 'Hipppie'
     const description =
-      appConfig?.tagline ?? 'Adventure Nepal — a non-commercial map, wiki, and activity log for Nepal, built by contributors.'
+      appConfig?.tagline ?? 'Hipppie — a non-commercial map, wiki, and activity log for Nepal, built by contributors.'
     // Root's own canonical link is intentionally dropped below - TanStack
     // Router doesn't dedupe `link` tags by `rel` the way it dedupes `meta`
     // tags by name/property (confirmed by reading headContentUtils.js), so

@@ -1,4 +1,11 @@
-title: Adventure Nepal
+title: Hipppie
 description: A community-built, non-commercial guide to every kind of adventure in Nepal.
 theme: jekyll-theme-cayman
 markdown: kramdown
+# GitHub Pages has no access to the app's own .env/CONTACT_EMAIL at build
+# time (this site is a separate static build, not server-rendered) - this
+# is the equivalent single source of truth for a static site: change it
+# here once, referenced via {{ site.contact_email }} everywhere it's used
+# (currently just privacy.md), instead of hand-editing prose in place.
+# Keep in sync with the API's CONTACT_EMAIL env var by hand.
+contact_email: kumarad556@gmail.com

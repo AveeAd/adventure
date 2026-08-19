@@ -196,6 +196,9 @@ Locked palette stays pine-green (`#2f6b4f` at 600) primary / terracotta (`#c1633
 
 ## Open decisions and known gaps (consolidated)
 
+**Branding**
+- The app's real name isn't decided yet — "Hipppie" is a placeholder codename living in `app.name`/`app.tagline`/`app.description` (`apps/api/src/settings/settings.constants.ts`), which is the single source of truth every UI surface reads from (`apps/admin/src/hooks/useAppConfig.ts`, `apps/public/src/lib/app-config.ts` + `src/routes/__root.tsx`'s root `head()`) rather than hardcoding a name — rename by changing that one setting, not by grepping for a string across three apps. Two things don't read from it and need a manual touch on a real rename: `apps/public/src/locales/en/common.json`'s `appName`/`tagline` keys (a static i18next catalogue value used as the page-title fallback in ~20 routes' own `head()` functions, not wired to live settings — would need TanStack Router context-threading to fix properly) and `docs/_config.yml`'s `title` (GitHub Pages is a separate static build with no access to the API's settings at all). A brand mark (`assets/summit-route-icon*.{png,svg}`, palette Pine `#12352A`/Moss `#3E7F5F`/Sage `#A3C1AC`/Paper `#F5F2E9`) already exists and is wired into every app icon/favicon/OG-image slot as of 2026-08-19 — see git history for exactly what was regenerated. The locked pine-green/terracotta design-system palette (see "Design system" below) has **not** been changed to this new palette; only icon/logo assets were swapped, the palette question is still open.
+
 **Database / master data**
 - Nepal geography data (`nepal-places` npm package) and `requiresRegisteredAgency`'s district list (Manang/Mustang/Gorkha only) aren't official sources — re-derive from the Ministry of Federal Affairs / Nepal Tourism Board before relying on either anywhere authoritativeness matters.
 
