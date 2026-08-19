@@ -12,7 +12,15 @@ export function apiUrl(path: string): string {
   return `${API_URL}/api/v1${path}`;
 }
 
-// Sent on every request so the Phase 7 min-version gate (MOBILE_PLAN.md) has
-// something to read once it exists; unused by the API until then.
+// Sent on every request so the Phase 7 min-version gate can 426 stale
+// clients - see apps/api/src/settings/min-version.middleware.ts and
+// lib/version-gate.ts.
 export const CLIENT_VERSION_HEADER = 'X-Client-Version';
 export const CLIENT_VERSION = Constants.expoConfig?.version ?? '0.0.0';
+
+// Store listing URLs for the "Update" button on the blocked screen
+// (components/UpdateRequiredScreen.tsx). Unset until the app is actually
+// published (EAS Submit, still a later Phase 7 item) - the screen degrades
+// to text-only instructions rather than a dead link in the meantime.
+export const IOS_STORE_URL = process.env.EXPO_PUBLIC_IOS_STORE_URL ?? null;
+export const ANDROID_STORE_URL = process.env.EXPO_PUBLIC_ANDROID_STORE_URL ?? null;

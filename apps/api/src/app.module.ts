@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AdventurePagesModule } from './adventure-pages/adventure-pages.module';
 import { ApprovalsModule } from './approvals/approvals.module';
 import { AuthModule } from './auth/auth.module';
@@ -12,6 +12,7 @@ import { ModeratorApplicationsModule } from './moderator-applications/moderator-
 import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ReportsModule } from './reports/reports.module';
+import { MinVersionMiddleware } from './settings/min-version.middleware';
 import { SettingsModule } from './settings/settings.module';
 import { TracksModule } from './tracks/tracks.module';
 import { ThreadsModule } from './threads/threads.module';
@@ -44,4 +45,11 @@ import { HealthController } from './health/health.controller';
   ],
   controllers: [HealthController],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    // Runs ahead of the global JwtAuthGuard for every route, api-prefixed
+    // or not - see MinVersionMiddleware for why (blocks sign-in itself,
+    // not just already-authenticated routes).
+    consumer.apply(MinVersionMiddleware).forRoutes('*');
+  }
+}

@@ -19,6 +19,8 @@ import { queryClient } from '@/lib/query-client';
 // cold relaunch purely to deliver a background location batch.
 import '@/lib/recording/location-task';
 import { Sentry } from '@/lib/sentry';
+import { useVersionGate } from '@/lib/version-gate';
+import { UpdateRequiredScreen } from '@/components/UpdateRequiredScreen';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -64,13 +66,32 @@ function RootNavigator() {
 
 function RootLayout() {
   const colorScheme = useColorScheme();
+  const gate = useVersionGate();
+
+  useEffect(() => {
+    // Auth restore inside RootNavigator hides the splash screen itself once
+    // it resolves ('ok' path); a blocked client never mounts RootNavigator,
+    // so it has to hide the splash here instead. 'checking' leaves it up.
+    if (gate.status === 'blocked') {
+      SplashScreen.hideAsync();
+    }
+  }, [gate.status]);
+
+  if (gate.status === 'checking') {
+    return null;
+  }
+
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <RootNavigator />
-        </AuthProvider>
-      </QueryClientProvider>
+      {gate.status === 'blocked' ? (
+        <UpdateRequiredScreen minVersion={gate.minVersion} />
+      ) : (
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <RootNavigator />
+          </AuthProvider>
+        </QueryClientProvider>
+      )}
     </ThemeProvider>
   );
 }

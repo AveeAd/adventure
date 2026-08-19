@@ -2,6 +2,7 @@ import type { CurrentUser, MobileLoginResponse, RefreshResponse } from '@adventu
 
 import { apiUrl, CLIENT_VERSION, CLIENT_VERSION_HEADER } from '@/lib/api';
 import { authDelete, authPost } from '@/lib/auth-fetch';
+import { checkUpgradeRequired } from '@/lib/version-gate';
 import { secureStorage } from './secure-storage';
 import { tokenStore } from './token-store';
 
@@ -20,6 +21,7 @@ async function performRefresh(refreshToken: string): Promise<boolean> {
       headers: { 'Content-Type': 'application/json', [CLIENT_VERSION_HEADER]: CLIENT_VERSION },
       body: JSON.stringify({ refreshToken }),
     });
+    await checkUpgradeRequired(res);
     if (!res.ok) {
       return false;
     }
@@ -57,6 +59,7 @@ export async function completeGoogleMobileLogin(idToken: string): Promise<Curren
     headers: { 'Content-Type': 'application/json', [CLIENT_VERSION_HEADER]: CLIENT_VERSION },
     body: JSON.stringify({ idToken }),
   });
+  await checkUpgradeRequired(res);
   if (!res.ok) {
     const message = await res.text().catch(() => res.statusText);
     throw new Error(message || `Login failed: ${res.status}`);
@@ -82,6 +85,7 @@ export async function completeAppleMobileLogin(
     headers: { 'Content-Type': 'application/json', [CLIENT_VERSION_HEADER]: CLIENT_VERSION },
     body: JSON.stringify({ identityToken, fullName: fullName ?? undefined }),
   });
+  await checkUpgradeRequired(res);
   if (!res.ok) {
     const message = await res.text().catch(() => res.statusText);
     throw new Error(message || `Login failed: ${res.status}`);
@@ -111,8 +115,9 @@ export async function fetchCurrentUser(): Promise<CurrentUser | null> {
     return null;
   }
   const res = await fetch(apiUrl('/auth/me'), {
-    headers: { Authorization: `Bearer ${tokenStore.get()}` },
+    headers: { Authorization: `Bearer ${tokenStore.get()}`, [CLIENT_VERSION_HEADER]: CLIENT_VERSION },
   });
+  await checkUpgradeRequired(res);
   if (!res.ok) {
     return null;
   }

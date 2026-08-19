@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common';
+import { MinVersionMiddleware } from './min-version.middleware';
 import { PublicSettingsController } from './public-settings.controller';
 import { SettingsController } from './settings.controller';
 import { SettingsService } from './settings.service';
@@ -8,7 +9,7 @@ import { SettingsService } from './settings.service';
 @Global()
 @Module({
   controllers: [SettingsController, PublicSettingsController],
-  providers: [SettingsService],
-  exports: [SettingsService],
+  providers: [SettingsService, MinVersionMiddleware],
+  exports: [SettingsService, MinVersionMiddleware],
 })
 export class SettingsModule {}

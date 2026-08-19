@@ -33,6 +33,19 @@ export const SETTING_DEFAULTS: Record<string, { value: string; description: stri
   // push send.
   'push.enabled': { value: 'true', description: 'Master kill switch for push notification delivery' },
 
+  // Phase 7: minimum apps/mobile version allowed to talk to the API.
+  // MinVersionMiddleware compares this against the X-Client-Version header
+  // apps/mobile sends on every request (see apps/mobile/src/lib/api.ts) and
+  // 426s anything older, so a store rejection/security fix can force an
+  // update without a native force-update SDK. Public so a stale client can
+  // still resolve it without auth. Web/admin never send the header, so this
+  // has no effect on them.
+  'mobile.minVersion': {
+    value: '1.0.0',
+    description: 'Minimum apps/mobile version (semver) allowed to call the API',
+    public: true,
+  },
+
   // Public branding keys - readable via GET /settings/public (no auth) so
   // apps/public and apps/admin can render the app's name/tagline without
   // hardcoding it, and it can be changed later without a deploy.
