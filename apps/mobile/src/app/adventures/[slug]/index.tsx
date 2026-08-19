@@ -47,7 +47,7 @@ export default function AdventureDetail() {
   return (
     <Screen scroll className="px-0 py-0" contentContainerClassName="gap-4 px-4 py-4">
       {cover ? (
-        <Image source={{ uri: cover.url }} style={{ width: '100%', height: 220 }} contentFit="cover" />
+        <Image source={{ uri: cover.largeUrl ?? cover.url }} style={{ width: '100%', height: 220 }} contentFit="cover" />
       ) : null}
 
       <View className="gap-3 px-4">

@@ -215,6 +215,9 @@ export class TripReportsService {
       data: {
         tripReportId: id,
         url: dto.url,
+        smallUrl: dto.smallUrl,
+        mediumUrl: dto.mediumUrl,
+        largeUrl: dto.largeUrl,
         caption: dto.caption,
         altText: dto.altText,
         sortOrder: dto.sortOrder ?? 0,

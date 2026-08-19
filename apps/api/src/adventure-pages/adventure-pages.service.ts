@@ -170,7 +170,7 @@ export class AdventurePagesService {
                   where: { isActive: true },
                   orderBy: { sortOrder: 'asc' },
                   take: 1,
-                  select: { url: true, altText: true },
+                  select: { url: true, altText: true, smallUrl: true, mediumUrl: true, largeUrl: true },
                 },
               },
             },
@@ -735,6 +735,9 @@ export class AdventurePagesService {
       data: {
         adventurePageId: pageId,
         url: dto.url,
+        smallUrl: dto.smallUrl,
+        mediumUrl: dto.mediumUrl,
+        largeUrl: dto.largeUrl,
         caption: dto.caption,
         altText: dto.altText,
         sortOrder: dto.sortOrder ?? 0,

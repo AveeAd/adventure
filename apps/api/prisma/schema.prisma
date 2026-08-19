@@ -473,6 +473,15 @@ model Media {
   adventurePageId String
   adventurePage   AdventurePage @relation(fields: [adventurePageId], references: [id], onDelete: Cascade)
   url             String
+  // Resized WebP variants from the image-processing pipeline
+  // (uploads/image-processor.service.ts). Nullable so uploads made before
+  // this pipeline existed keep working - their srcset just falls back to
+  // `url` alone. `url` itself continues to point at the "large" variant for
+  // anything uploaded through the pipeline, so old callers reading only
+  // `url` never see a regression.
+  smallUrl        String?
+  mediumUrl       String?
+  largeUrl        String?
   caption         String?
   altText         String?
   sortOrder       Int           @default(0)
@@ -821,6 +830,10 @@ model TripReportMedia {
   tripReportId String
   tripReport   TripReport @relation(fields: [tripReportId], references: [id], onDelete: Cascade)
   url          String
+  // See Media's identical fields for why these are nullable.
+  smallUrl     String?
+  mediumUrl    String?
+  largeUrl     String?
   caption      String?
   altText      String?
   sortOrder    Int        @default(0)

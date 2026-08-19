@@ -32,7 +32,7 @@ function AdventureCard({ page }: { page: AdventurePageSummary }) {
       <Card className="mb-3 overflow-hidden" onPress={() => {}}>
         {cover ? (
           <Image
-            source={{ uri: cover.url }}
+            source={{ uri: cover.mediumUrl ?? cover.url }}
             style={{ width: '100%', height: 140 }}
             contentFit="cover"
           />

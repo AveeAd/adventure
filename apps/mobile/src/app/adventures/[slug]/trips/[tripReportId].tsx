@@ -162,7 +162,7 @@ export default function TripReportDetail() {
           {report.media.map((item) => (
             <Image
               key={item.id}
-              source={{ uri: item.url }}
+              source={{ uri: item.smallUrl ?? item.url }}
               style={{ width: 120, height: 120, borderRadius: 8 }}
               contentFit="cover"
             />

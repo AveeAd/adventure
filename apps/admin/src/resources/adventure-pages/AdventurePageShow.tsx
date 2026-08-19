@@ -8,6 +8,10 @@ import { VerificationStatusControl } from '../common/VerificationStatusControl';
 interface MediaItem {
   id: string;
   url: string;
+  // Nullable - only present on images uploaded through the image-processing
+  // pipeline (apps/api/src/uploads/image-processor.service.ts); older
+  // uploads only have `url`.
+  mediumUrl?: string | null;
   caption: string | null;
   altText: string | null;
 }
@@ -127,7 +131,15 @@ function MediaGallery({ pageId, media }: { pageId: string; media: MediaItem[] })
     <Space wrap>
       {media.map((item) => (
         <Space key={item.id} direction="vertical" align="center" size="small">
-          <Image src={item.url} alt={item.altText ?? ''} width={120} height={90} style={{ objectFit: 'cover' }} />
+          <Image
+            src={item.mediumUrl ?? item.url}
+            alt={item.altText ?? ''}
+            width={120}
+            height={90}
+            style={{ objectFit: 'cover' }}
+            preview={{ src: item.url }}
+            loading="lazy"
+          />
           <Button danger size="small" loading={mutation.isPending} onClick={() => remove(item.id)}>
             {t('common:actions.delete')}
           </Button>

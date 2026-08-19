@@ -11,6 +11,7 @@ import { Card } from '../components/Card';
 import { Container } from '../components/Container';
 import { EmptyState } from '../components/EmptyState';
 import { LazyAdventureMap } from '../components/LazyAdventureMap';
+import { ResponsiveImage, type MediaSizeUrls } from '../components/ResponsiveImage';
 import type { MapSpot, MapTrail } from '../components/AdventureMap';
 
 interface SearchResult {
@@ -37,7 +38,7 @@ interface AdventurePageSummary {
   activityType: { name: string } | null;
   difficultyLevel: { name: string } | null;
   tags: { tag: { id: string; name: string } }[];
-  media: { url: string; altText: string | null }[];
+  media: ({ url: string; altText: string | null } & MediaSizeUrls)[];
   likeCount: number;
 }
 
@@ -261,9 +262,13 @@ function DiscoverPage() {
                       <div
                         className={`relative w-full overflow-hidden rounded-2xl shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl group-hover:shadow-primary-900/10 ${aspect}`}
                       >
-                        <img
-                          src={page.media[0].url}
+                        <ResponsiveImage
+                          url={page.media[0].url}
+                          smallUrl={page.media[0].smallUrl}
+                          mediumUrl={page.media[0].mediumUrl}
+                          largeUrl={page.media[0].largeUrl}
                           alt={page.media[0].altText ?? ''}
+                          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />

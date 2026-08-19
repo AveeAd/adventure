@@ -1,3 +1,4 @@
+import type { UploadImageResponse } from '@adventure/api-types';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -34,7 +35,7 @@ export default function NewTripReport() {
   const [durationDays, setDurationDays] = useState('');
   const [cost, setCost] = useState('');
   const [currency, setCurrency] = useState<string | null>(null);
-  const [photos, setPhotos] = useState<{ url: string }[]>([]);
+  const [photos, setPhotos] = useState<UploadImageResponse[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [ownTracks, setOwnTracks] = useState<RecordingSession[]>([]);
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>([]);
@@ -53,7 +54,7 @@ export default function NewTripReport() {
     try {
       const uploaded = await pickAndUploadImage(source);
       if (uploaded) {
-        setPhotos((prev) => [...prev, { url: uploaded.url }]);
+        setPhotos((prev) => [...prev, uploaded]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('newTripReport.uploadError'));
@@ -87,7 +88,12 @@ export default function NewTripReport() {
       for (const photo of photos) {
         // Sequential, not Promise.all - keeps ordering deterministic and
         // avoids hammering the API with a burst of concurrent uploads.
-        await authPost(`/trip-reports/${report.id}/media`, { url: photo.url });
+        await authPost(`/trip-reports/${report.id}/media`, {
+          url: photo.url,
+          smallUrl: photo.smallUrl,
+          mediumUrl: photo.mediumUrl,
+          largeUrl: photo.largeUrl,
+        });
       }
 
       router.replace(`/adventures/${slug}/trips/${report.id}`);

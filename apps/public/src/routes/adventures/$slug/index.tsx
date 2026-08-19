@@ -22,8 +22,9 @@ import { MapHeroLayout } from '../../../components/MapHeroLayout';
 import { MultiSelectChips, selectedChipValues } from '../../../components/MultiSelectChips';
 import type { MapSpot, MapTrail } from '../../../components/AdventureMap';
 import { ElevationProfile } from '../../../components/ElevationProfile';
+import { ResponsiveImage, type MediaSizeUrls } from '../../../components/ResponsiveImage';
 
-interface MediaItem {
+interface MediaItem extends MediaSizeUrls {
   id: string;
   url: string;
   caption: string | null;
@@ -42,7 +43,7 @@ interface RelatedPageSummary {
   durationMaxDays: number | null;
   activityType: { name: string } | null;
   difficultyLevel: { name: string } | null;
-  media: { url: string; altText: string | null }[];
+  media: ({ url: string; altText: string | null } & MediaSizeUrls)[];
 }
 
 interface AdventurePageDetail {
@@ -185,7 +186,18 @@ function AdventurePageView() {
     <>
       <div className="relative z-0 -mt-24 flex h-96 items-center justify-center overflow-hidden bg-gradient-to-br from-primary-100 to-accent-100 sm:-mt-28 sm:h-[28rem] dark:from-primary-950 dark:to-accent-950">
         {page.media[0] ? (
-          <img src={page.media[0].url} alt={page.media[0].altText ?? ''} className="h-full w-full object-cover" />
+          <ResponsiveImage
+            url={page.media[0].url}
+            smallUrl={page.media[0].smallUrl}
+            mediumUrl={page.media[0].mediumUrl}
+            largeUrl={page.media[0].largeUrl}
+            alt={page.media[0].altText ?? ''}
+            className="h-full w-full object-cover"
+            // The hero is the page's LCP element - lazy-loading it would
+            // delay the very thing lazy-loading elsewhere is meant to speed
+            // up, so it loads eagerly.
+            loading="eager"
+          />
         ) : (
           <MountainSnow className="h-16 w-16 text-primary-500 dark:text-primary-400" />
         )}
@@ -547,9 +559,12 @@ function GallerySection({
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const { url } = await authUpload<{ url: string }>('/uploads/images', formData);
+      const uploaded = await authUpload<MediaSizeUrls & { url: string }>('/uploads/images', formData);
       const created = await authPost<MediaItem>(`/adventure-pages/${pageId}/media`, {
-        url,
+        url: uploaded.url,
+        smallUrl: uploaded.smallUrl,
+        mediumUrl: uploaded.mediumUrl,
+        largeUrl: uploaded.largeUrl,
         caption: caption || undefined,
         altText: altText || undefined,
       });
@@ -600,10 +615,14 @@ function GallerySection({
                   className="block w-full cursor-zoom-in"
                   aria-label={t('gallery.viewPhoto')}
                 >
-                  <img
-                    src={item.url}
+                  <ResponsiveImage
+                    url={item.url}
+                    smallUrl={item.smallUrl}
+                    mediumUrl={item.mediumUrl}
+                    largeUrl={item.largeUrl}
                     alt={item.altText ?? ''}
                     className="h-32 w-full rounded-lg object-cover sm:h-36"
+                    sizes="(min-width: 768px) 25vw, 50vw"
                   />
                 </button>
                 {canDelete(item) && (
@@ -732,11 +751,19 @@ function Lightbox({
         </button>
       )}
 
-      <img
-        src={item.url}
+      <ResponsiveImage
+        url={item.url}
+        smallUrl={item.smallUrl}
+        mediumUrl={item.mediumUrl}
+        largeUrl={item.largeUrl}
         alt={item.altText ?? ''}
         onClick={(e) => e.stopPropagation()}
         className="max-h-[80vh] max-w-full rounded-lg object-contain"
+        sizes="90vw"
+        // Only rendered once the user opens the lightbox - not a
+        // load-time cost to defer, but there's nothing to lazy-load
+        // against either (it's already the only thing on screen).
+        loading="eager"
       />
 
       {media.length > 1 && (
@@ -1039,9 +1066,13 @@ function SeeAlsoSection({
             <li key={related.id}>
               <Card className="flex gap-3 p-4">
                 {related.media[0] && (
-                  <img
-                    src={related.media[0].url}
+                  <ResponsiveImage
+                    url={related.media[0].url}
+                    smallUrl={related.media[0].smallUrl}
+                    mediumUrl={related.media[0].mediumUrl}
+                    largeUrl={related.media[0].largeUrl}
                     alt={related.media[0].altText ?? ''}
+                    sizes="80px"
                     className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
                   />
                 )}

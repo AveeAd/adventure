@@ -19,6 +19,17 @@ export interface ListResponse<T> {
   pageSize: number;
 }
 
+// Media/TripReportMedia's resized WebP variants from the image-processing
+// pipeline (apps/api/src/uploads/image-processor.service.ts) - all
+// optional since anything uploaded before that pipeline existed only ever
+// has `url`. Consumers should build a srcset from whichever of these are
+// present and fall back to plain `url` when none are.
+export interface MediaSizeUrls {
+  smallUrl?: string | null;
+  mediumUrl?: string | null;
+  largeUrl?: string | null;
+}
+
 // GET /adventure-pages, /adventure-pages/search - list item
 export interface AdventurePageSummary {
   id: string;
@@ -30,7 +41,7 @@ export interface AdventurePageSummary {
   verificationStatus: string;
   activityType: { name: string } | null;
   difficultyLevel: { name: string } | null;
-  media: { url: string; altText: string | null }[];
+  media: ({ url: string; altText: string | null } & MediaSizeUrls)[];
 }
 
 // GET /adventure-pages/slug/:slug
@@ -87,7 +98,7 @@ export interface TripReportSummary {
 // GET /trip-reports/:id
 export interface TripReportDetail extends TripReportSummary {
   description: string;
-  media: { id: string; url: string; altText: string | null }[];
+  media: ({ id: string; url: string; altText: string | null } & MediaSizeUrls)[];
   activityTracks: { id: string; distanceMeters: number; ascentMeters: number | null }[];
   club: { id: string; name: string } | null;
   commentCount: number;
@@ -221,15 +232,17 @@ export interface CreateTripReportRequest {
   clubId?: string;
 }
 
-export interface AddMediaRequest {
+export interface AddMediaRequest extends MediaSizeUrls {
   url: string;
   caption?: string;
   altText?: string;
   sortOrder?: number;
 }
 
-// POST /uploads/images response.
-export interface UploadImageResponse {
+// POST /uploads/images response - smallUrl/mediumUrl/largeUrl always
+// present in practice (the pipeline always produces all three), typed via
+// MediaSizeUrls' optionality anyway so a caller isn't forced to assume that.
+export interface UploadImageResponse extends MediaSizeUrls {
   url: string;
 }
 
