@@ -1,4 +1,6 @@
 import type { Spot, Trail } from '@adventure/api-types';
+import type { CameraRef } from '@maplibre/maplibre-react-native';
+import type { Ref } from 'react';
 import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -10,7 +12,12 @@ import { useTranslation } from 'react-i18next';
 // `expo export --platform web` (used as a smoke test - apps/mobile isn't
 // shipped to web, apps/public is the real web app) keeps working for every
 // other route instead of failing outright.
-export function AdventureMap(_props: { trails: Trail[]; spots: Spot[] }) {
+export function AdventureMap(_props: {
+  trails: Trail[];
+  spots: Spot[];
+  cameraRef?: Ref<CameraRef>;
+  showUserLocation?: boolean;
+}) {
   const { t } = useTranslation('adventurePage');
   return (
     <View className="flex-1 items-center justify-center p-8">

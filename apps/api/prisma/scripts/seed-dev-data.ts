@@ -7,9 +7,9 @@
 // where practical, but this is dev-only fixture data, not idempotent
 // production seeding.
 //
-// Users here have fake `googleId`s since there's no way to pre-create a real
-// Google-authenticated account (see ARCHITECTURE.md Sec 8) - fine for local
-// dev, never something to run against a real environment.
+// Users here get fake Google AuthIdentity rows since there's no way to
+// pre-create a real Google-authenticated account - fine for local dev,
+// never something to run against a real environment.
 import { PrismaClient } from '@prisma/client';
 import { sanitizeUsernameSeed } from '../../src/common/username';
 
@@ -47,8 +47,17 @@ async function upsertDemoUser(email: string, googleId: string, name: string) {
   const user =
     existing ??
     (await prisma.user.create({
-      data: { email, googleId, role: 'USER', username: await generateUniqueUsername(name) },
+      data: { email, role: 'USER', username: await generateUniqueUsername(name) },
     }));
+  // User.googleId was replaced by AuthIdentity (see CLAUDE.md's auth
+  // section) - this script predates that migration and was never updated,
+  // which is exactly what broke it. Upsert by the same @@unique([provider,
+  // providerId]) the real Google login flow keys on.
+  await prisma.authIdentity.upsert({
+    where: { provider_providerId: { provider: 'GOOGLE', providerId: googleId } },
+    update: {},
+    create: { userId: user.id, provider: 'GOOGLE', providerId: googleId, email },
+  });
   await prisma.profile.upsert({
     where: { userId: user.id },
     update: { name },

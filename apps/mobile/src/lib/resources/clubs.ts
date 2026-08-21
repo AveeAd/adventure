@@ -6,17 +6,26 @@ import type {
   ListResponse,
   ThreadSummary,
 } from '@adventure/api-types';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { authDelete, authGet, authPatch, authPost } from '@/lib/auth-fetch';
 
-export function useClubs(search?: string, sort: 'newest' | 'active' | 'members' = 'members') {
-  const params = new URLSearchParams({ pageSize: '50', sort });
-  if (search?.trim()) params.set('search', search.trim());
+const CLUBS_PAGE_SIZE = 15;
 
-  return useQuery({
-    queryKey: ['clubs', search ?? '', sort],
-    queryFn: () => authGet<ListResponse<ClubSummary>>(`/clubs?${params.toString()}`),
+// Paginated, most-members-first, no search - backs Clubs' infinite-scroll
+// list ((tabs)/clubs/index.tsx), same redesign already applied to Discover
+// (search bar and heading dropped, see that screen's own comment).
+// getNextPageParam compares the API's own `total`/`page`/`pageSize`
+// (ListResponse) rather than `data.length < pageSize`, same reasoning as
+// useAdventurePagesInfinite.
+export function useClubsInfinite() {
+  return useInfiniteQuery({
+    queryKey: ['clubs', 'members'],
+    queryFn: ({ pageParam }) =>
+      authGet<ListResponse<ClubSummary>>(`/clubs?sort=members&pageSize=${CLUBS_PAGE_SIZE}&page=${pageParam}`),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page * lastPage.pageSize < lastPage.total ? lastPage.page + 1 : undefined,
   });
 }
 

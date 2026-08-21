@@ -4,6 +4,7 @@
   "empty": "No clubs found.",
   "memberCount_one": "{{count}} member",
   "memberCount_other": "{{count}} members",
+  "private": "Private",
   "leaveClub": "Leave club",
   "requestPending": "Request pending",
   "joinClub": "Join club",

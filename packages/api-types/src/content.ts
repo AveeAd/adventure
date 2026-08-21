@@ -56,6 +56,10 @@ export interface AdventurePageDetail extends AdventurePageSummary {
   likedByMe: boolean;
   visitCount: number;
   visitedByMe: boolean;
+  // Distinct editorIds across the page's approved revisions
+  // (AdventurePagesService's own contributorIds field) - backs the "At a
+  // glance" Contributors stat, same as apps/public's InfoItem row.
+  contributorIds: string[];
 }
 
 // GET /adventure-pages/:pageId/trails (plain array, no envelope) - fields
@@ -132,13 +136,19 @@ export interface GuideProfile {
   languages: { language: { name: string } }[];
 }
 
-// GET /clubs - list item
+// GET /clubs - list item. `_count.members`, not a flattened `memberCount` -
+// ClubsController.list() returns ClubsService.list()'s Prisma result
+// untransformed, and that uses `include: { _count: { select: { members }
+// } } }`, so this mirrors apps/public's own ClubCardData/$clubId route
+// (both of which read `club._count.members`) rather than the shape it's
+// easy to assume from the field's actual meaning.
 export interface ClubSummary {
   id: string;
   name: string;
   description: string | null;
+  coverImageUrl: string | null;
   visibility: 'PUBLIC' | 'PRIVATE';
-  memberCount: number;
+  _count: { members: number };
 }
 
 // GET /clubs/:id - `members` is present only when the caller is an

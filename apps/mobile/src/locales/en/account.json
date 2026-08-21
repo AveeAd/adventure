@@ -1,6 +1,11 @@
 {
   "activityTracksButton": "Activity Tracks",
   "signOut": "Sign out",
+  "guest": {
+    "heading": "You're browsing as a guest",
+    "subheading": "Sign in to save activity tracks, contribute edits, and join clubs.",
+    "signInButton": "Sign in"
+  },
   "notifications": {
     "title": "Notifications",
     "social": "Comments, replies & kudos",

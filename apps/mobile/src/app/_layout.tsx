@@ -47,13 +47,21 @@ function RootNavigator() {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      {/* Read-only browsing needs no session - the API's own GET routes for
+          this content are @Public() already (adventure pages, trails/spots,
+          guides, clubs), so a guest can reach these screens directly.
+          Account.tsx renders a sign-in prompt in place of the
+          session-specific sections (tracks, connected accounts, delete)
+          when status is 'signed-out'. */}
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="adventures/[slug]/index" />
+      <Stack.Screen name="adventures/[slug]/map" />
+      <Stack.Screen name="adventures/[slug]/trips/[tripReportId]" />
+      {/* Everything below writes data or is inherently per-account (activity
+          tracks) - still gated behind a real session. */}
       <Stack.Protected guard={status === 'signed-in'}>
-        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="adventures/new" />
-        <Stack.Screen name="adventures/[slug]/index" />
         <Stack.Screen name="adventures/[slug]/edit" />
-        <Stack.Screen name="adventures/[slug]/map" />
-        <Stack.Screen name="adventures/[slug]/trips/[tripReportId]" />
         <Stack.Screen name="adventures/[slug]/trips/new" />
         <Stack.Screen name="adventures/[slug]/trails/new" />
         <Stack.Screen name="adventures/[slug]/spots/new" />

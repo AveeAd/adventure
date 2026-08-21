@@ -7,10 +7,11 @@ import { authGet } from '@/lib/auth-fetch';
 // that shows one resolves it via this endpoint. React Query gives this a
 // cross-component cache by userId for free, which the web version (a bare
 // useEffect fetch per mount) doesn't have.
-export function useUserRef(userId: string) {
+export function useUserRef(userId: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['user-ref', userId],
-    queryFn: () => authGet<{ displayName: string }>(`/users/${userId}/profile`),
+    queryFn: () => authGet<{ displayName: string; avatarUrl: string | null }>(`/users/${userId}/profile`),
     staleTime: 5 * 60_000,
+    enabled: (options?.enabled ?? true) && !!userId,
   });
 }

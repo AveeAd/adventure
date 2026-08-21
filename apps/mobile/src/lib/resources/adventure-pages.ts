@@ -13,26 +13,31 @@ import type {
   UpdateSpotRequest,
   UpdateTrailRequest,
 } from '@adventure/api-types';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { authDelete, authGet, authPatch, authPost } from '@/lib/auth-fetch';
 import { isConnected } from '@/lib/offline/connectivity';
 import { getOfflinePage, getOfflineSpots, getOfflineTrails, isStale, saveOfflineAdventure } from '@/lib/offline/store';
 
-// search?.trim() decides trending vs. search, mirroring apps/public's
-// routes/index.tsx (trending fetch vs. debounced /adventure-pages/search).
-// Search results aren't offline-cached - only a specific adventure page a
-// user opened and downloaded is (see useAdventurePage below).
-export function useAdventurePages(search?: string) {
-  const trimmed = search?.trim();
-  return useQuery({
-    queryKey: ['adventure-pages', trimmed ?? 'trending'],
-    queryFn: () =>
-      trimmed
-        ? authGet<ListResponse<AdventurePageSummary>>(
-            `/adventure-pages/search?q=${encodeURIComponent(trimmed)}&pageSize=20`,
-          )
-        : authGet<ListResponse<AdventurePageSummary>>('/adventure-pages?sort=trending&pageSize=15'),
+const TRENDING_PAGE_SIZE = 15;
+
+// Trending, paginated - backs Discover's infinite-scroll list
+// ((tabs)/discover.tsx). Not offline-cached (search results weren't
+// either, back when this hook also covered search) - only a specific
+// adventure page a user opened and downloaded is (see useAdventurePage
+// below). getNextPageParam compares against the API's own `total`/`page`/
+// `pageSize` (ListResponse) rather than trusting `data.length < pageSize`,
+// since the latter breaks if the server ever changes its own page size.
+export function useAdventurePagesInfinite() {
+  return useInfiniteQuery({
+    queryKey: ['adventure-pages', 'trending'],
+    queryFn: ({ pageParam }) =>
+      authGet<ListResponse<AdventurePageSummary>>(
+        `/adventure-pages?sort=trending&pageSize=${TRENDING_PAGE_SIZE}&page=${pageParam}`,
+      ),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page * lastPage.pageSize < lastPage.total ? lastPage.page + 1 : undefined,
   });
 }
 
@@ -65,6 +70,40 @@ export function useAdventurePage(slug: string) {
         throw err;
       }
     },
+  });
+}
+
+// A generous box around Nepal, fetched once rather than re-queried per
+// viewport pan/zoom - mirrors apps/public/src/routes/index.tsx's own
+// NEPAL_BBOX approach (the bbox endpoints only support a rectangle, not a
+// country polygon, so this is the same deliberate approximation). Backs the
+// standalone Map tab (app/(tabs)/map.tsx), which has no single adventure
+// page to scope trails/spots to the way adventures/[slug]/map.tsx does.
+const NEPAL_BBOX = { minLng: 79.5, minLat: 26.0, maxLng: 88.5, maxLat: 30.5 };
+
+export function useTrailsBbox() {
+  const params = new URLSearchParams({
+    minLng: String(NEPAL_BBOX.minLng),
+    minLat: String(NEPAL_BBOX.minLat),
+    maxLng: String(NEPAL_BBOX.maxLng),
+    maxLat: String(NEPAL_BBOX.maxLat),
+  });
+  return useQuery({
+    queryKey: ['trails-bbox', 'nepal'],
+    queryFn: () => authGet<Trail[]>(`/trails/bbox?${params}`),
+  });
+}
+
+export function useSpotsBbox() {
+  const params = new URLSearchParams({
+    minLng: String(NEPAL_BBOX.minLng),
+    minLat: String(NEPAL_BBOX.minLat),
+    maxLng: String(NEPAL_BBOX.maxLng),
+    maxLat: String(NEPAL_BBOX.maxLat),
+  });
+  return useQuery({
+    queryKey: ['spots-bbox', 'nepal'],
+    queryFn: () => authGet<Spot[]>(`/spots/bbox?${params}`),
   });
 }
 

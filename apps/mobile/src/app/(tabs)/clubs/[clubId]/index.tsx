@@ -11,6 +11,8 @@ import { LoadingState } from '@/components/LoadingState';
 import { Screen } from '@/components/Screen';
 import { UserRef } from '@/components/UserRef';
 import { useClub, useClubThreads, useJoinClub, useLeaveClub, useRequestClubJoin } from '@/lib/resources/clubs';
+import { HEADER_CLEARANCE } from '@/lib/header';
+import { TAB_BAR_CLEARANCE } from '@/lib/tab-bar';
 
 export default function ClubDetail() {
   const { t } = useTranslation('clubs');
@@ -31,13 +33,16 @@ export default function ClubDetail() {
   const isPendingRequest = membership?.status === 'PENDING';
 
   return (
-    <Screen contentContainerClassName="gap-4 px-4 py-4">
+    <Screen
+      contentContainerClassName="gap-4 px-4 pb-4"
+      contentContainerStyle={{ paddingTop: HEADER_CLEARANCE, paddingBottom: TAB_BAR_CLEARANCE }}
+    >
       <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">{club.name}</Text>
       {club.description ? (
         <Text className="text-base text-stone-700 dark:text-stone-300">{club.description}</Text>
       ) : null}
       <View className="flex-row flex-wrap gap-1.5">
-        <Badge tone="neutral">{t('memberCount', { count: club.memberCount })}</Badge>
+        <Badge tone="neutral">{t('memberCount', { count: club._count.members })}</Badge>
         {membership ? <Badge tone="success">{membership.status}</Badge> : null}
       </View>
 
@@ -87,7 +92,7 @@ export default function ClubDetail() {
         <View className="gap-2">
           {threads.data.map((thread) => (
             <Link key={thread.id} href={`/clubs/${clubId}/threads/${thread.id}`} asChild>
-              <Card className="p-3" onPress={() => {}}>
+              <Card className="p-3" glass onPress={() => {}}>
                 <View className="flex-row items-center gap-2">
                   <UserRef userId={thread.authorId} className="text-sm font-medium text-primary-700 dark:text-primary-400" />
                   {thread.isPinned ? <Badge tone="warning">{t('pinned')}</Badge> : null}

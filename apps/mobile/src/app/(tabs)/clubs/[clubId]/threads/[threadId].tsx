@@ -14,6 +14,8 @@ import { LoadingState } from '@/components/LoadingState';
 import { Screen } from '@/components/Screen';
 import { UserRef } from '@/components/UserRef';
 import { useCreateThreadReply, useThread, useThreadReplies } from '@/lib/resources/threads';
+import { HEADER_CLEARANCE } from '@/lib/header';
+import { TAB_BAR_CLEARANCE } from '@/lib/tab-bar';
 
 function ReplyComposer({
   onSubmit,
@@ -114,7 +116,10 @@ export default function ThreadDetail() {
   };
 
   return (
-    <Screen contentContainerClassName="gap-4 px-4 py-4">
+    <Screen
+      contentContainerClassName="gap-4 px-4 pb-4"
+      contentContainerStyle={{ paddingTop: HEADER_CLEARANCE, paddingBottom: TAB_BAR_CLEARANCE }}
+    >
       <View className="flex-row items-center gap-2">
         <UserRef userId={thread.authorId} className="text-base font-semibold text-primary-900 dark:text-primary-100" />
         <Badge tone="neutral">{thread.tag}</Badge>

@@ -11,6 +11,8 @@ import { Field, TextArea } from '@/components/FormField';
 import { Screen } from '@/components/Screen';
 import { Select } from '@/components/Select';
 import { useCreateThread } from '@/lib/resources/threads';
+import { HEADER_CLEARANCE } from '@/lib/header';
+import { TAB_BAR_CLEARANCE } from '@/lib/tab-bar';
 
 const TAG_IDS: ThreadTag[] = ['DISCUSSION', 'TRIP_SHARE', 'QUESTION', 'ANNOUNCEMENT', 'RANDOM'];
 
@@ -50,7 +52,10 @@ export default function NewThread() {
   };
 
   return (
-    <Screen contentContainerClassName="gap-4 px-4 py-4">
+    <Screen
+      contentContainerClassName="gap-4 px-4 pb-4"
+      contentContainerStyle={{ paddingTop: HEADER_CLEARANCE, paddingBottom: TAB_BAR_CLEARANCE }}
+    >
       <Text className="text-2xl font-bold text-primary-900 dark:text-primary-100">{t('newThread.title')}</Text>
       <Select
         label={t('newThread.tagLabel')}

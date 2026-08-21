@@ -11,7 +11,9 @@ import { LoadingState } from '@/components/LoadingState';
 import { Screen } from '@/components/Screen';
 import { UserRef } from '@/components/UserRef';
 import { useGuideProfiles } from '@/lib/resources/guide-profiles';
+import { HEADER_CLEARANCE } from '@/lib/header';
 import { useActivityTypes, useDistricts, useLanguages } from '@/lib/resources/master-data';
+import { TAB_BAR_CLEARANCE } from '@/lib/tab-bar';
 
 function FilterChips({
   options,
@@ -29,12 +31,18 @@ function FilterChips({
       data={options}
       keyExtractor={(option) => option.id}
       className="mb-2"
+      // Without an explicit height, a horizontal FlatList's cross-axis
+      // stretches to fill whatever free vertical space its flex-1 parent
+      // (Screen) has - which then stretches every rendered chip into a
+      // huge oval instead of a compact pill. Bounding it to the chip's own
+      // content height (padding + one line of text) fixes both.
+      style={{ flexGrow: 0, maxHeight: 44 }}
       renderItem={({ item }) => {
         const selected = item.id === selectedId;
         return (
           <Pressable
             onPress={() => onSelect(selected ? undefined : item.id)}
-            className={`mr-2 rounded-full border-2 px-3 py-1.5 ${
+            className={`mr-2 self-start rounded-full border-2 px-3 py-1.5 ${
               selected ? 'border-primary-600 bg-primary-100 dark:bg-primary-900' : 'border-stone-300 dark:border-stone-600'
             }`}
           >
@@ -62,7 +70,7 @@ export default function GuidesList() {
   });
 
   return (
-    <Screen scroll={false}>
+    <Screen scroll={false} contentContainerStyle={{ paddingTop: HEADER_CLEARANCE }}>
       <Text className="mb-4 text-2xl font-bold text-primary-900 dark:text-primary-100">{t('title')}</Text>
 
       {activityTypes?.data.length ? (
@@ -84,9 +92,10 @@ export default function GuidesList() {
           data={data?.data ?? []}
           keyExtractor={(guide) => guide.id}
           contentContainerClassName="gap-3 pt-2"
+          contentContainerStyle={{ paddingBottom: TAB_BAR_CLEARANCE }}
           renderItem={({ item }) => (
             <Link href={`/guides/${item.id}`} asChild>
-              <Card className="p-3" onPress={() => {}}>
+              <Card className="p-3" glass onPress={() => {}}>
                 <UserRef userId={item.userId} className="font-medium text-primary-900 dark:text-primary-100" />
                 {item.bio ? (
                   <Text className="mt-1 text-sm text-stone-600 dark:text-stone-400" numberOfLines={2}>

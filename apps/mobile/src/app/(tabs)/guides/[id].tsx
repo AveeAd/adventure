@@ -8,6 +8,8 @@ import { LoadingState } from '@/components/LoadingState';
 import { Screen } from '@/components/Screen';
 import { UserRef } from '@/components/UserRef';
 import { useGuideProfile } from '@/lib/resources/guide-profiles';
+import { HEADER_CLEARANCE } from '@/lib/header';
+import { TAB_BAR_CLEARANCE } from '@/lib/tab-bar';
 
 export default function GuideDetail() {
   const { t } = useTranslation('guides');
@@ -18,7 +20,10 @@ export default function GuideDetail() {
   if (isError || !guide) return <ErrorState onRetry={() => refetch()} />;
 
   return (
-    <Screen contentContainerClassName="gap-4 px-4 py-4">
+    <Screen
+      contentContainerClassName="gap-4 px-4 pb-4"
+      contentContainerStyle={{ paddingTop: HEADER_CLEARANCE, paddingBottom: TAB_BAR_CLEARANCE }}
+    >
       <UserRef
         userId={guide.userId}
         className="text-2xl font-bold text-primary-900 dark:text-primary-100"

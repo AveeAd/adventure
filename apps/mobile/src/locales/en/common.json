@@ -1,4 +1,5 @@
 {
+  "appName": "Hipppie",
   "errorState": {
     "defaultMessage": "Something went wrong loading this.",
     "retry": "Try again"
@@ -18,6 +19,7 @@
   },
   "tabs": {
     "discover": "Discover",
+    "map": "Map",
     "guides": "Guides",
     "clubs": "Clubs",
     "account": "Account"
