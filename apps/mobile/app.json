@@ -11,9 +11,13 @@
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.aveead.hipppie",
       "usesAppleSignIn": true,
-      "associatedDomains": ["applinks:adventure.aveead.com"],
+      "associatedDomains": [
+        "applinks:adventure.aveead.com"
+      ],
       "infoPlist": {
-        "UIBackgroundModes": ["location"],
+        "UIBackgroundModes": [
+          "location"
+        ],
         "NSLocationWhenInUseUsageDescription": "Adventure uses your location to trace your route while you record a hike.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Adventure records your route in the background so tracking continues when your phone is locked or the app isn't in view."
       }
@@ -33,18 +37,38 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "FOREGROUND_SERVICE_LOCATION",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
       "intentFilters": [
         {
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "adventure.aveead.com", "pathPrefix": "/adventures" },
-            { "scheme": "https", "host": "adventure.aveead.com", "pathPrefix": "/clubs" },
-            { "scheme": "https", "host": "adventure.aveead.com", "pathPrefix": "/guides" }
+            {
+              "scheme": "https",
+              "host": "adventure.aveead.com",
+              "pathPrefix": "/adventures"
+            },
+            {
+              "scheme": "https",
+              "host": "adventure.aveead.com",
+              "pathPrefix": "/clubs"
+            },
+            {
+              "scheme": "https",
+              "host": "adventure.aveead.com",
+              "pathPrefix": "/guides"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -94,6 +118,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "12776a29-eb2d-427d-8604-f3306990fd77"
+      }
+    },
+    "owner": "aveead"
   }
 }
