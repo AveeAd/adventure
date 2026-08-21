@@ -145,6 +145,16 @@ function AccountPage() {
           )}
         </div>
       )}
+
+      <div className="mt-10 border-t border-stone-200 pt-6 dark:border-stone-800">
+        <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">{t('account.deleteAccountHeading')}</h2>
+        <Link
+          to="/account/delete"
+          className="mt-2 inline-block text-sm font-medium text-red-700 underline hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+        >
+          {t('account.deleteAccountLink')}
+        </Link>
+      </div>
     </Container>
   );
 }

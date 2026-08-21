@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as AccountDeleteRouteImport } from './routes/account/delete'
 import { Route as AccountGuideProfileRouteImport } from './routes/account/guide-profile'
 import { Route as AdventuresNewRouteImport } from './routes/adventures/new'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
@@ -70,6 +71,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/account/',
   path: '/account/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountDeleteRoute = AccountDeleteRouteImport.update({
+  id: '/account/delete',
+  path: '/account/delete',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountGuideProfileRoute = AccountGuideProfileRouteImport.update({
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/account/delete': typeof AccountDeleteRoute
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/account/delete': typeof AccountDeleteRoute
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/account/delete': typeof AccountDeleteRoute
   '/account/guide-profile': typeof AccountGuideProfileRoute
   '/adventures/new': typeof AdventuresNewRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -368,6 +377,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/sitemap.xml'
+    | '/account/delete'
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
@@ -407,6 +417,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/sitemap.xml'
+    | '/account/delete'
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/sitemap.xml'
+    | '/account/delete'
     | '/account/guide-profile'
     | '/adventures/new'
     | '/auth/callback'
@@ -486,6 +498,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AccountDeleteRoute: typeof AccountDeleteRoute
   AccountGuideProfileRoute: typeof AccountGuideProfileRoute
   AdventuresNewRoute: typeof AdventuresNewRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -556,6 +569,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account/'
       preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/delete': {
+      id: '/account/delete'
+      path: '/account/delete'
+      fullPath: '/account/delete'
+      preLoaderRoute: typeof AccountDeleteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/account/guide-profile': {
@@ -790,6 +810,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AccountDeleteRoute: AccountDeleteRoute,
   AccountGuideProfileRoute: AccountGuideProfileRoute,
   AdventuresNewRoute: AdventuresNewRoute,
   AuthCallbackRoute: AuthCallbackRoute,

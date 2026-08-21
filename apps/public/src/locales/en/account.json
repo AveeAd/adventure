@@ -122,7 +122,20 @@
     "usernameOneTimeHint": "Lowercase letters, digits, and underscores only, 3-30 characters. This is the only time you can change it.",
     "changeUsername": "Change username",
     "usernameFormatError": "Username must be 3-30 characters, start with a letter, and use only lowercase letters, digits, and underscores",
-    "usernameError": "Failed to update username"
+    "usernameError": "Failed to update username",
+    "deleteAccountHeading": "Delete account",
+    "deleteAccountLink": "Delete your account"
+  },
+  "deleteAccount": {
+    "pageTitle": "Delete account",
+    "pageDescription": "Permanently delete your account and personal data.",
+    "heading": "Delete your account",
+    "warning": "This permanently deletes your recorded activity tracks, connected sign-in accounts, and login sessions. Your trip reports, edits, and comments stay attributed to \"[deleted user]\" rather than being removed, since other people's content links to them.",
+    "confirmButton": "Yes, delete my account",
+    "cancelButton": "Cancel",
+    "deleting": "Deleting...",
+    "error": "Failed to delete account. Please try again or contact support.",
+    "done": "Your account has been deleted."
   },
   "login": {
     "pageTitle": "Sign in",
