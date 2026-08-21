@@ -171,7 +171,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div className="flex-1">{children}</div>
 
         <footer className="border-t border-stone-200 py-8 text-center text-sm text-stone-500 dark:border-stone-800 dark:text-stone-400">
-          {appConfig.tagline}
+          <p>{appConfig.tagline}</p>
+          <Link to="/privacy" className="mt-2 inline-block underline hover:text-stone-700 dark:hover:text-stone-200">
+            Privacy Policy
+          </Link>
         </footer>
 
         <Scripts />
