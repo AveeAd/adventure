@@ -29,7 +29,7 @@ docker-compose up
 
 This starts Postgres/PostGIS, the API, the admin app, and the public app together, with code bind-mounted for live reload. See `CLAUDE.md` for environment variables, architecture, and conventions in detail.
 
-`apps/mobile` isn't part of this — React Native can't run meaningfully in Docker (the iOS Simulator needs a macOS host with Xcode, the Android emulator needs host virtualization). Run `docker-compose up` first for the API, then separately `cd apps/mobile && cp .env.example .env` (fill in your LAN IP so a physical device/simulator can reach the containerized API) and `npm run start` — see `MOBILE_PLAN.md` for the full setup and `apps/mobile/.env.example` for what each variable is for.
+`apps/mobile` isn't part of this — React Native can't run meaningfully in Docker (the iOS Simulator needs a macOS host with Xcode, the Android emulator needs host virtualization). Run `docker-compose up` first for the API, then separately `cd apps/mobile && cp .env.example .env` (fill in your LAN IP so a physical device/simulator can reach the containerized API) and `pnpm start` — see `MOBILE_PLAN.md` for the full setup and `apps/mobile/.env.example` for what each variable is for.
 
 ## Publishing `docs/` to GitHub Pages
 

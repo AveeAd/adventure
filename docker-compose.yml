@@ -20,7 +20,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     working_dir: /app
-    command: sh -c "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && npm run start:dev --workspace=apps/api"
+    command: sh -c "pnpm --filter api exec prisma migrate deploy --schema=prisma/schema.prisma && pnpm --filter api start:dev"
     restart: on-failure
     volumes:
       - .:/app
@@ -38,7 +38,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     working_dir: /app
-    command: npm run dev --workspace=apps/admin -- --host 0.0.0.0
+    command: pnpm --filter admin dev --host 0.0.0.0
     volumes:
       - .:/app
       - /app/node_modules
@@ -53,7 +53,7 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     working_dir: /app
-    command: npm run dev --workspace=apps/public -- --host 0.0.0.0
+    command: pnpm --filter public dev --host 0.0.0.0
     volumes:
       - .:/app
       - /app/node_modules
