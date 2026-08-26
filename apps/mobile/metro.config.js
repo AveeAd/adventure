@@ -16,15 +16,15 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
-// apps/public pins react@^19.2.0 and apps/admin react@^19.2.7; npm's
-// workspace hoisting has no nohoist, so the root node_modules/react can end
-// up on a different version than the exact one Expo/React Native pin here
-// (see MOBILE_PLAN.md Phase 1 step 2). disableHierarchicalLookup stops
-// Metro from walking up past this project's own node_modules once it finds
-// a match there, so react/react-dom/react-native always resolve to the
-// versions apps/mobile installed for itself rather than a hoisted sibling -
-// two copies of React in one bundle is an "Invalid hook call" bug otherwise.
-config.resolver.disableHierarchicalLookup = true;
+// apps/public pins react@^19.2.0 and apps/admin react@^19.2.7, while Expo
+// pins the exact version here. Under npm's flat hoisting this used to risk
+// Metro resolving a hoisted sibling copy from the shared root node_modules
+// instead of this project's own exact-pinned version - two copies of React
+// in one bundle is an "Invalid hook call" bug. pnpm's isolated linker (see
+// MOBILE_PLAN.md Phase 1 step 2) makes apps/mobile/node_modules/react a
+// symlink straight to the exact version apps/mobile declared for itself -
+// there's no shared hoisted copy left for Metro to walk into, so this
+// workaround is no longer needed.
 
 // expo-sqlite's web implementation loads a wasm binary; without this, Metro
 // doesn't know how to resolve `.wasm` imports and `expo export --platform
