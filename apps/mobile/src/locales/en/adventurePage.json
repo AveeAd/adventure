@@ -94,6 +94,11 @@
     "saving": "Saving…",
     "addButton": "Add spot"
   },
+  "pickPage": {
+    "title": "Which adventure page?",
+    "searchPlaceholder": "Search adventure pages",
+    "empty": "No matching adventure pages."
+  },
   "newTrail": {
     "minPointsError": "Draw at least two points to form a trail.",
     "saveError": "Could not save trail.",

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, type ColorValue } from 'react-native';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { FloatingHeader } from '@/components/FloatingHeader';
 import { GlassEdgeHighlight } from '@/components/GlassEdgeHighlight';
+import { RecordFAB } from '@/components/RecordFAB';
 import { GLYPH_SHADOW, useGlassTokens } from '@/lib/glass';
 import { TAB_BAR_HEIGHT, TAB_BAR_MARGIN } from '@/lib/tab-bar';
 
@@ -71,6 +72,10 @@ export default function TabsLayout() {
   const { t } = useTranslation('common');
   const tokens = useGlassTokens();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+  // "index" is the Map tab's route (see the comment above) - matches '/'
+  // exactly, not startsWith, so it doesn't also catch nested routes.
+  const isMapTab = pathname === '/';
 
   return (
     <>
@@ -191,6 +196,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="guides/[id]" options={{ href: null }} />
       </Tabs>
       <FloatingHeader />
+      {isMapTab ? <RecordFAB /> : null}
     </>
   );
 }

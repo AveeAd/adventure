@@ -65,6 +65,7 @@ function RootNavigator() {
         <Stack.Screen name="adventures/[slug]/trips/new" />
         <Stack.Screen name="adventures/[slug]/trails/new" />
         <Stack.Screen name="adventures/[slug]/spots/new" />
+        <Stack.Screen name="pick-page" />
         <Stack.Screen name="tracks/index" />
         <Stack.Screen name="tracks/new" />
         <Stack.Screen name="tracks/record" />
