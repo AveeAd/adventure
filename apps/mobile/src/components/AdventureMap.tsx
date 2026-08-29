@@ -10,7 +10,7 @@ import {
 } from '@maplibre/maplibre-react-native';
 import type { Ref } from 'react';
 import { useEffect } from 'react';
-import { View } from 'react-native';
+import { Platform, View } from 'react-native';
 
 import { boundsForGeometry } from '@/lib/map/bbox';
 
@@ -82,7 +82,14 @@ export function AdventureMap({
 
   return (
     <View style={{ flex: 1 }}>
-      <Map mapStyle={STYLE_URL} style={{ flex: 1 }}>
+      {/* androidView="texture": MapLibre's Android default renders through
+          a SurfaceView, which composites outside the normal view hierarchy
+          and can't be captured by expo-blur's snapshot-based Android blur
+          (dimezisBlurView, see glass.ts) - the Map tab's RecordFAB sheet
+          blurs this view via a shared BlurTargetView (see (tabs)/index.tsx),
+          so this map specifically needs the TextureView-backed path to be
+          blur-capturable. iOS ignores this prop entirely. */}
+      <Map mapStyle={STYLE_URL} style={{ flex: 1 }} androidView={Platform.OS === 'android' ? 'texture' : undefined}>
         <Camera ref={cameraRef} initialViewState={bounds ? { bounds } : { center: [84.124, 28.3949], zoom: 6 }} />
         {showUserLocation ? <UserLocation animated accuracy /> : null}
 

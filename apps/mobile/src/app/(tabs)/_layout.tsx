@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, usePathname } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, type ColorValue } from 'react-native';
@@ -8,7 +8,8 @@ import { useTranslation } from 'react-i18next';
 
 import { FloatingHeader } from '@/components/FloatingHeader';
 import { GlassEdgeHighlight } from '@/components/GlassEdgeHighlight';
-import { GLYPH_SHADOW, useGlassTokens } from '@/lib/glass';
+import { RecordFAB } from '@/components/RecordFAB';
+import { BLUR_METHOD, GLYPH_SHADOW, useActiveBlurTarget, useGlassTokens } from '@/lib/glass';
 import { TAB_BAR_HEIGHT, TAB_BAR_MARGIN } from '@/lib/tab-bar';
 
 // Ionicons ships an "-outline" (thin stroke) and a filled/solid variant of
@@ -71,6 +72,16 @@ export default function TabsLayout() {
   const { t } = useTranslation('common');
   const tokens = useGlassTokens();
   const insets = useSafeAreaInsets();
+  const pathname = usePathname();
+  // "index" is the Map tab's route (see the comment above) - matches '/'
+  // exactly, not startsWith, so it doesn't also catch nested routes.
+  const isMapTab = pathname === '/';
+  // Whichever screen currently has focus (see glass.ts) - every Screen
+  // registers itself automatically, and the Map tab (which has no Screen)
+  // registers its own live map directly (see index.tsx). Real blur here
+  // needs this, since the tab bar sits as a sibling of every screen rather
+  // than nested inside any one of them.
+  const activeBlurTarget = useActiveBlurTarget();
 
   return (
     <>
@@ -108,15 +119,18 @@ export default function TabsLayout() {
         tabBarItemStyle: { paddingTop: 6, paddingBottom: 4, marginHorizontal: 4 },
         tabBarBackground: () => (
           <View style={{ flex: 1, borderRadius: RADIUS, overflow: 'hidden' }}>
-            {/* blurMethod="none", not BLUR_METHOD: this pill floats over
-                whatever a screen last scrolled under it, not a single fixed
-                backdrop the way Card/Button sit over their own screen's
-                GradientMesh (see glass.ts's BlurTargetContext note), so
-                there's no blurTarget to give dimezisBlurView - passing it
-                anyway just gets the same flat-tint fallback with a console
-                warning on every render. Explicit "none" opts into that
-                fallback silently instead. */}
-            <BlurView intensity={70} tint={tokens.blurTint} blurMethod="none" style={StyleSheet.absoluteFill} />
+            {/* Blurs whichever screen currently has focus (activeBlurTarget,
+                see glass.ts) rather than a single fixed backdrop the way
+                Card/Button sit over their own screen's GradientMesh -
+                falls back to "none" (flat tint, no console warning) until
+                the first screen registers itself. */}
+            <BlurView
+              intensity={70}
+              tint={tokens.blurTint}
+              blurMethod={activeBlurTarget ? BLUR_METHOD : 'none'}
+              blurTarget={activeBlurTarget ?? undefined}
+              style={StyleSheet.absoluteFill}
+            />
             <LinearGradient
               colors={[tokens.bg1, tokens.bg2]}
               start={{ x: 0, y: 0 }}
@@ -191,6 +205,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="guides/[id]" options={{ href: null }} />
       </Tabs>
       <FloatingHeader />
+      {isMapTab ? <RecordFAB /> : null}
     </>
   );
 }

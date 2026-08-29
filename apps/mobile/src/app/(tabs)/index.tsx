@@ -1,12 +1,15 @@
 import type { CameraRef } from '@maplibre/maplibre-react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
+import { BlurTargetView } from 'expo-blur';
 import { useCallback, useRef, useState } from 'react';
+import { StyleSheet, type View as RNView } from 'react-native';
 
 import { AdventureMap } from '@/components/AdventureMap';
 import { ErrorState } from '@/components/ErrorState';
 import { LoadingState } from '@/components/LoadingState';
 import { MapLocateButton } from '@/components/MapLocateButton';
+import { useRegisterActiveBlurTarget } from '@/lib/glass';
 import { useSpotsBbox, useTrailsBbox } from '@/lib/resources/adventure-pages';
 
 // The Map tab: every trail/spot in Nepal on one full-screen map, unscoped
@@ -20,6 +23,12 @@ export default function MapTab() {
   const { data: spots, isLoading: isSpotsLoading, isError: isSpotsError, refetch: refetchSpots } = useSpotsBbox();
   const cameraRef = useRef<CameraRef>(null);
   const [isLocating, setIsLocating] = useState(false);
+  // This tab has no Screen of its own (see the comment below) to publish a
+  // backdrop automatically, so it registers its own live map as the
+  // app-wide active blur target while focused - FloatingHeader, the tab
+  // bar, and RecordFAB's sheet all blur against this ref in turn.
+  const blurTargetRef = useRef<RNView>(null);
+  useRegisterActiveBlurTarget(blurTargetRef);
 
   // Shared by the focus effect below (automatic, silent) and
   // MapLocateButton's onPress (explicit, user-triggered) - same "degrade,
@@ -69,7 +78,9 @@ export default function MapTab() {
 
   return (
     <>
-      <AdventureMap trails={trails ?? []} spots={spots ?? []} cameraRef={cameraRef} showUserLocation />
+      <BlurTargetView ref={blurTargetRef} style={StyleSheet.absoluteFill}>
+        <AdventureMap trails={trails ?? []} spots={spots ?? []} cameraRef={cameraRef} showUserLocation />
+      </BlurTargetView>
       <MapLocateButton onPress={flyToUserLocation} loading={isLocating} />
     </>
   );

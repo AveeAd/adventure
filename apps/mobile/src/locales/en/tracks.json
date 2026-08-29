@@ -6,8 +6,17 @@
   "empty": "No recordings yet. Start a recording to trace your route as you hike - it syncs automatically once you finish.",
   "pointCount_one": "{{count}} point",
   "pointCount_other": "{{count}} points",
+  "fab": {
+    "addSpot": "Add spot",
+    "addTrail": "Add trail",
+    "recordActivity": "Record activity",
+    "resumeActivity": "Resume activity",
+    "close": "Close menu"
+  },
   "newRecording": {
     "title": "What are you doing?",
+    "activityTypeLabel": "Activity type",
+    "startButton": "Start",
     "starting": "Starting…",
     "startError": "Could not start recording."
   },
