@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { AuthProvider, useAuth } from '@/lib/auth/auth-context';
+import { ActiveBlurTargetProvider } from '@/lib/glass';
 // Registers the foreground notification handler + Android channel (Phase 6)
 // - same "register before the OS can need it" convention as location-task.ts
 // below.
@@ -101,7 +102,9 @@ function RootLayout() {
       ) : (
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <RootNavigator />
+            <ActiveBlurTargetProvider>
+              <RootNavigator />
+            </ActiveBlurTargetProvider>
           </AuthProvider>
         </QueryClientProvider>
       )}

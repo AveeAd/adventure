@@ -1,4 +1,5 @@
-import { createContext, useContext, type RefObject } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { createContext, useCallback, useContext, useState, type ReactNode, type RefObject } from 'react';
 import { useColorScheme, type View } from 'react-native';
 
 // Mirrors apps/public/src/styles.css's --glass-bg-1/2/3 + --glass-border
@@ -96,6 +97,50 @@ export const BlurTargetContext = createContext<RefObject<View | null> | null>(nu
 
 export function useBlurTarget() {
   return useContext(BlurTargetContext);
+}
+
+// The context above is provided fresh by each Screen instance for its own
+// descendants (Card/Button's glass) - fine for content living inside one
+// screen, but chrome mounted as a sibling of the navigator (FloatingHeader,
+// the tab bar, GlassPill, RecordFAB) has no screen of its own to nest
+// inside and needs "whichever screen currently has focus" instead. This
+// second context tracks exactly that, updated by
+// useRegisterActiveBlurTarget - Screen.tsx calls it automatically for every
+// screen built on Screen; the Map tab (which has no Screen, see its own
+// comment) registers its own ref directly.
+type ActiveBlurTarget = RefObject<View | null> | null;
+const ActiveBlurTargetSetterContext = createContext<((ref: ActiveBlurTarget) => void) | null>(null);
+const ActiveBlurTargetValueContext = createContext<ActiveBlurTarget>(null);
+
+export function ActiveBlurTargetProvider({ children }: { children: ReactNode }) {
+  const [active, setActive] = useState<ActiveBlurTarget>(null);
+  return (
+    <ActiveBlurTargetSetterContext.Provider value={setActive}>
+      <ActiveBlurTargetValueContext.Provider value={active}>{children}</ActiveBlurTargetValueContext.Provider>
+    </ActiveBlurTargetSetterContext.Provider>
+  );
+}
+
+export function useActiveBlurTarget() {
+  return useContext(ActiveBlurTargetValueContext);
+}
+
+// Registers `ref` as the active blur target for as long as the calling
+// screen has focus. `ref` should be a stable useRef() return value, not a
+// fresh object per render - BlurView's own componentDidUpdate only detects
+// a new target by comparing `.current` across renders, so the ref
+// identity needs to stay put while its `.current` is what actually changes
+// as the target view mounts. Deliberately doesn't clear on blur/unmount:
+// leaving the outgoing screen's own backdrop in place during a navigation
+// transition reads better than a one-frame flash back to flat-tint before
+// the next screen registers itself.
+export function useRegisterActiveBlurTarget(ref: RefObject<View | null>) {
+  const setActive = useContext(ActiveBlurTargetSetterContext);
+  useFocusEffect(
+    useCallback(() => {
+      setActive?.(ref);
+    }, [setActive, ref]),
+  );
 }
 
 export function useGlassTokens() {

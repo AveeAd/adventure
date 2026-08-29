@@ -12,7 +12,7 @@ import {
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { BlurTargetView } from 'expo-blur';
 
-import { BlurTargetContext } from '@/lib/glass';
+import { BlurTargetContext, useRegisterActiveBlurTarget } from '@/lib/glass';
 import { GradientMesh } from './GradientMesh';
 
 // Every route wraps its content in this - same role as apps/public's
@@ -63,6 +63,11 @@ export function Screen({
   refreshControl?: ReactElement<RefreshControlProps>;
 }) {
   const targetRef = useRef<RNView>(null);
+  // Also publishes this screen's own backdrop as the app-wide "currently
+  // focused" blur target while it has focus - see glass.ts's own comment -
+  // so chrome mounted outside any screen (FloatingHeader, the tab bar,
+  // GlassPill) blurs against whatever's actually on screen right now.
+  useRegisterActiveBlurTarget(targetRef);
 
   if (!scroll) {
     return (

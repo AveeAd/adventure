@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassEdgeHighlight } from '@/components/GlassEdgeHighlight';
 import { GlassSpecular } from '@/components/GlassSpecular';
-import { useGlassTokens } from '@/lib/glass';
+import { BLUR_METHOD, useActiveBlurTarget, useGlassTokens } from '@/lib/glass';
 
 // The floating-pill shape shared by the header (FloatingHeader.tsx), the
 // map's locate button (MapLocateButton.tsx), and, in spirit, the tab bar's
@@ -26,6 +26,12 @@ export function GlassPill({
   style?: StyleProp<ViewStyle>;
 }) {
   const tokens = useGlassTokens();
+  // Blurs whichever screen currently has focus (see glass.ts) - a GlassPill
+  // shows up over many different backdrops (header, map, list content), so
+  // unlike Card/Button (fixed to their own screen's own GradientMesh) it
+  // needs the dynamic "active" target rather than a static one. Falls back
+  // to "none" (flat tint, no console warning) until a target has registered.
+  const blurTarget = useActiveBlurTarget();
   return (
     // overflow-hidden has to live on an inner wrapper, not this outer view -
     // it would clip tokens.shadowStyle's drop shadow away along with the
@@ -33,12 +39,13 @@ export function GlassPill({
     // glass variant).
     <View className={`flex-row items-center rounded-full ${className}`} style={[tokens.shadowStyle, style]}>
       <View className="absolute inset-0 overflow-hidden rounded-full" style={StyleSheet.absoluteFill}>
-        {/* blurMethod="none": this pill floats over the header overlay,
-            not a single fixed backdrop with a BlurTargetView to reference
-            (see (tabs)/_layout.tsx's tab bar background for the same
-            reasoning) - passing BLUR_METHOD here would just warn and fall
-            back to this same flat tint anyway. */}
-        <BlurView intensity={70} tint={tokens.blurTint} blurMethod="none" style={StyleSheet.absoluteFill} />
+        <BlurView
+          intensity={70}
+          tint={tokens.blurTint}
+          blurMethod={blurTarget ? BLUR_METHOD : 'none'}
+          blurTarget={blurTarget ?? undefined}
+          style={StyleSheet.absoluteFill}
+        />
         <LinearGradient
           colors={[tokens.bg1, tokens.bg2]}
           start={{ x: 0, y: 0 }}

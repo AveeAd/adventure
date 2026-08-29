@@ -10,7 +10,8 @@
     "addSpot": "Add spot",
     "addTrail": "Add trail",
     "recordActivity": "Record activity",
-    "resumeActivity": "Resume activity"
+    "resumeActivity": "Resume activity",
+    "close": "Close menu"
   },
   "newRecording": {
     "title": "What are you doing?",
